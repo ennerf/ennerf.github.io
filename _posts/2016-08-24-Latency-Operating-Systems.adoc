@@ -12,6 +12,8 @@
 
 == Introduction
 
+NOTE: TODO: should this blog be about real-time control or more focused on latency?
+
 // Arbitrary requirements are bad. Not much information out there. Planning on blog series about various aspects.
 
 Robotic systems tend to be controlled in _real-time_, which means that a command gets executed within a _deadline_ (fixed period of time). There are _hard real-time_ systems that can never exceed the given deadline, and _soft real-time_ systems that are able to occasionally handle reasonable outliers.
@@ -52,16 +54,22 @@ However, before dismissing consumer OS for real-time control systems, it is wort
 
 link:https://www.azul.com[Azul Systems] sells products targeted at latency critical applications and they have created a variety of useful tools to measure latency. link:https://www.azul.com/jhiccup/[jHiccup] is a tool that allows us to measure and record hiccups (~jitter) at the OS level. By running it on an idle system, we can measure the best case scenario. It uses link:https://github.com/HdrHistogram/HdrHistogram[HdrHistogram] for the actual recording of samples. Lastly, I'm using link:https://github.com/ennerf/HdrHistogramVisualizer[HdrHistogramVisualizer] which is a tool that I've written for visualizing the recorded data.
 
-Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. jHiccup essentially measures the time for sleep(1ms) and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 1ms to wake up, it will record a 1ms hiccup.
+Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. jHiccup measures the time for sleep(1ms) and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms hiccup value.
 
-I've setup two standard desktop computers, one for Windows/Linux and one for OSX tests.
+I've setup two standard desktop computers, one for Windows/Linux and one for Mac tests.
 
 Windows/Linux:: Gigabyte Brix BXi7-4770R, i7-4770R @ 3.2 GHz, 16 GB 1600 MHz DDR3
-OSX:: Mac Mini 2014, i7-3720QM @ 2.6 GHz, 16 GB 1600 MHz DDR3
+Mac:: Mac Mini 2014, i7-3720QM @ 2.6 GHz, 16 GB 1600 MHz DDR3
 
+=== Windows / Mac / Linux
 
+Let's first look at the main consumer operating systems: Windows, Mac and Linux. I've done a clean install for each OS, disabled sleep mode, and performed any steps necessary to start jHiccup. Other than that, there were no other modifications. After starting, I've unplugged all cables other than the power cable and let the computer sit idle for >24 hours.
 
-=== Tools
+NOTE: TODO: add kernel and exact update versions
+
+Max:: OSX 9.
+Windows:: Windows 10 Enterprise ()
+Linux:: Ubuntu 16.04 Desktop ()
 
 
 
