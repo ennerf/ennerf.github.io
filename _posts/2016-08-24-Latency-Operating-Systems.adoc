@@ -24,7 +24,7 @@ Over a series of blog posts, I'll try to share some my own experiences and data 
 
 // Data is not normally distributed. What is a better way to look at latency? What are tools that do this? How does jHiccup work? Gil Tene mentions coordinated omission, but that is less of a problem for request/response systems.
 
-The first important realization when looking at latency is that data is not normally distributed. I have seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Looking at only the mean and standard deviation tends to provide an extremely optimistic view that can be misleading.
+The first important realization when looking at latency is that data is not normally (Gaussian) distributed. I have seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Looking at only the mean and standard deviation tends to provide an extremely optimistic view that can be misleading.
 
 A better way to look at latency is via histograms and percentile plots, e.g., 99.9% of measurements have been below Xms. Since there are already several blog posts and videos about recording latency, I'd encourage you to refer to the links below for more information,
 
@@ -42,16 +42,24 @@ The operating system is the base of everything. No matter how amazing the softwa
  
 There is a trade-off between responding in a timely manner and overall performance, battery life, and many other concerns. As a result, the major consumer operating systems don't guarantee to meet hard deadlines and can theoretically have arbitrarily long pauses.
 
-However, before dismissing consumer OS for real-time control systems entirely, it is worth looking at their actual performance. Even though there are no theoretical guarantees, the practical performance may be good enough for many applications.
+However, before dismissing consumer OS for real-time control systems, it is worth looking at their actual performance. Even though there are no theoretical guarantees, the practical performance may be good enough for many applications.
 
-=== Hardware Setup
+=== Benchmark Setup
+
+link:https://www.azul.com[Azul Systems] sells products targeted at latency critical applications and they have created a variety of useful tools to measure latency. One is a
+
+link:https://www.azul.com/jhiccup/[jHiccup]
 
 I've setup two standard desktop computers, one for Windows/Linux and one for OSX tests.
 
 Windows/Linux:: Gigabyte Brix BXi7-4770R, i7-4770R @ 3.2 GHz, 16 GB 1600 MHz DDR3
 OSX:: Mac Mini 2014, i7-3720QM @ 2.6 GHz, 16 GB 1600 MHz DDR3
 
+
+
 === Tools
+
+
 
 Non-tuned OS, bare install. Mac Mini 2014, Windows 10 (version), Ubuntu 16.04 (Kernel)
 
