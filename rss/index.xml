@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Wed, 24 Aug 2016 23:40:52 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Wed, 24 Aug 2016 23:49:17 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
 <h2 id="_introduction">Introduction</h2>
 <div class="sectionbody">
 <div class="admonitionblock note">
@@ -121,6 +121,19 @@ TODO: add kernel and exact update versions
 </div>
 <div class="paragraph">
 <p>Non-tuned OS, bare install. Mac Mini 2014, Windows 10 (version), Ubuntu 16.04 (Kernel)</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://ennerf.github.io/images/os/osx-win-ubuntu_24h.png" alt="24 hour latency plot">
+</div>
+</div>
+<div class="paragraph">
+<p>And zoomed in</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://ennerf.github.io/images/os/osx-win-ubuntu_10m.png" alt="10 minute latency plot">
+</div>
 </div>
 <div class="sect3">
 <h4 id="_results_24_hour_view">Results (24 hour view)</h4>
