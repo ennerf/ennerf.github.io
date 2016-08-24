@@ -5,8 +5,6 @@ Outline
 1.	Introduction to real-time and blog series. Arbitrary requirements are bad.
 
 
-
-
 2.	Data is not normally distributed. What is a better way to look at latency? What are tools that do this? How does jHiccup work? Gil Tene mentions coordinated omission, but that is less of a problem for request/response systems.
 
 
