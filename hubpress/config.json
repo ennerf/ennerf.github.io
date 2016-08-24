@@ -6,9 +6,9 @@
     "delay": ""
   },
   "site": {
-    "title": "Florian Enner",
-    "description": "",
-    "postsPerPage": "25",
+    "title": "Florian's Blog",
+    "description": "Software for Robots",
+    "postsPerPage": "10",
     "googleAnalytics": "UA-83018359-1",
     "disqus": "ennerf"
   },
@@ -17,6 +17,6 @@
     "github": "https://github.com/ennerf"
   },
   "theme": {
-    "name": "roon"
+    "name": "ghostium"
   }
 }
