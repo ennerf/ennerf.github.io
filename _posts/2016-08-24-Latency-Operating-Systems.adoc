@@ -24,9 +24,9 @@ Over a series of blog posts, I'll try to share some my own experiences and data 
 
 // Data is not normally distributed. What is a better way to look at latency? What are tools that do this? How does jHiccup work? Gil Tene mentions coordinated omission, but that is less of a problem for request/response systems.
 
-When looking at latency it is important to understand that the data is not normally distributed. I have seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Thus, looking only at the mean and std-dev can be very misleading.
+The first important realization when looking at latency is that data is not normally distributed. I have seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Looking at only the mean and standard deviation tends to provide an extremely optimistic view that can be misleading.
 
-A better way to look at latency is via histograms and percentile plots.
+A better way to look at latency is via histograms and percentile plots, e.g., 99.9% of measurements have been below 1ms. Recording these takes more effort, but luckily there are some great libraries. 
 
 jHiccup is a great tool developed by Azul Systems that allows us to measure and record hiccups ('jitter')  at the OS level. These can be caused by a large number of reasons, including swap, indexing tasks, and many more. By running it on an idle system, we can measure the best case scenario.
 
