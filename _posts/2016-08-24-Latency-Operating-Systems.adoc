@@ -73,6 +73,12 @@ Linux:: Ubuntu 16.04 Desktop ()
 
 Non-tuned OS, bare install. Mac Mini 2014, Windows 10 (version), Ubuntu 16.04 (Kernel)
 
+image::os/osx-win-ubuntu_24h.png[24 hour latency plot ]
+
+And zoomed in
+
+image::os/osx-win-ubuntu_10m.png[10 minute latency plot]
+
 ==== Results (24 hour view)
 
 24 hours in 3 minute intervals. What can create the spikes? How bad is it?
