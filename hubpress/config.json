@@ -2,9 +2,21 @@
   "meta": {
     "username": "ennerf",
     "repositoryName": "ennerf.github.io",
-    "branch": "master"
+    "branch": "master",
+    "delay": "2000"
+  },
+  "site": {
+    "title": "Florian Enner",
+    "description": "",
+    "postsPerPage": "25",
+    "googleAnalytics": "UA-83018359-1",
+    "disqus": "ennerf"
+  },
+  "socialnetwork": {
+    "linkedin": "https://www.linkedin.com/in/florian-enner-59b81466",
+    "github": "https://github.com/ennerf"
   },
   "theme": {
-    "name": "Casper"
+    "name": "casper"
   }
 }
