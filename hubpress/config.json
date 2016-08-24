@@ -3,7 +3,7 @@
     "username": "ennerf",
     "repositoryName": "ennerf.github.io",
     "branch": "master",
-    "delay": "2000"
+    "delay": ""
   },
   "site": {
     "title": "Florian Enner",
@@ -17,6 +17,6 @@
     "github": "https://github.com/ennerf"
   },
   "theme": {
-    "name": "saga"
+    "name": "uno"
   }
 }
