@@ -28,7 +28,7 @@ Non-tuned OS, bare install. Mac Mini 2014, Windows 10 (version), Ubuntu 16.04 (K
 
 == Real-Time Linux
 
-Untuned systems aren't good enough for 1KHz control. Describe Linux setup: SCL6, RT kernel, basic optimizations
+Untuned systems aren't good enough for 1KHz control. Describe Linux setup: SCL6, RT kernel, basic optimizations, highest priority.
 
 It still falls flat.
 
