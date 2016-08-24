@@ -67,9 +67,17 @@ Let's first look at the performance of consumer operating systems: Windows, Mac 
 
 NOTE: TODO: add kernel and exact update versions
 
-Mac:: OSX 9.
-Windows:: Windows 10 Enterprise ()
-Linux:: Ubuntu 16.04 Desktop ()
+[width="50%",frame="topbot"]
+|=========
+| |*Release* |*Version* |*Update*
+|*Windows* |10 |Enterprise |?
+|*Mac* |9.x |? |?
+|*Linux* |Ubuntu 16.04 |Desktop |?
+|=========
+
+Mac:: OSX 9.?
+Windows:: Windows 10 Enterprise (?)
+Linux:: Ubuntu 16.04 Desktop (?)
 
 Non-tuned OS, bare install. Mac Mini 2014, Windows 10 (version), Ubuntu 16.04 (Kernel)
 
