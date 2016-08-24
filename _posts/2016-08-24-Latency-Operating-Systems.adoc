@@ -63,11 +63,11 @@ Mac:: Mac Mini 2014, i7-3720QM @ 2.6 GHz, 16 GB 1600 MHz DDR3
 
 === Windows / Mac / Linux
 
-Let's first look at the performance of consumer operating systems: Windows, Mac and Linux. Each test started off with a clean install for each OS. The only two modifications to the stock installation were to disable sleep mode and to install Java8_u101 to run jHiccup. I then started the test, unplugged all external cables and let the computer sit idle for >24 hours.
+Let's first look at the performance of consumer operating systems: Windows, Mac and Linux. Each test started off with a clean install for each OS. The only two modifications to the stock installation were to disable sleep mode and to install JDK8 (update 101) to run jHiccup. I then started the test, unplugged all external cables and let the computer sit 'idle' for >24 hours.
 
 NOTE: TODO: add kernel and exact update versions
 
-Max:: OSX 9.
+Mac:: OSX 9.
 Windows:: Windows 10 Enterprise ()
 Linux:: Ubuntu 16.04 Desktop ()
 
