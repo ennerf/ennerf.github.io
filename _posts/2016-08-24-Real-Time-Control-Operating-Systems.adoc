@@ -1,20 +1,57 @@
 = Real Time Control : Operating Systems
+:published_at: 2016-08-24
+:hp-tags: jHiccup, Latency, Sleep, Operating System, Windows, OSX, Ubuntu, Scientific Linux, Real-Time, Control
 
-Outline
+//NOTE: Keep X in Mind
+//image::cover-image.jpg[150, 250, link="http://docs.hebi.us"]
+//video::KCylB780zSM[youtube]
 
-== (Intro) Real-Time and Latency
+== Introduction
 
-Arbitrary requirements are bad. Not much information out there. Planning on blog series about various aspects.
+// Arbitrary requirements are bad. Not much information out there. Planning on blog series about various aspects.
 
-== Measuring Latency
+Robotic systems tend to be controlled in _real-time_, which means that a command gets executed within a _deadline_ (fixed period of time). There are _hard real-time_ systems that can never exceed the given deadline, and _soft real-time_ systems that are able to occasionally handle reasonable outliers. 
+ 
+Although the terms may seem familiar, it can be challenging to determine reasonable deadlines and to assess their criticality. This is especially true during the design phase and in academic research settings. Since this is a systemic concern that is difficult to change later, there is a tendency towards high requirements with regards to determinism. However, requirements that are too high can result in significant development efforts that may not yield any benefits in the real world.
+ 
+Over a series of short blog posts, we will try to share some of our own experiences. Today's post will focus on operating systems.
 
-Data is not normally distributed. What is a better way to look at latency? What are tools that do this? How does jHiccup work? Gil Tene mentions coordinated omission, but that is less of a problem for request/response systems.
+=== Measuring Latency
+
+// Data is not normally distributed. What is a better way to look at latency? What are tools that do this? How does jHiccup work? Gil Tene mentions coordinated omission, but that is less of a problem for request/response systems.
+
+When discussing latency
+
+jHiccup is a great tool developed by Azul Systems that allows us to measure and record hiccups ('jitter')  at the OS level. These can be caused by a large number of reasons, including swap, indexing tasks, and many more. By running it on an idle system, we can measure the best case scenario.
 
 Reference Nitsan blog and Gil Tene videos
 
 http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html
 
+== Operating Systems
+ 
+The operating system is the base of everything. No matter how good the software stack is, the system is fundamentally bound by the capabilities of the OS, it's scheduler, and the overall load on the system.
+ 
+There is a trade-off between responding in a timely manner and overall performance, battery life, and many other concerns. As a result, the major consumer operating systems are not considered to be deterministic and hard real-time compliant. However, they may still be enough for many applications.
+
 == Benchmark Systems
+
+To start off with, I've tried to
+
+Mac Mini 2014
+
+[cols="3*"]
+|===
+/Windows 10
+|Web Browser
+
+|Ruby
+|Programming Language
+
+|TorqueBox
+|Application Server
+|===
+
 
 Non-tuned OS, bare install. Mac Mini 2014, Windows 10 (version), Ubuntu 16.04 (Kernel)
 
@@ -35,21 +72,3 @@ It still falls flat.
 ==	Conclusion
 
 It's easy to do 100 Hz control in just about any OS. 1KHz hard real-time requires lots of tuning. Rates are highly dependent on the application. Hard to generalize.
-
-== Old text
-
-Real Time Control: Operating Systems
- 
-Robotic systems tend to be controlled in 'real-time', which means that a command gets executed within a deadline (fixed period of time). There are 'hard real-time' systems that can never exceed the given deadline, and 'soft real-time' systems that are able to handle occasional outliers.
- 
-Although the terms may seem familiar, it can be challenging to determine reasonable deadlines and to assess their criticality. This is especially true during the design phase and in academic research settings. Since this is a systemic concern that is difficult to change later, there is a tendency towards high requirements with regards to determinism. However, requirements that are too high can result in significant development efforts that may not yield any benefits in the real world.
- 
-Over a series of short blog posts, we will try to share some of our own experiences. Today's post will focus on operating systems.
- 
-Operating Systems
- 
-The operating system is the base of everything. No matter how good the software stack is, the system is fundamentally bound by the capabilities of the OS, it's scheduler, and the overall load on the system.
- 
-There is a trade-off between responding in a timely manner and overall performance, battery life, and many other concerns. As a result, the major consumer operating systems are not considered to be deterministic and hard real-time compliant. However, they may still be enough for many applications.
- 
-jHiccup is a great tool developed by Azul Systems that allows us to measure and record hiccups ('jitter')  at the OS level. These can be caused by a large number of reasons, including swap, indexing tasks, and many more. By running it on an idle system, we can measure the best case scenario.
