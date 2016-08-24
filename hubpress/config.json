@@ -6,8 +6,8 @@
     "delay": ""
   },
   "site": {
-    "title": "Florian's Blog",
-    "description": "Software for Robots",
+    "title": "Software for Robots",
+    "description": "Real-Time Control, Networking, Operating Systems, Languages",
     "postsPerPage": "10",
     "googleAnalytics": "UA-83018359-1",
     "disqus": "ennerf"
