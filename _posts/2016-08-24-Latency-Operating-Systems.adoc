@@ -1,4 +1,4 @@
-= Real Time Control : Operating Systems
+= Latency : Operating Systems
 :published_at: 2016-08-24
 :hp-tags: jHiccup, Latency, Sleep, Operating System, Windows, OSX, Ubuntu, Scientific Linux, Real-Time, Control
 
@@ -10,17 +10,23 @@
 
 // Arbitrary requirements are bad. Not much information out there. Planning on blog series about various aspects.
 
-Robotic systems tend to be controlled in _real-time_, which means that a command gets executed within a _deadline_ (fixed period of time). There are _hard real-time_ systems that can never exceed the given deadline, and _soft real-time_ systems that are able to occasionally handle reasonable outliers. 
+Robotic systems tend to be controlled in _real-time_, which means that a command gets executed within a _deadline_ (fixed period of time). There are _hard real-time_ systems that can never exceed the given deadline, and _soft real-time_ systems that are able to occasionally handle reasonable outliers.
  
-Although the terms may seem familiar, it can be challenging to determine reasonable deadlines and to assess their criticality. This is especially true during the design phase and in academic research settings. Since this is a systemic concern that is difficult to change later, there is a tendency towards high requirements with regards to determinism. However, requirements that are too high can result in significant development efforts that may not yield any benefits in the real world.
- 
-Over a series of short blog posts, we will try to share some of our own experiences. Today's post will focus on operating systems.
+Although there is a lot of information on the theoretial definition of these terms, it can be challenging to determine reasonable deadlines for a practical application. This is especially true for research environments that build unique mechanisms.
+
+Unfortunately, the control scheme is a systemic concern that can impact the entire system architecture. This can be very difficult to change later on, so there is a tendency towards high requirements with regards to determinism. However, requirements that are too high can result in significant development efforts that may not yield any benefits in the real world.
+
+There is also a lot of folklore about the reliablity and performance of various components. I have been in countless debates where people have tried to convince me that a proposed system has no chance of working, not knowing that it had already been implemented and been running without issues. This is partly because there is very little useful data on latency out there. Most benchmarks focus only on throughput, and some that do include latency were measured incorrectly.
+
+Over a series of blog posts, I'll try to share some my own experiences and data sets. Today's post will focus on operating systems.
 
 === Measuring Latency
 
 // Data is not normally distributed. What is a better way to look at latency? What are tools that do this? How does jHiccup work? Gil Tene mentions coordinated omission, but that is less of a problem for request/response systems.
 
-When discussing latency
+When looking at latency it is important to understand that the data is not normally distributed. I have seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Thus, looking only at the mean and std-dev can be very misleading.
+
+A better way to look at latency is via histograms and percentile plots.
 
 jHiccup is a great tool developed by Azul Systems that allows us to measure and record hiccups ('jitter')  at the OS level. These can be caused by a large number of reasons, including swap, indexing tasks, and many more. By running it on an idle system, we can measure the best case scenario.
 
