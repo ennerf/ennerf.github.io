@@ -44,28 +44,14 @@ There is a trade-off between responding in a timely manner and overall performan
 
 However, before dismissing consumer OS for real-time control systems entirely, it is worth looking at their actual performance. Even though there are no theoretical guarantees, the practical performance may be good enough for many applications.
 
-=== Benchmark Systems
+=== Hardware Setup
 
-I've used two 
+I've setup two standard desktop computers, one for Windows/Linux and one for OSX tests.
+
+Windows/Linux:: Gigabyte Brix BXi7-4770R, i7-4770R @ 3.2 GHz, 16 GB 1600 MHz DDR3
+OSX:: Mac Mini 2014, i7-3720QM @ 2.6 GHz, 16 GB 1600 MHz DDR3
 
 === Tools
-
-To start off with, I've tried to
-
-Mac Mini 2014
-
-[cols="3*"]
-|===
-/Windows 10
-|Web Browser
-
-|Ruby
-|Programming Language
-
-|TorqueBox
-|Application Server
-|===
-
 
 Non-tuned OS, bare install. Mac Mini 2014, Windows 10 (version), Ubuntu 16.04 (Kernel)
 
