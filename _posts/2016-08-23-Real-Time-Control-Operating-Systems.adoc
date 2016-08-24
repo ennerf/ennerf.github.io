@@ -12,6 +12,8 @@ Data is not normally distributed. What is a better way to look at latency? What 
 
 Reference Nitsan blog and Gil Tene videos
 
+http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html
+
 == Benchmark Systems
 
 Non-tuned OS, bare install. Mac Mini 2014, Windows 10 (version), Ubuntu 16.04 (Kernel)
