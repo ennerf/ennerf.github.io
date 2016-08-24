@@ -2,27 +2,39 @@
 
 Outline
 
-1.	Introduction to real-time and blog series. Arbitrary requirements are bad.
+== (Intro) Real-Time and Latency
 
+Arbitrary requirements are bad. Not much information out there. Planning on blog series about various aspects.
 
-2.	Data is not normally distributed. What is a better way to look at latency? What are tools that do this? How does jHiccup work? Gil Tene mentions coordinated omission, but that is less of a problem for request/response systems.
+== Measuring Latency
 
+Data is not normally distributed. What is a better way to look at latency? What are tools that do this? How does jHiccup work? Gil Tene mentions coordinated omission, but that is less of a problem for request/response systems.
 
+Reference Nitsan blog and Gil Tene videos
 
-3.	Benchmark system setup and non-tuned operating system setup. 
+== Benchmark Systems
 
+Non-tuned OS, bare install. Mac Mini 2014, Windows 10 (version), Ubuntu 16.04 (Kernel)
 
-4.	High-level 24hour view (3 minute intervals)
+== Results (24 hour view)
 
+24 hours in 3 minute intervals. What can create the spikes? How bad is it?
 
-5.	Zoomed into 10 minutes (1 second intervals)
+== Results (10 minute view)
 
+10 minute with 1 second intervals. What can we see in a lower time frame?
 
-6.	RT Linux to rule them all. Setup and data.
+== Real-Time Linux
 
+Untuned systems aren't good enough for 1KHz control. Describe Linux setup: SCL6, RT kernel, basic optimizations
 
-7.	Conclusion
+It still falls flat.
 
+==	Conclusion
+
+It's easy to do 100 Hz control in just about any OS. 1KHz hard real-time requires lots of tuning. Rates are highly dependent on the application. Hard to generalize.
+
+== Old text
 
 Real Time Control: Operating Systems
  
