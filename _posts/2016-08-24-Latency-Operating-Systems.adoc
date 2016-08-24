@@ -12,7 +12,7 @@
 
 == Introduction
 
-NOTE: TODO: should this blog be about real-time control or more focused on latency?
+NOTE: TODO: should this blog be about real-time control or on latency with a focus on robotics?
 
 // Arbitrary requirements are bad. Not much information out there. Planning on blog series about various aspects.
 
@@ -63,7 +63,7 @@ Mac:: Mac Mini 2014, i7-3720QM @ 2.6 GHz, 16 GB 1600 MHz DDR3
 
 === Windows / Mac / Linux
 
-Let's first look at the main consumer operating systems: Windows, Mac and Linux. I've done a clean install for each OS, disabled sleep mode, and performed any steps necessary to start jHiccup. Other than that, there were no other modifications. After starting, I've unplugged all cables other than the power cable and let the computer sit idle for >24 hours.
+Let's first look at the stock performance of consumer operating systems: Windows, Mac and Linux. I've done a clean install for each OS, disabled sleep mode, and performed any steps necessary to start jHiccup. There were no other modifications. After starting, I've unplugged all cables other than the power cable and let the computer sit idle for >24 hours.
 
 NOTE: TODO: add kernel and exact update versions
 
