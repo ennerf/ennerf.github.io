@@ -12,7 +12,7 @@
 
 == Introduction
 
-NOTE: TODO: should this blog be about real-time control or on latency with a focus on robotics?
+NOTE: TODO: should this blog be about real-time control or on latency with a focus on robotics (motivation section)?
 
 // Arbitrary requirements are bad. Not much information out there. Planning on blog series about various aspects.
 
@@ -71,19 +71,17 @@ Max:: OSX 9.
 Windows:: Windows 10 Enterprise ()
 Linux:: Ubuntu 16.04 Desktop ()
 
-
-
 Non-tuned OS, bare install. Mac Mini 2014, Windows 10 (version), Ubuntu 16.04 (Kernel)
 
-== Results (24 hour view)
+==== Results (24 hour view)
 
 24 hours in 3 minute intervals. What can create the spikes? How bad is it?
 
-== Results (10 minute view)
+==== Results (10 minute view)
 
 10 minute with 1 second intervals. What can we see in a lower time frame?
 
-== Real-Time Linux
+=== Linux with RT_PREEMPT
 
 Untuned systems aren't good enough for 1KHz control. Describe Linux setup: SCL6, RT kernel, basic optimizations, highest priority.
 
