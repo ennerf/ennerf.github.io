@@ -67,21 +67,31 @@ Let's first look at the performance of consumer operating systems: Windows, Mac 
 
 NOTE: TODO: add kernel and exact update versions
 
-[width="50%",frame="topbot"]
-|=========
-| |*Release* |*Version* |*Update*
-|*Windows* |10 |Enterprise |?
-|*Mac* |9.x |? |?
-|*Linux* |Ubuntu 16.04 |Desktop |?
-|=========
+//[width="80%",frame="topbot"]
+//|=========
+//| |*Release* |*Version* |*Update*
+//|*Windows* |10 |Enterprise |?
+//|*Mac* |9.x |? |?
+//|*Linux* |Ubuntu 16.04 |Desktop |?
+//|=========
 
 Mac:: OSX 9.?
 Windows:: Windows 10 Enterprise (?)
 Linux:: Ubuntu 16.04 Desktop (?)
 
-Non-tuned OS, bare install. Mac Mini 2014, Windows 10 (version), Ubuntu 16.04 (Kernel)
+The charts below are split into two sections. The top one shows the worst hiccup that occured within given time intervals. The bottom one shows the percentiles of all measurements across the entire duration.
 
 image::os/osx-win-ubuntu_24h.png[24 hour latency plot ]
+
+Up to the 90th percentile all three systems respond relatively similarly, but 
+
+[width="80%"]
+|========
+| |*Samples* |*Mean* |*StdDev* |*Worst Case*
+|*Windows 10* |a |b |c |d
+|*OSX ?*     |a |b |c |d
+|*Ubuntu 16.04*   |a |b |c |d
+|========
 
 And zoomed in
 
