@@ -85,9 +85,11 @@ The charts below are split into two sections. The top one shows the worst hiccup
 // 24 hour plot: -/+ 20 min on each side to avoid start/stop noise => sec 1200 to 87600 in aggregate 180 intervals
 // 10 min plot: 36005 to 36590 in aggregate 1 intervals
 
-image::os/osx-win-ubuntu_24h.png[24 hour latency plot ]
+//image::os/osx-win-ubuntu_24h.png[24 hour latency plot ]
+image::os/osx-win-ubuntu-scl_24h.png[24 hour latency plot ]
 
-Up to the 90th percentile all three systems respond relatively similarly, but 
+Up to the 90th percentile all three systems respond relatively 
+similarly, but 
 
 [width="80%"]
 |========
