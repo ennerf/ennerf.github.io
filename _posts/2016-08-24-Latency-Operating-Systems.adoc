@@ -75,9 +75,10 @@ NOTE: TODO: add kernel and exact update versions
 //|*Linux* |Ubuntu 16.04 |Desktop |?
 //|=========
 
-Mac:: OSX 9.?
-Windows:: Windows 10 Enterprise (?)
-Linux:: Ubuntu 16.04 Desktop (?)
+Mac:: OS X, version 10.9.5
+Windows:: Windows 10 Enterprise, version 1511 (OS build: 10586.545)
+Linux:: Ubuntu 16.04 Desktop, kernel 4.4.0-31-generic
+SCL:: Scientific Linux 6.6, kernel 3.10.0-327.rt56.194.el6rt.x86_64
 
 The charts below are split into two sections. The top one shows the worst hiccup that occured within given time intervals. The bottom one shows the percentiles of all measurements across the entire duration.
 
