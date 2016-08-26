@@ -38,7 +38,7 @@ link:http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture
 
 link:http://latencytipoftheday.blogspot.com/[Gil Tene]
 
-video::lJ8ydIuPFeU[youtube]
+//video::lJ8ydIuPFeU[youtube]
 
 == Operating Systems
 
