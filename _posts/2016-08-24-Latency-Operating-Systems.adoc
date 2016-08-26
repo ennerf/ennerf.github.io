@@ -73,21 +73,17 @@ Let's first look at the performance of consumer operating systems: Windows, Mac 
 //|*Linux* |Ubuntu 16.04 |Desktop |?
 //|=========
 
-Mac:: OS X, version 10.9.5
 Windows:: Windows 10 Enterprise, version 1511 (OS build: 10586.545)
+Mac:: OS X, version 10.9.5
 Linux:: Ubuntu 16.04 Desktop, kernel 4.4.0-31-generic
 RT Linux:: Scientific Linux 6.6, kernel 3.10.0-327.rt56.194.el6rt.x86_64
 
 The charts below are split into two sections. The top one shows the worst hiccup that occured within given time intervals. The bottom one shows the percentiles of all measurements across the entire duration.
 
 // 24 hour plot: -/+ 20 min on each side to avoid start/stop noise => sec 1200 to 87600 in aggregate 180 intervals
-// 10 min plot: 36005 to 36590 in aggregate 1 intervals
-
 image::os/osx-win-ubuntu_24h.png[24 hour latency plot ]
-image::os/osx-win-ubuntu-scl_24h.png[24 hour latency plot ]
 
-Up to the 90th percentile all three systems respond relatively 
-similarly, but 
+Up to the 90th percentile all three systems respond relatively similarly.
 
 [width="80%"]
 |========
@@ -98,23 +94,19 @@ similarly, but
 |*Scientific Linux 6.6-rt*   |79.753.643 |0.08 ms|0.01 |0.15 ms |7
 |========
 
-And zoomed in
-
+// 10 min plot: 36005 to 36590 in aggregate 1 intervals
 image::os/osx-win-ubuntu_10m.png[10 minute latency plot]
-
-==== Results (24 hour view)
-
-24 hours in 3 minute intervals. What can create the spikes? How bad is it?
-
-==== Results (10 minute view)
-
-10 minute with 1 second intervals. What can we see in a lower time frame?
 
 === Linux with RT_PREEMPT
 
 Untuned systems aren't good enough for 1KHz control. Describe Linux setup: SCL6, RT kernel, basic optimizations, highest priority.
 
-It still falls flat.
+image::os/ubuntu-scl_24h.png[24 hour latency plot ]
+image::os/ubuntu-scl_10m.png[10 minute latency plot]
+
+image::os/scl_24h.png[24 hour latency plot ]
+
+
 
 ==	Conclusion
 
