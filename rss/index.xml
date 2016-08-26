@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Fri, 26 Aug 2016 01:55:30 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Fri, 26 Aug 2016 02:14:58 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
 <h2 id="_introduction">Introduction</h2>
 <div class="sectionbody">
 <div class="admonitionblock note">
@@ -88,13 +88,13 @@ TODO: should this blog be about real-time control or on latency with a focus on 
 </div>
 <div class="dlist">
 <dl>
-<dt class="hdlist1">Mac</dt>
-<dd>
-<p>OS X, version 10.9.5</p>
-</dd>
 <dt class="hdlist1">Windows</dt>
 <dd>
 <p>Windows 10 Enterprise, version 1511 (OS build: 10586.545)</p>
+</dd>
+<dt class="hdlist1">Mac</dt>
+<dd>
+<p>OS X, version 10.9.5</p>
 </dd>
 <dt class="hdlist1">Linux</dt>
 <dd>
@@ -114,14 +114,8 @@ TODO: should this blog be about real-time control or on latency with a focus on 
 <img src="https://ennerf.github.io/images/os/osx-win-ubuntu_24h.png" alt="24 hour latency plot">
 </div>
 </div>
-<div class="imageblock">
-<div class="content">
-<img src="https://ennerf.github.io/images/os/osx-win-ubuntu-scl_24h.png" alt="24 hour latency plot">
-</div>
-</div>
 <div class="paragraph">
-<p>Up to the 90th percentile all three systems respond relatively
-similarly, but</p>
+<p>Up to the 90th percentile all three systems respond relatively similarly.</p>
 </div>
 <table class="tableblock frame-all grid-all" style="width: 80%;">
 <colgroup>
@@ -175,24 +169,9 @@ similarly, but</p>
 </tr>
 </tbody>
 </table>
-<div class="paragraph">
-<p>And zoomed in</p>
-</div>
 <div class="imageblock">
 <div class="content">
 <img src="https://ennerf.github.io/images/os/osx-win-ubuntu_10m.png" alt="10 minute latency plot">
-</div>
-</div>
-<div class="sect3">
-<h4 id="_results_24_hour_view">Results (24 hour view)</h4>
-<div class="paragraph">
-<p>24 hours in 3 minute intervals. What can create the spikes? How bad is it?</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_results_10_minute_view">Results (10 minute view)</h4>
-<div class="paragraph">
-<p>10 minute with 1 second intervals. What can we see in a lower time frame?</p>
 </div>
 </div>
 </div>
@@ -201,8 +180,20 @@ similarly, but</p>
 <div class="paragraph">
 <p>Untuned systems aren&#8217;t good enough for 1KHz control. Describe Linux setup: SCL6, RT kernel, basic optimizations, highest priority.</p>
 </div>
-<div class="paragraph">
-<p>It still falls flat.</p>
+<div class="imageblock">
+<div class="content">
+<img src="https://ennerf.github.io/images/os/ubuntu-scl_24h.png" alt="24 hour latency plot">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://ennerf.github.io/images/os/ubuntu-scl_10m.png" alt="10 minute latency plot">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://ennerf.github.io/images/os/scl_24h.png" alt="24 hour latency plot">
+</div>
 </div>
 </div>
 </div>
