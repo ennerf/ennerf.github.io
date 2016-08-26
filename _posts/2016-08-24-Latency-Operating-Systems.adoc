@@ -81,7 +81,7 @@ RT Linux:: Scientific Linux 6.6, kernel 3.10.0-327.rt56.194.el6rt.x86_64
 The charts below are split into two sections. The top one shows the worst hiccup that occured within given time intervals. The bottom one shows the percentiles of all measurements across the entire duration.
 
 // 24 hour plot: -/+ 20 min on each side to avoid start/stop noise => sec 1200 to 87600 in aggregate 180 intervals
-image::os/osx-win-ubuntu_24h.png[24 hour latency plot, link="/images/os/osx-win-ubuntu_24h.png"]
+image::os/osx-win-ubuntu_24h.png[osx windows ubuntu latency over 24 hours, link="/images/os/osx-win-ubuntu_24h.png"]
 Up to the 90th percentile all three systems respond relatively similarly.
 
 [width="80%"]
@@ -94,16 +94,16 @@ Up to the 90th percentile all three systems respond relatively similarly.
 |========
 
 // 10 min plot: 36005 to 36590 in aggregate 1 intervals
-image::os/osx-win-ubuntu_10m.png[10 minute latency plot]
+image::os/osx-win-ubuntu_10m.pn[osx windows ubuntu latency over 10 minutes, link="/images/os/osx-win-ubuntu_10m.png"]
 
 === Linux with RT_PREEMPT
 
 Untuned systems aren't good enough for 1KHz control. Describe Linux setup: SCL6, RT kernel, basic optimizations, highest priority.
 
-image::os/ubuntu-scl_24h.png[24 hour latency plot ]
-image::os/ubuntu-scl_10m.png[10 minute latency plot]
+image::os/ubuntu-scl_24h.png[ubuntu scientific linux latency over 24 hours, link="/images/os/ubuntu-scl_24h.png"]
+image::os/ubuntu-scl_10m.png[ubuntu scientific linux latency over 10 minutes, link="/images/os/ubuntu-scl_10m.png"]
 
-image::os/scl_24h.png[24 hour latency plot ]
+image::os/scl_24h.png[scientific linux latency over 24 hours, link="/images/os/scl_24h.png"]
 
 
 
