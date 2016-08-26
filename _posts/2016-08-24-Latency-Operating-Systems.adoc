@@ -94,7 +94,7 @@ Up to the 90th percentile all three systems respond relatively similarly.
 |========
 
 // 10 min plot: 36005 to 36590 in aggregate 1 intervals
-image::os/osx-win-ubuntu_10m.pn[osx windows ubuntu latency over 10 minutes, link="/images/os/osx-win-ubuntu_10m.png"]
+image::os/osx-win-ubuntu_10m.png[osx windows ubuntu latency over 10 minutes, link="/images/os/osx-win-ubuntu_10m.png"]
 
 === Linux with RT_PREEMPT
 
