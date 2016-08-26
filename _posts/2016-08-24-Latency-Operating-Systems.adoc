@@ -94,9 +94,10 @@ similarly, but
 [width="80%"]
 |========
 | |*Samples* |*Mean* |*StdDev* |*Worst Case*
-|*Windows 10* |a |b |c |d
-|*OSX ?*     |a |b |c |d
-|*Ubuntu 16.04*   |a |b |c |d
+|*Windows 10* |80.304.595 |0.55 |0.37 |17.17
+|*OSX ?*     |65.282.969 |0.32 |0.03 |12.65
+|*Ubuntu 16.04*   |78.039.162 |0.10 |0.01 |3.03
+|*Scientific Linux 6.6-rt*   |79.753.643 |0.08 |0.01 |0.15
 |========
 
 And zoomed in
