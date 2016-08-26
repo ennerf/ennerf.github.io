@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Fri, 26 Aug 2016 01:36:40 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Fri, 26 Aug 2016 01:40:55 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
 <h2 id="_introduction">Introduction</h2>
 <div class="sectionbody">
 <div class="admonitionblock note">
@@ -147,9 +147,9 @@ similarly, but</p>
 <tr>
 <td class="tableblock halign-left valign-top"></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Samples</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Mean</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Mean</strong> [ms]</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>StdDev</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Worst Case</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Max</strong> [ms]</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Windows 10</strong></p></td>
@@ -159,7 +159,7 @@ similarly, but</p>
 <td class="tableblock halign-left valign-top"><p class="tableblock">17.17</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>OSX ?</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>OSX 10.9.5</strong></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">65.282.969</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">0.32</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">0.03</p></td>
@@ -181,6 +181,11 @@ similarly, but</p>
 </tr>
 </tbody>
 </table>
+<div class="listingblock">
+<div class="content">
+<pre>\sigma = 2</pre>
+</div>
+</div>
 <div class="paragraph">
 <p>And zoomed in</p>
 </div>
