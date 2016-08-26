@@ -65,8 +65,6 @@ Mac:: Mac Mini 2014, i7-3720QM @ 2.6 GHz, 16 GB 1600 MHz DDR3
 
 Let's first look at the performance of consumer operating systems: Windows, Mac and Linux. Each test started off with a clean install for each OS. The only two modifications to the stock installation were to disable sleep mode and to install JDK8 (update 101) to run jHiccup. I then started the test, unplugged all external cables and let the computer sit 'idle' for >24 hours.
 
-NOTE: TODO: add kernel and exact update versions
-
 //[width="80%",frame="topbot"]
 //|=========
 //| |*Release* |*Version* |*Update*
@@ -78,7 +76,7 @@ NOTE: TODO: add kernel and exact update versions
 Mac:: OS X, version 10.9.5
 Windows:: Windows 10 Enterprise, version 1511 (OS build: 10586.545)
 Linux:: Ubuntu 16.04 Desktop, kernel 4.4.0-31-generic
-SCL:: Scientific Linux 6.6, kernel 3.10.0-327.rt56.194.el6rt.x86_64
+RT Linux:: Scientific Linux 6.6, kernel 3.10.0-327.rt56.194.el6rt.x86_64
 
 The charts below are split into two sections. The top one shows the worst hiccup that occured within given time intervals. The bottom one shows the percentiles of all measurements across the entire duration.
 
@@ -93,17 +91,12 @@ similarly, but
 
 [width="80%"]
 |========
-| |*Samples* |*Mean* [ms] |*StdDev* |*Max* [ms] |*Distance* [StdDev]
-|*Windows 10* |80,304,595 |0.55 |0.37 |17.17 |44.9
-|*OSX 10.9.5*     |65,282,969 |0.32 |0.03 |12.65 |411
-|*Ubuntu 16.04*   |78,039,162 |0.10 |0.01 |3.03 |293
-|*Scientific Linux 6.6-rt*   |79.753.643 |0.08 |0.01 |0.15 |7
+| |*Samples* |*Mean* |*StdDev* |*Max* | *(max-mean) /stddev*
+|*Windows 10* |80,304,595 |0.55 ms |0.37 |17.17 ms |44.9
+|*OSX 10.9.5*     |65,282,969 |0.32 ms |0.03 |12.65 ms |411
+|*Ubuntu 16.04*   |78,039,162 |0.10 ms |0.01 |3.03 ms |293
+|*Scientific Linux 6.6-rt*   |79.753.643 |0.08 ms|0.01 |0.15 ms |7
 |========
-
-[latex]
----------------
-\sigma = 2
----------------
 
 And zoomed in
 
