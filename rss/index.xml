@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Fri, 26 Aug 2016 01:44:51 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Fri, 26 Aug 2016 01:55:30 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
 <h2 id="_introduction">Introduction</h2>
 <div class="sectionbody">
 <div class="admonitionblock note">
@@ -86,18 +86,6 @@ TODO: should this blog be about real-time control or on latency with a focus on 
 <div class="paragraph">
 <p>Let&#8217;s first look at the performance of consumer operating systems: Windows, Mac and Linux. Each test started off with a clean install for each OS. The only two modifications to the stock installation were to disable sleep mode and to install JDK8 (update 101) to run jHiccup. I then started the test, unplugged all external cables and let the computer sit 'idle' for &gt;24 hours.</p>
 </div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-TODO: add kernel and exact update versions
-</td>
-</tr>
-</table>
-</div>
 <div class="dlist">
 <dl>
 <dt class="hdlist1">Mac</dt>
@@ -112,7 +100,7 @@ TODO: add kernel and exact update versions
 <dd>
 <p>Ubuntu 16.04 Desktop, kernel 4.4.0-31-generic</p>
 </dd>
-<dt class="hdlist1">SCL</dt>
+<dt class="hdlist1">RT Linux</dt>
 <dd>
 <p>Scientific Linux 6.6, kernel 3.10.0-327.rt56.194.el6rt.x86_64</p>
 </dd>
@@ -148,50 +136,45 @@ similarly, but</p>
 <tr>
 <td class="tableblock halign-left valign-top"></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Samples</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Mean</strong> [ms]</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Mean</strong></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>StdDev</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Max</strong> [ms]</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Distance</strong> [StdDev]</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Max</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>(max-mean) /stddev</strong></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Windows 10</strong></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">80,304,595</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">0.55</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.55 ms</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">0.37</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">17.17</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">17.17 ms</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">44.9</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>OSX 10.9.5</strong></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">65,282,969</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">0.32</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.32 ms</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">0.03</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">12.65</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12.65 ms</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">411</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Ubuntu 16.04</strong></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">78,039,162</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">0.10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.10 ms</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.03</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.03 ms</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">293</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Scientific Linux 6.6-rt</strong></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">79.753.643</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">0.08</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.08 ms</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">0.15</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.15 ms</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">7</p></td>
 </tr>
 </tbody>
 </table>
-<div class="listingblock">
-<div class="content">
-<pre>\sigma = 2</pre>
-</div>
-</div>
 <div class="paragraph">
 <p>And zoomed in</p>
 </div>
