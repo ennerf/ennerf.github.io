@@ -8,8 +8,8 @@
   "site": {
     "title": "Software for Robots",
     "description": "Real-Time Control, Networking, Operating Systems, Languages",
-    "logo": "cover-image.jpg",
-    "cover": "cover-image.jpg",
+    "logo": "cover-image2.jpg",
+    "cover": "cover-image2.jpg",
     "postsPerPage": "10",
     "googleAnalytics": "UA-83018359-1",
     "disqus": "ennerf"
