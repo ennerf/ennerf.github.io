@@ -85,6 +85,10 @@ Let's first look at the performance of consumer operating systems: Windows, Mac 
 * OS X, version 10.9.5
 * Ubuntu 16.04 Desktop, kernel 4.4.0-31-generic
 
+When doing latency tests you should be aware of the Windows system timer. It has variable timer intervals that range from 0.5ms to 15.6ms. By calling _timeBeginPeriod_ and _endTimePeriod_ applications can notify the OS whenever they need a higher resolution. The timer interrupt is a global resource that gets set to the lowest interrupt interval requested by any application. For example, watching a video in Chrome requests a timer interrupt interval of 0.5ms. A lower period results in a more responsive system at the cost of overall throughput and battery life. link:https://vvvv.org/contribution/windows-system-timer-tool[System Timer Tool] is a little utility that let's you view the current state. Calling Java's _Thread.sleep()_ with a value of below 10ms automatically requests a 1ms timer interval.
+
+NOTE: TODO: Confirm that system timer was set to 1ms for test.
+
 The charts below are split into two sections. The top one shows the worst hiccup that occured within given time intervals. The bottom one shows the percentiles of all measurements across the entire duration.
 
 // 24 hour plot: -/+ 20 min on each side to avoid start/stop noise => sec 1200 to 87600 in aggregate 180 intervals
