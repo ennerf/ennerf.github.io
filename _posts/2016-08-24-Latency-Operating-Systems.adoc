@@ -52,7 +52,7 @@ However, before dismissing consumer OS for real-time control systems, it is wort
 
 === Benchmark Setup
 
-link:https://www.azul.com[Azul Systems] sells products targeted at latency critical applications and they have created a variety of useful tools to measure latency. link:https://www.azul.com/jhiccup/[jHiccup] is a tool that allows us to measure and record hiccups (~jitter) at the OS level. By running it on an idle system, we can measure the best case scenario. It uses link:https://github.com/HdrHistogram/HdrHistogram[HdrHistogram] for the actual recording of samples. Lastly, I'm using link:https://github.com/ennerf/HdrHistogramVisualizer[HdrHistogramVisualizer] which is a tool that I've written for visualizing the recorded data.
+link:https://www.azul.com[Azul Systems] sells products targeted at latency sensitive applications and they have created a variety of useful tools to measure latency. link:https://www.azul.com/jhiccup/[jHiccup] is a tool that allows us to measure and record hiccups (~jitter) at the OS level. By running it on an idle system, we can measure the best case scenario. It uses link:https://github.com/HdrHistogram/HdrHistogram[HdrHistogram] for the actual recording of samples. Lastly, I'm using link:https://github.com/ennerf/HdrHistogramVisualizer[HdrHistogramVisualizer] which is a tool that I've written for visualizing the recorded data.
 
 Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. jHiccup measures the time for sleep(1ms) and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms hiccup value.
 
