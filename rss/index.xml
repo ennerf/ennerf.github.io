@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Sat, 27 Aug 2016 02:05:14 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Sat, 27 Aug 2016 02:41:04 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
 <h2 id="_introduction">Introduction</h2>
 <div class="sectionbody">
 <div class="admonitionblock note">
@@ -117,6 +117,76 @@ TODO: should this blog be about real-time control or on latency with a focus on 
 <div class="paragraph">
 <p>Up to the 90th percentile all three systems respond relatively similarly.</p>
 </div>
+<div class="imageblock">
+<div class="content">
+<a class="image" href="/images/os/osx-win-ubuntu_10m.png"><img src="https://ennerf.github.io/images/os/osx-win-ubuntu_10m.png" alt="osx windows ubuntu latency over 10 minutes"></a>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_real_time_linux">Real Time Linux</h3>
+<div class="paragraph">
+<p>Now that we have a better understanding of how traditional systems without tuning perform, let&#8217;s take a look at the performance of Linux with a real-time kernel. The rt kernel (PREEMPT_RT patch) can preempt lower priority tasks, which results in worse overall performance, but more deterministic behavior with respect to latency.</p>
+</div>
+<div class="paragraph">
+<p>I&#8217;ve chosen Scientific Linux 6.6 because of it&#8217;s support for <a href="https://access.redhat.com/products/red-hat-enterprise-mrg-realtime">Red Hat&#174; Enterprise MRG Realtime&#174;</a>. You can download the ISO via <a href="http://ftp.scientificlinux.org/linux/scientific/">FTP</a> and find instructions for installing MRG Realtime <a href="http://linux.web.cern.ch/linux/mrg/">here</a>. I&#8217;ve also applied a small list of system options to improve the default behavior.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>/boot/grub/menu.lst</em> &#8658; <em>transparent_hugepage=never</em></p>
+</li>
+<li>
+<p><em>/etc/sysctl.conf</em> &#8658; <em>vm.swappiness=0</em></p>
+</li>
+<li>
+<p><em>/etc/inittab</em> &#8658; <em>id:3:initdefault</em> (no GUI)</p>
+</li>
+<li>
+<p><em>chkconfig --level 0123456 cpuspeed off</em></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Note that there is a huge number of tuning options that may improve the performance of your application. There are various tuning guides that can provide more information, e.g., Red Hat&#8217;s <a href="http://linux.web.cern.ch/linux/mrg/2.3/Red_Hat_Enterprise_MRG-2-Realtime_Tuning_Guide-en-US.pdf">MRG Realtime Tuning Guide</a>.</p>
+</div>
+<div class="paragraph">
+<p>The process priority was set to 98, which is the highest priority available for real-time threads. I&#8217;d advise consulting
+<a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_MRG/2/html/Realtime_Tuning_Guide/chap-Realtime-Specific_Tuning.html#Setting_scheduler_priorities">scheduler priorities</a> before running anything that actually uses cpu time.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-shell" data-lang="shell"># find process id
+pid=$(pgrep -f "[j]Hiccup.jar")
+
+# show current priority
+echo $(chrt -p $pid)
+
+# set priority
+sudo chrt -p 98 $pid</code></pre>
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<a class="image" href="/images/os/ubuntu-scl_24h.png"><img src="https://ennerf.github.io/images/os/ubuntu-scl_24h.png" alt="ubuntu scientific linux latency over 24 hours"></a>
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<a class="image" href="/images/os/ubuntu-scl_10m.png"><img src="https://ennerf.github.io/images/os/ubuntu-scl_10m.png" alt="ubuntu scientific linux latency over 10 minutes"></a>
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<a class="image" href="/images/os/scl_24h.png"><img src="https://ennerf.github.io/images/os/scl_24h.png" alt="scientific linux latency over 24 hours"></a>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_latency_is_not_gaussian">Latency is not Gaussian</h3>
+<div class="paragraph">
+<p>As mentioned before, latency practically never follows a Gaussian distribution. For example, the max for OSX is more than 400 standard deviations away from the mean. Be careful when using mean/stddev for any sort of latency comparison. There are many cases where systems with seemingly better values end up performing much worse in practice.</p>
+</div>
 <table class="tableblock frame-all grid-all" style="width: 80%;">
 <colgroup>
 <col style="width: 16.6666%;">
@@ -169,75 +239,13 @@ TODO: should this blog be about real-time control or on latency with a focus on 
 </tr>
 </tbody>
 </table>
-<div class="imageblock">
-<div class="content">
-<a class="image" href="/images/os/osx-win-ubuntu_10m.png"><img src="https://ennerf.github.io/images/os/osx-win-ubuntu_10m.png" alt="osx windows ubuntu latency over 10 minutes"></a>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_real_time_linux">Real Time Linux</h3>
-<div class="paragraph">
-<p>Now that we have a better understanding of how traditional systems without tuning perform, let&#8217;s take a look at the performance of Linux with a real-time kernel. The rt kernel (PREEMPT_RT patch) can preempt lower priority tasks, which results in worse overall performance, but more deterministic behavior with respect to latency.</p>
-</div>
-<div class="paragraph">
-<p>I&#8217;ve chosen Scientific Linux 6.6 because of it&#8217;s support for <a href="https://access.redhat.com/products/red-hat-enterprise-mrg-realtime">Red Hat&#174; Enterprise MRG Realtime&#174;</a>. You can download the ISO via <a href="http://ftp.scientificlinux.org/linux/scientific/">FTP</a> and find instructions for installing MRG Realtime <a href="http://linux.web.cern.ch/linux/mrg/">here</a>. I&#8217;ve also applied a small list of general system tweaks.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><em>/boot/grub/menu.lst</em> &#8658; <em>transparent_hugepage=never</em></p>
-</li>
-<li>
-<p><em>/etc/sysctl.conf</em> &#8658; <em>vm.swappiness=0</em></p>
-</li>
-<li>
-<p><em>/etc/inittab</em> &#8658; <em>id:3:initdefault</em> (no GUI)</p>
-</li>
-<li>
-<p><em>chkconfig --level 0123456 cpuspeed off</em></p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>I&#8217;m not very familiar with tuning systems at this level, so I&#8217;m probably missing a few things. There are various tuning guides, e.g., Red Hat&#8217;s <a href="http://linux.web.cern.ch/linux/mrg/2.3/Red_Hat_Enterprise_MRG-2-Realtime_Tuning_Guide-en-US.pdf">MRG Realtime Tuning Guide</a>, that can provide more information. The process priority was set to 98, which is for high priority real-time threads (see <a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_MRG/2/html/Realtime_Tuning_Guide/chap-Realtime-Specific_Tuning.html#Setting_scheduler_priorities">setting scheduler priorities</a>).</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-shell" data-lang="shell"># find process id
-pid=$(pgrep -f "[j]Hiccup.jar")
-
-# show current priority
-echo $(chrt -p $pid)
-
-# set priority
-sudo chrt -p 98 $pid</code></pre>
-</div>
-</div>
-<div class="imageblock">
-<div class="content">
-<a class="image" href="/images/os/ubuntu-scl_24h.png"><img src="https://ennerf.github.io/images/os/ubuntu-scl_24h.png" alt="ubuntu scientific linux latency over 24 hours"></a>
-</div>
-</div>
-<div class="imageblock">
-<div class="content">
-<a class="image" href="/images/os/ubuntu-scl_10m.png"><img src="https://ennerf.github.io/images/os/ubuntu-scl_10m.png" alt="ubuntu scientific linux latency over 10 minutes"></a>
-</div>
-</div>
-<div class="imageblock">
-<div class="content">
-<a class="image" href="/images/os/scl_24h.png"><img src="https://ennerf.github.io/images/os/scl_24h.png" alt="scientific linux latency over 24 hours"></a>
-</div>
-</div>
 </div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_conclusion">Conclusion</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>It&#8217;s easy to do 100 Hz control in just about any OS. 1KHz hard real-time requires lots of tuning. Rates are highly dependent on the application. Hard to generalize.</p>
-</div>
+
 </div>
 </div>]]></description><link>https://ennerf.github.io/2016/08/24/Latency-Operating-Systems.html</link><guid isPermaLink="true">https://ennerf.github.io/2016/08/24/Latency-Operating-Systems.html</guid><category><![CDATA[jHiccup]]></category><category><![CDATA[ Latency]]></category><category><![CDATA[ Sleep]]></category><category><![CDATA[ Operating System]]></category><category><![CDATA[ Windows]]></category><category><![CDATA[ OSX]]></category><category><![CDATA[ Ubuntu]]></category><category><![CDATA[ Scientific Linux]]></category><category><![CDATA[ Real-Time]]></category><category><![CDATA[ Control]]></category><dc:creator><![CDATA[Florian Enner]]></dc:creator><pubDate>Wed, 24 Aug 2016 00:00:00 GMT</pubDate></item><item><title><![CDATA[First Post]]></title><description><![CDATA[<div class="sect1">
 <h2 id="_first_heading">First heading</h2>
