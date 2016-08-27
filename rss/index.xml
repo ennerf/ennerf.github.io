@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Sat, 27 Aug 2016 02:46:20 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Sat, 27 Aug 2016 02:52:55 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
 <h2 id="_introduction">Introduction</h2>
 <div class="sectionbody">
 <div class="admonitionblock note">
@@ -68,81 +68,32 @@ TODO: should this blog be about real-time control or on latency with a focus on 
 <div class="paragraph">
 <p>I&#8217;ve setup two standard desktop computers, one for Windows/Linux and one for Mac tests.</p>
 </div>
-<table class="tableblock frame-topbot grid-all spread">
-<colgroup>
-<col style="width: 25%;">
-<col style="width: 25%;">
-<col style="width: 25%;">
-<col style="width: 25%;">
-</colgroup>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"></td>
-<td class="tableblock halign-left valign-top"></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>CPU</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>RAM</strong></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Windows/Linux</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Gigabyte Brix Bxi7-4770R</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">i7-4770R @ 3.2 GHz</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">16 GB 1600 MHz DDR3</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Mac</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Mac Mini 2014</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">i7-3720QM @ 2.6 GHz</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">16 GB 1600 MHz DDR3</p></td>
-</tr>
-</tbody>
-</table>
+<div class="ulist">
+<ul>
+<li>
+<p>Gigabyte Brix BXi7-4770R, i7-4770R @ 3.2 GHz, 16 GB 1600 MHz DDR3</p>
+</li>
+<li>
+<p>Mac Mini 2014, i7-3720QM @ 2.6 GHz, 16 GB 1600 MHz DDR3</p>
+</li>
+</ul>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_windows_mac_linux">Windows / Mac / Linux</h3>
 <div class="paragraph">
-<p>Let&#8217;s first look at the performance of consumer operating systems: Windows, Mac and Linux. Each test started off with a clean install for each OS. The only two modifications to the stock installation were to disable sleep mode and to install JDK8 (update 101) to run jHiccup. I then started the test, unplugged all external cables and let the computer sit 'idle' for &gt;24 hours.</p>
+<p>Let&#8217;s first look at the performance of consumer operating systems: Windows, Mac and Linux. Each test started off with a clean install for each OS. The only two modifications to the stock installation were to disable sleep mode and to install JDK8 (update 101) to run jHiccup. I then started the test, unplugged all external cables and let the computer sit 'idle' for &gt;24 hours. The actual OS versions were,</p>
 </div>
-<table class="tableblock frame-topbot grid-all spread">
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>OS</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Version</strong></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Windows</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Windows 10 Enterprise, version 1511 (OS build: 10586.545)</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Mac</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">OS X, version 10.9.5</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Linux</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Ubuntu 16.04 Desktop, kernel 4.4.0-31-generic</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>RT Linux</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Scientific Linux 6.6, kernel 3.10.0-327.rt56.194.el6rt.x86_64</p></td>
-</tr>
-</tbody>
-</table>
 <div class="ulist">
 <ul>
 <li>
-<p>Windows:: Windows 10 Enterprise, version 1511 (OS build: 10586.545)</p>
+<p>Windows 10 Enterprise, version 1511 (OS build: 10586.545)</p>
 </li>
 <li>
-<p>Mac:: OS X, version 10.9.5</p>
+<p>OS X, version 10.9.5</p>
 </li>
 <li>
-<p>Linux:: Ubuntu 16.04 Desktop, kernel 4.4.0-31-generic</p>
-</li>
-<li>
-<p>RT Linux:: Scientific Linux 6.6, kernel 3.10.0-327.rt56.194.el6rt.x86_64</p>
+<p>Ubuntu 16.04 Desktop, kernel 4.4.0-31-generic</p>
 </li>
 </ul>
 </div>
@@ -169,7 +120,17 @@ TODO: should this blog be about real-time control or on latency with a focus on 
 <p>Now that we have a better understanding of how traditional systems without tuning perform, let&#8217;s take a look at the performance of Linux with a real-time kernel. The rt kernel (PREEMPT_RT patch) can preempt lower priority tasks, which results in worse overall performance, but more deterministic behavior with respect to latency.</p>
 </div>
 <div class="paragraph">
-<p>I&#8217;ve chosen Scientific Linux 6.6 because of it&#8217;s support for <a href="https://access.redhat.com/products/red-hat-enterprise-mrg-realtime">Red Hat&#174; Enterprise MRG Realtime&#174;</a>. You can download the ISO via <a href="http://ftp.scientificlinux.org/linux/scientific/">FTP</a> and find instructions for installing MRG Realtime <a href="http://linux.web.cern.ch/linux/mrg/">here</a>. I&#8217;ve also applied a small list of system options to improve the default behavior.</p>
+<p>I&#8217;ve chosen Scientific Linux 6 because of it&#8217;s support for <a href="https://access.redhat.com/products/red-hat-enterprise-mrg-realtime">Red Hat&#174; Enterprise MRG Realtime&#174;</a>. You can download the ISO via <a href="http://ftp.scientificlinux.org/linux/scientific/">FTP</a> and find instructions for installing MRG Realtime <a href="http://linux.web.cern.ch/linux/mrg/">here</a>. The version I&#8217;ve tested was,</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Scientific Linux 6.6, kernel 3.10.0-327.rt56.194.el6rt.x86_64</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>I&#8217;ve also applied a small list of system options to improve the default behavior.</p>
 </div>
 <div class="ulist">
 <ul>
@@ -268,6 +229,14 @@ sudo chrt -p 98 $pid</code></pre>
 <td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">3.03 ms</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">293</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Scientific Linux 6.6-rt</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">79.753.643</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.08 ms</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.15 ms</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7</p></td>
 </tr>
 </tbody>
 </table>
