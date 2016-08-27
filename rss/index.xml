@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Sat, 27 Aug 2016 16:26:08 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Sat, 27 Aug 2016 17:46:39 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
 <h2 id="_introduction">Introduction</h2>
 <div class="sectionbody">
 <div class="admonitionblock note">
@@ -31,16 +31,10 @@ TODO: should this blog be about real-time control or on latency with a focus on 
 <div class="sect2">
 <h3 id="_measuring_latency">Measuring Latency</h3>
 <div class="paragraph">
-<p>The first important realization when looking at latency is that data is not normally (Gaussian) distributed. I have seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Looking at only the mean and standard deviation tends to provide an extremely optimistic view that can be misleading.</p>
+<p>The first important realization when looking at latency is that data does not follow a Gaussian distribution. I have seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Looking at only the mean and standard deviation tends to provide an extremely optimistic view that can be misleading.</p>
 </div>
 <div class="paragraph">
-<p>A better way to look at latency is via histograms and percentile plots, e.g., 99.9% of measurements have been below Xms. Since there are already several blog posts and videos about recording latency, I&#8217;d encourage you to refer to the links below for more information,</p>
-</div>
-<div class="paragraph">
-<p><a href="http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.htm">Nitsan Wakart</a></p>
-</div>
-<div class="paragraph">
-<p><a href="http://latencytipoftheday.blogspot.com/">Gil Tene</a></p>
+<p>A better way to look at latency is via histograms and percentile plots, e.g., 99.9% of measurements have been below Xms. There are already several good resources about recording latency out there, so I won&#8217;t go into detail here. Please refer to <a href="http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html">HdrHistogram: A better latency capture method</a> and <a href="https://youtu.be/lJ8ydIuPFeU">How NOT to Measure Latency</a> for more information.</p>
 </div>
 </div>
 </div>
@@ -97,8 +91,17 @@ TODO: should this blog be about real-time control or on latency with a focus on 
 </li>
 </ul>
 </div>
-<div class="paragraph">
-<p>When doing latency tests you should be aware of the Windows system timer. It has variable timer intervals that range from 0.5ms to 15.6ms. By calling <em>timeBeginPeriod</em> and <em>endTimePeriod</em> applications can notify the OS whenever they need a higher resolution. The timer interrupt is a global resource that gets set to the lowest interrupt interval requested by any application. For example, watching a video in Chrome requests a timer interrupt interval of 0.5ms. A lower period results in a more responsive system at the cost of overall throughput and battery life. <a href="https://vvvv.org/contribution/windows-system-timer-tool">System Timer Tool</a> is a little utility that let&#8217;s you view the current state. Calling Java&#8217;s <em>Thread.sleep()</em> with a value of below 10ms automatically requests a 1ms timer interval.</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+When doing latency tests you should be aware of the Windows system timer. It has variable timer intervals that range from 0.5ms to 15.6ms. By calling <em>timeBeginPeriod</em> and <em>endTimePeriod</em> applications can notify the OS whenever they need a higher resolution. The timer interrupt is a global resource that gets set to the lowest interrupt interval requested by any application. For example, watching a video in Chrome requests a timer interrupt interval of 0.5ms. A lower period results in a more responsive system at the cost of overall throughput and battery life. <a href="https://vvvv.org/contribution/windows-system-timer-tool">System Timer Tool</a> is a little utility that let&#8217;s you view the current state. Calling Java&#8217;s <em>Thread.sleep()</em> with a value of below 10ms automatically requests a 1ms timer interval.
+</td>
+</tr>
+</table>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -113,7 +116,7 @@ TODO: Confirm that system timer was set to 1ms for test.
 </table>
 </div>
 <div class="paragraph">
-<p>The charts below are split into two sections. The top one shows the worst hiccup that occured within given time intervals. The bottom one shows the percentiles of all measurements across the entire duration.</p>
+<p>Each image below contains two charts. The top section shows the worst hiccup that occured within a given interval window, e.g., data point 1 shows the worst hiccup within the first 3 minutes, data point 2 shows the worst hiccup within the next 3 minutes. The bottom chart shows the percentiles of all measurements across the entire duration. Each 24 hour data set contains roughly 70-80 million actual measurements.</p>
 </div>
 <div class="imageblock">
 <div class="content">
@@ -121,12 +124,15 @@ TODO: Confirm that system timer was set to 1ms for test.
 </div>
 </div>
 <div class="paragraph">
-<p>Up to the 90th percentile all three systems respond relatively similarly.</p>
+<p>Up to the 90th percentile all three systems respond relatively similarly, but there are significant differences at the higher percentiles. There also seems to have been a period of increased system activity on OSX after 7 hours. The chart below shows a zoomed in view of a 10 minute time period starting at 10 hours.</p>
 </div>
 <div class="imageblock">
 <div class="content">
 <a class="image" href="/images/os/osx-win-ubuntu_10m.png"><img src="https://ennerf.github.io/images/os/osx-win-ubuntu_10m.png" alt="osx windows ubuntu latency over 10 minutes"></a>
 </div>
+</div>
+<div class="paragraph">
+<p>While Windows and OSX both have relatively frequent spikes, Ubuntu 16.04 has very little hiccups.</p>
 </div>
 </div>
 <div class="sect2">
@@ -135,7 +141,7 @@ TODO: Confirm that system timer was set to 1ms for test.
 <p>Now that we have a better understanding of how traditional systems without tuning perform, let&#8217;s take a look at the performance of Linux with a real-time kernel. The rt kernel (PREEMPT_RT patch) can preempt lower priority tasks, which results in worse overall performance, but more deterministic behavior with respect to latency.</p>
 </div>
 <div class="paragraph">
-<p>I&#8217;ve chosen Scientific Linux 6 because of it&#8217;s support for <a href="https://access.redhat.com/products/red-hat-enterprise-mrg-realtime">Red Hat&#174; Enterprise MRG Realtime&#174;</a>. You can download the ISO via <a href="http://ftp.scientificlinux.org/linux/scientific/">FTP</a> and find instructions for installing MRG Realtime <a href="http://linux.web.cern.ch/linux/mrg/">here</a>. The version I&#8217;ve tested was,</p>
+<p>I&#8217;ve chosen Scientific Linux 6 because of it&#8217;s support for <a href="https://access.redhat.com/products/red-hat-enterprise-mrg-realtime">Red Hat&#174; Enterprise MRG Realtime&#174;</a>. You can download the  <a href="http://ftp.scientificlinux.org/linux/scientific/">ISO</a> and find instructions for installing MRG Realtime <a href="http://linux.web.cern.ch/linux/mrg/">here</a>. The version I&#8217;ve tested was,</p>
 </div>
 <div class="ulist">
 <ul>
@@ -145,7 +151,7 @@ TODO: Confirm that system timer was set to 1ms for test.
 </ul>
 </div>
 <div class="paragraph">
-<p>I&#8217;ve also applied a small list of system options to improve the default behavior.</p>
+<p>Note that there is a huge number of tuning options that may improve the performance of your application. There are various tuning guides that can provide more information, e.g., Red Hat&#8217;s <a href="http://linux.web.cern.ch/linux/mrg/2.3/Red_Hat_Enterprise_MRG-2-Realtime_Tuning_Guide-en-US.pdf">MRG Realtime Tuning Guide</a>. I&#8217;m not very familiar with tuning systems at this level, so I&#8217;ve only applied the following small list of changes.</p>
 </div>
 <div class="ulist">
 <ul>
@@ -164,9 +170,6 @@ TODO: Confirm that system timer was set to 1ms for test.
 </ul>
 </div>
 <div class="paragraph">
-<p>Note that there is a huge number of tuning options that may improve the performance of your application. There are various tuning guides that can provide more information, e.g., Red Hat&#8217;s <a href="http://linux.web.cern.ch/linux/mrg/2.3/Red_Hat_Enterprise_MRG-2-Realtime_Tuning_Guide-en-US.pdf">MRG Realtime Tuning Guide</a>.</p>
-</div>
-<div class="paragraph">
 <p>The process priority was set to 98, which is the highest priority available for real-time threads. I&#8217;d advise consulting
 <a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_MRG/2/html/Realtime_Tuning_Guide/chap-Realtime-Specific_Tuning.html#Setting_scheduler_priorities">scheduler priorities</a> before running anything that actually uses cpu time.</p>
 </div>
@@ -182,15 +185,24 @@ echo $(chrt -p $pid)
 sudo chrt -p 98 $pid</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>Below is a comparison of the two Linux variants. 24 hours with 3 minute intervals,</p>
+</div>
 <div class="imageblock">
 <div class="content">
 <a class="image" href="/images/os/ubuntu-scl_24h.png"><img src="https://ennerf.github.io/images/os/ubuntu-scl_24h.png" alt="ubuntu scientific linux latency over 24 hours"></a>
 </div>
 </div>
+<div class="paragraph">
+<p>and 10 minutes at 1 second intervals.</p>
+</div>
 <div class="imageblock">
 <div class="content">
 <a class="image" href="/images/os/ubuntu-scl_10m.png"><img src="https://ennerf.github.io/images/os/ubuntu-scl_10m.png" alt="ubuntu scientific linux latency over 10 minutes"></a>
 </div>
+</div>
+<div class="paragraph">
+<p>I&#8217;ve also added the 24 hour chart for only the real-time variant to provide a better scale. Note that this resolution is getting close to what we can measure and record.</p>
 </div>
 <div class="imageblock">
 <div class="content">
@@ -198,10 +210,21 @@ sudo chrt -p 98 $pid</code></pre>
 </div>
 </div>
 </div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_final_notes">Final Notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>I&#8217;ve tried to provide a basic idea of the out of box performance of various off the shelf operating systems. It&#8217;s almost impossible to make any recommendations because the requirements are so specific to the use case. While some safety critical applications may require a real time operating system, others may run perfectly fine on Windows. My goal is to provide an overview that allows you to select a suitable choice after you&#8217;ve established your requirements. I&#8217;m planning on doing a future post on actually figuring out sane requirements.</p>
+</div>
+<div class="paragraph">
+<p>Note that these are not your only options. There are many different <a href="https://en.wikipedia.org/wiki/Comparison_of_real-time_operating_systems">RTOS</a> out there. There are even RT extensions for Windows, e.g.,  <a href="http://www.tenasys.com/overview-ifw">INtime</a> or <a href="http://kithara.com/en/products/realtime-suite">Kithara</a>. However, since integrating such systems can be very expensive or time consuming, I&#8217;d recommend going with simple and community supported solutions unless necessary.</p>
+</div>
 <div class="sect2">
 <h3 id="_latency_is_not_gaussian">Latency is not Gaussian</h3>
 <div class="paragraph">
-<p>As mentioned before, latency practically never follows a Gaussian distribution. For example, the max for OSX is more than 400 standard deviations away from the mean. Be careful when using mean/stddev for any sort of latency comparison. There are many cases where systems with seemingly better values end up performing much worse in practice.</p>
+<p>Finally, I&#8217;d like to stress again that latency practically never follows a Gaussian distribution. The table for these data sets is below.</p>
 </div>
 <table class="tableblock frame-all grid-all" style="width: 80%;">
 <colgroup>
@@ -255,13 +278,10 @@ sudo chrt -p 98 $pid</code></pre>
 </tr>
 </tbody>
 </table>
+<div class="paragraph">
+<p>The max for OSX is more than 400 standard deviations away from the mean. Using only mean/stddev for any sort of latency comparison can produce unwanted results. Aside from giving little to no information about the higher percentiles, there are many cases where systems with seemingly better values exhibit worse actual performance.</p>
 </div>
 </div>
-</div>
-<div class="sect1">
-<h2 id="_conclusion">Conclusion</h2>
-<div class="sectionbody">
-
 </div>
 </div>]]></description><link>https://ennerf.github.io/2016/08/24/Latency-Operating-Systems.html</link><guid isPermaLink="true">https://ennerf.github.io/2016/08/24/Latency-Operating-Systems.html</guid><category><![CDATA[jHiccup]]></category><category><![CDATA[ Latency]]></category><category><![CDATA[ Sleep]]></category><category><![CDATA[ Operating System]]></category><category><![CDATA[ Windows]]></category><category><![CDATA[ OSX]]></category><category><![CDATA[ Ubuntu]]></category><category><![CDATA[ Scientific Linux]]></category><category><![CDATA[ Real-Time]]></category><category><![CDATA[ Control]]></category><dc:creator><![CDATA[Florian Enner]]></dc:creator><pubDate>Wed, 24 Aug 2016 00:00:00 GMT</pubDate></item><item><title><![CDATA[First Post]]></title><description><![CDATA[<div class="sect1">
 <h2 id="_first_heading">First heading</h2>
