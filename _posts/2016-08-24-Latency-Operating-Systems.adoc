@@ -96,9 +96,32 @@ Up to the 90th percentile all three systems respond relatively similarly.
 // 10 min plot: 36005 to 36590 in aggregate 1 intervals
 image::os/osx-win-ubuntu_10m.png[osx windows ubuntu latency over 10 minutes, link="/images/os/osx-win-ubuntu_10m.png"]
 
-=== Linux with RT_PREEMPT
+=== Real Time Linux
 
-Untuned systems aren't good enough for 1KHz control. Describe Linux setup: SCL6, RT kernel, basic optimizations, highest priority.
+Now that we have a better understanding of how traditional systems without tuning perform, let's take a look at the performance of Linux with a real-time kernel. The rt kernel (PREEMPT_RT patch) can preempt lower priority tasks, which results in worse overall performance, but more deterministic behavior with respect to latency.
+
+I've chosen Scientific Linux 6.6 because of it's support for link:https://access.redhat.com/products/red-hat-enterprise-mrg-realtime[Red Hat(R) Enterprise MRG Realtime(R)]. You can download the ISO via link:http://ftp.scientificlinux.org/linux/scientific/[FTP] and find instructions for installing MRG Realtime link:http://linux.web.cern.ch/linux/mrg/[here]. I've also applied a small list of general system tweaks.
+
+* _/boot/grub/menu.lst_ => _transparent_hugepage=never_
+* _/etc/sysctl.conf_ => _vm.swappiness=0_ 
+* _/etc/inittab_ => _id:3:initdefault_ (no GUI)
+* _chkconfig --level 0123456 cpuspeed off_
+
+I'm not very familiar with tuning systems at this level, so I'm probably missing a few things. There are various tuning guides, e.g., Red Hat's link:http://linux.web.cern.ch/linux/mrg/2.3/Red_Hat_Enterprise_MRG-2-Realtime_Tuning_Guide-en-US.pdf[MRG Realtime Tuning Guide], that can provide more information. The process priority was set to 98, which is for high priority real-time threads (see link:https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_MRG/2/html/Realtime_Tuning_Guide/chap-Realtime-Specific_Tuning.html#Setting_scheduler_priorities[setting scheduler priorities]).
+
+[source,shell,numbered]
+---------------------------------------------------------------------
+# find process id
+pid=$(pgrep -f "[j]Hiccup.jar")
+
+# show current priority
+echo $(chrt -p $pid)
+
+# set priority
+sudo chrt -p 98 $pid
+---------------------------------------------------------------------
+
+//Untuned systems aren't good enough for 1KHz control. Describe Linux setup: SCL6, RT kernel, basic optimizations, highest priority.
 
 image::os/ubuntu-scl_24h.png[ubuntu scientific linux latency over 24 hours, link="/images/os/ubuntu-scl_24h.png"]
 image::os/ubuntu-scl_10m.png[ubuntu scientific linux latency over 10 minutes, link="/images/os/ubuntu-scl_10m.png"]
