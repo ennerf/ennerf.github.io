@@ -30,14 +30,11 @@ Over a series of blog posts, I'll try to share some my own experiences and data 
 
 // Data is not normally distributed. What is a better way to look at latency? What are tools that do this? How does jHiccup work? Gil Tene mentions coordinated omission, but that is less of a problem for request/response systems.
 
-The first important realization when looking at latency is that data is not normally (Gaussian) distributed. I have seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Looking at only the mean and standard deviation tends to provide an extremely optimistic view that can be misleading.
+The first important realization when looking at latency is that data does not follow a Gaussian distribution. I have seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Looking at only the mean and standard deviation tends to provide an extremely optimistic view that can be misleading.
 
-A better way to look at latency is via histograms and percentile plots, e.g., 99.9% of measurements have been below Xms. Since there are already several blog posts and videos about recording latency, I'd encourage you to refer to the links below for more information,
+A better way to look at latency is via histograms and percentile plots, e.g., 99.9% of measurements have been below Xms. There are already several good resources about recording latency out there, so I won't go into detail here. Please refer to link:http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html[HdrHistogram: A better latency capture method] and link:https://youtu.be/lJ8ydIuPFeU[How NOT to Measure Latency] for more information.
 
-link:http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.htm[Nitsan Wakart]
-
-link:http://latencytipoftheday.blogspot.com/[Gil Tene]
-
+//link:http://latencytipoftheday.blogspot.com/[Gil Tene]
 //video::lJ8ydIuPFeU[youtube]
 
 == Operating Systems
@@ -85,35 +82,36 @@ Let's first look at the performance of consumer operating systems: Windows, Mac 
 * OS X, version 10.9.5
 * Ubuntu 16.04 Desktop, kernel 4.4.0-31-generic
 
-When doing latency tests you should be aware of the Windows system timer. It has variable timer intervals that range from 0.5ms to 15.6ms. By calling _timeBeginPeriod_ and _endTimePeriod_ applications can notify the OS whenever they need a higher resolution. The timer interrupt is a global resource that gets set to the lowest interrupt interval requested by any application. For example, watching a video in Chrome requests a timer interrupt interval of 0.5ms. A lower period results in a more responsive system at the cost of overall throughput and battery life. link:https://vvvv.org/contribution/windows-system-timer-tool[System Timer Tool] is a little utility that let's you view the current state. Calling Java's _Thread.sleep()_ with a value of below 10ms automatically requests a 1ms timer interval.
+NOTE: When doing latency tests you should be aware of the Windows system timer. It has variable timer intervals that range from 0.5ms to 15.6ms. By calling _timeBeginPeriod_ and _endTimePeriod_ applications can notify the OS whenever they need a higher resolution. The timer interrupt is a global resource that gets set to the lowest interrupt interval requested by any application. For example, watching a video in Chrome requests a timer interrupt interval of 0.5ms. A lower period results in a more responsive system at the cost of overall throughput and battery life. link:https://vvvv.org/contribution/windows-system-timer-tool[System Timer Tool] is a little utility that let's you view the current state. Calling Java's _Thread.sleep()_ with a value of below 10ms automatically requests a 1ms timer interval.
 
 NOTE: TODO: Confirm that system timer was set to 1ms for test.
 
-The charts below are split into two sections. The top one shows the worst hiccup that occured within given time intervals. The bottom one shows the percentiles of all measurements across the entire duration.
+Each image below contains two charts. The top section shows the worst hiccup that occured within a given interval window, e.g., data point 1 shows the worst hiccup within the first 3 minutes, data point 2 shows the worst hiccup within the next 3 minutes. The bottom chart shows the percentiles of all measurements across the entire duration. Each 24 hour data set contains roughly 70-80 million actual measurements.
 
 // 24 hour plot: -/+ 20 min on each side to avoid start/stop noise => sec 1200 to 87600 in aggregate 180 intervals
 image::os/osx-win-ubuntu_24h.png[osx windows ubuntu latency over 24 hours, link="/images/os/osx-win-ubuntu_24h.png"]
-Up to the 90th percentile all three systems respond relatively similarly.
+
+Up to the 90th percentile all three systems respond relatively similarly, but there are significant differences at the higher percentiles. There also seems to have been a period of increased system activity on OSX after 7 hours. The chart below shows a zoomed in view of a 10 minute time period starting at 10 hours.
 
 // 10 min plot: 36005 to 36590 in aggregate 1 intervals
 image::os/osx-win-ubuntu_10m.png[osx windows ubuntu latency over 10 minutes, link="/images/os/osx-win-ubuntu_10m.png"]
+
+While Windows and OSX both have relatively frequent spikes, Ubuntu 16.04 has very little hiccups.
 
 === Real Time Linux
 
 Now that we have a better understanding of how traditional systems without tuning perform, let's take a look at the performance of Linux with a real-time kernel. The rt kernel (PREEMPT_RT patch) can preempt lower priority tasks, which results in worse overall performance, but more deterministic behavior with respect to latency.
 
-I've chosen Scientific Linux 6 because of it's support for link:https://access.redhat.com/products/red-hat-enterprise-mrg-realtime[Red Hat(R) Enterprise MRG Realtime(R)]. You can download the ISO via link:http://ftp.scientificlinux.org/linux/scientific/[FTP] and find instructions for installing MRG Realtime link:http://linux.web.cern.ch/linux/mrg/[here]. The version I've tested was,
+I've chosen Scientific Linux 6 because of it's support for link:https://access.redhat.com/products/red-hat-enterprise-mrg-realtime[Red Hat(R) Enterprise MRG Realtime(R)]. You can download the  link:http://ftp.scientificlinux.org/linux/scientific/[ISO] and find instructions for installing MRG Realtime link:http://linux.web.cern.ch/linux/mrg/[here]. The version I've tested was,
 
 * Scientific Linux 6.6, kernel 3.10.0-327.rt56.194.el6rt.x86_64
 
-I've also applied a small list of system options to improve the default behavior.
+Note that there is a huge number of tuning options that may improve the performance of your application. There are various tuning guides that can provide more information, e.g., Red Hat's link:http://linux.web.cern.ch/linux/mrg/2.3/Red_Hat_Enterprise_MRG-2-Realtime_Tuning_Guide-en-US.pdf[MRG Realtime Tuning Guide]. I'm not very familiar with tuning systems at this level, so I've only applied the following small list of changes.
 
 * _/boot/grub/menu.lst_ => _transparent_hugepage=never_
 * _/etc/sysctl.conf_ => _vm.swappiness=0_ 
 * _/etc/inittab_ => _id:3:initdefault_ (no GUI)
 * _chkconfig --level 0123456 cpuspeed off_
-
-Note that there is a huge number of tuning options that may improve the performance of your application. There are various tuning guides that can provide more information, e.g., Red Hat's link:http://linux.web.cern.ch/linux/mrg/2.3/Red_Hat_Enterprise_MRG-2-Realtime_Tuning_Guide-en-US.pdf[MRG Realtime Tuning Guide]. 
 
 The process priority was set to 98, which is the highest priority available for real-time threads. I'd advise consulting  
 link:https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_MRG/2/html/Realtime_Tuning_Guide/chap-Realtime-Specific_Tuning.html#Setting_scheduler_priorities[scheduler priorities] before running anything that actually uses cpu time.
@@ -132,14 +130,29 @@ sudo chrt -p 98 $pid
 
 //Untuned systems aren't good enough for 1KHz control. Describe Linux setup: SCL6, RT kernel, basic optimizations, highest priority.
 
+Below is a comparison of the two Linux variants. 24 hours with 3 minute intervals,
+
 image::os/ubuntu-scl_24h.png[ubuntu scientific linux latency over 24 hours, link="/images/os/ubuntu-scl_24h.png"]
+
+and 10 minutes at 1 second intervals.
+
 image::os/ubuntu-scl_10m.png[ubuntu scientific linux latency over 10 minutes, link="/images/os/ubuntu-scl_10m.png"]
+
+I've also added the 24 hour chart for only the real-time variant to provide a better scale. Note that this resolution is getting close to what we can measure and record.
 
 image::os/scl_24h.png[scientific linux latency over 24 hours, link="/images/os/scl_24h.png"]
 
+==	Final Notes
+
+//It's easy to do 100 Hz control in just about any OS. 1KHz hard real-time requires lots of tuning. Rates are highly dependent on the application. Hard to generalize.
+
+I've tried to provide a basic idea of the out of box performance of various off the shelf operating systems. It's almost impossible to make any recommendations because the requirements are so specific to the use case. While some safety critical applications may require a real time operating system, others may run perfectly fine on Windows. My goal is to provide an overview that allows you to select a suitable choice after you've established your requirements. I'm planning on doing a future post on actually figuring out sane requirements.
+
+Note that these are not your only options. There are many different link:https://en.wikipedia.org/wiki/Comparison_of_real-time_operating_systems[RTOS] out there. There are even RT extensions for Windows, e.g.,  link:http://www.tenasys.com/overview-ifw[INtime] or link:http://kithara.com/en/products/realtime-suite[Kithara]. However, since integrating such systems can be very expensive or time consuming, I'd recommend going with simple and community supported solutions unless necessary.
+
 === Latency is not Gaussian
 
-As mentioned before, latency practically never follows a Gaussian distribution. For example, the max for OSX is more than 400 standard deviations away from the mean. Be careful when using mean/stddev for any sort of latency comparison. There are many cases where systems with seemingly better values end up performing much worse in practice.
+Finally, I'd like to stress again that latency practically never follows a Gaussian distribution. The table for these data sets is below.
 
 [width="80%"]
 |========
@@ -150,6 +163,7 @@ As mentioned before, latency practically never follows a Gaussian distribution. 
 |*Scientific Linux 6.6-rt*   |79.753.643 |0.08 ms|0.01 |0.15 ms |7
 |========
 
-==	Conclusion
+The max for OSX is more than 400 standard deviations away from the mean. Using only mean/stddev for any sort of latency comparison can produce unwanted results. Aside from giving little to no information about the higher percentiles, there are many cases where systems with seemingly better values exhibit worse actual performance.
 
-//It's easy to do 100 Hz control in just about any OS. 1KHz hard real-time requires lots of tuning. Rates are highly dependent on the application. Hard to generalize.
+
+
