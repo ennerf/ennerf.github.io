@@ -58,33 +58,32 @@ Hiccups can be caused by a large number of reasons, including scheduling, paging
 
 I've setup two standard desktop computers, one for Windows/Linux and one for Mac tests.
 
-[width="100%",frame="topbot"]
-|=========
-|                 | |*CPU* |*RAM*
-|*Windows/Linux* |Gigabyte Brix Bxi7-4770R |i7-4770R @ 3.2 GHz |16 GB 1600 MHz DDR3
-|*Mac* |Mac Mini 2014 |i7-3720QM @ 2.6 GHz |16 GB 1600 MHz DDR3
-|=========
+//[width="100%",frame="topbot"]
+//|=========
+//|                 | |*CPU* |*RAM*
+//|*Windows/Linux* |Gigabyte Brix Bxi7-4770R |i7-4770R @ 3.2 GHz |16 GB 1600 MHz DDR3
+//|*Mac* |Mac Mini 2014 |i7-3720QM @ 2.6 GHz |16 GB 1600 MHz DDR3
+//|=========
 
-//Windows/Linux:: Gigabyte Brix BXi7-4770R, i7-4770R @ 3.2 GHz, 16 GB 1600 MHz DDR3
-//Mac:: Mac Mini 2014, i7-3720QM @ 2.6 GHz, 16 GB 1600 MHz DDR3
+* Gigabyte Brix BXi7-4770R, i7-4770R @ 3.2 GHz, 16 GB 1600 MHz DDR3
+* Mac Mini 2014, i7-3720QM @ 2.6 GHz, 16 GB 1600 MHz DDR3
 
 === Windows / Mac / Linux
 
-Let's first look at the performance of consumer operating systems: Windows, Mac and Linux. Each test started off with a clean install for each OS. The only two modifications to the stock installation were to disable sleep mode and to install JDK8 (update 101) to run jHiccup. I then started the test, unplugged all external cables and let the computer sit 'idle' for >24 hours.
+Let's first look at the performance of consumer operating systems: Windows, Mac and Linux. Each test started off with a clean install for each OS. The only two modifications to the stock installation were to disable sleep mode and to install JDK8 (update 101) to run jHiccup. I then started the test, unplugged all external cables and let the computer sit 'idle' for >24 hours. The actual OS versions were,
 
-[width="100%",frame="topbot"]
-|=========
-| *OS* |*Version* 
-|*Windows* | Windows 10 Enterprise, version 1511 (OS build: 10586.545)
-|*Mac* | OS X, version 10.9.5
-|*Linux* | Ubuntu 16.04 Desktop, kernel 4.4.0-31-generic
-|*RT Linux* |  Scientific Linux 6.6, kernel 3.10.0-327.rt56.194.el6rt.x86_64
-|=========
+//[width="100%",frame="topbot"]
+//|=========
+//| *OS* |*Version* 
+//|*Windows* | Windows 10 Enterprise, version 1511 (OS build: 10586.545)
+//|*Mac* | OS X, version 10.9.5
+//|*Linux* | Ubuntu 16.04 Desktop, kernel 4.4.0-31-generic
+//|*RT Linux* |  Scientific Linux 6.6, kernel 3.10.0-327.rt56.194.el6rt.x86_64
+//|=========
 
-* Windows:: Windows 10 Enterprise, version 1511 (OS build: 10586.545)
-* Mac:: OS X, version 10.9.5
-* Linux:: Ubuntu 16.04 Desktop, kernel 4.4.0-31-generic
-* RT Linux:: Scientific Linux 6.6, kernel 3.10.0-327.rt56.194.el6rt.x86_64
+* Windows 10 Enterprise, version 1511 (OS build: 10586.545)
+* OS X, version 10.9.5
+* Ubuntu 16.04 Desktop, kernel 4.4.0-31-generic
 
 The charts below are split into two sections. The top one shows the worst hiccup that occured within given time intervals. The bottom one shows the percentiles of all measurements across the entire duration.
 
@@ -99,7 +98,11 @@ image::os/osx-win-ubuntu_10m.png[osx windows ubuntu latency over 10 minutes, lin
 
 Now that we have a better understanding of how traditional systems without tuning perform, let's take a look at the performance of Linux with a real-time kernel. The rt kernel (PREEMPT_RT patch) can preempt lower priority tasks, which results in worse overall performance, but more deterministic behavior with respect to latency.
 
-I've chosen Scientific Linux 6.6 because of it's support for link:https://access.redhat.com/products/red-hat-enterprise-mrg-realtime[Red Hat(R) Enterprise MRG Realtime(R)]. You can download the ISO via link:http://ftp.scientificlinux.org/linux/scientific/[FTP] and find instructions for installing MRG Realtime link:http://linux.web.cern.ch/linux/mrg/[here]. I've also applied a small list of system options to improve the default behavior.
+I've chosen Scientific Linux 6 because of it's support for link:https://access.redhat.com/products/red-hat-enterprise-mrg-realtime[Red Hat(R) Enterprise MRG Realtime(R)]. You can download the ISO via link:http://ftp.scientificlinux.org/linux/scientific/[FTP] and find instructions for installing MRG Realtime link:http://linux.web.cern.ch/linux/mrg/[here]. The version I've tested was,
+
+* Scientific Linux 6.6, kernel 3.10.0-327.rt56.194.el6rt.x86_64
+
+I've also applied a small list of system options to improve the default behavior.
 
 * _/boot/grub/menu.lst_ => _transparent_hugepage=never_
 * _/etc/sysctl.conf_ => _vm.swappiness=0_ 
@@ -140,7 +143,7 @@ As mentioned before, latency practically never follows a Gaussian distribution. 
 |*Windows 10* |80,304,595 |0.55 ms |0.37 |17.17 ms |44.9
 |*OSX 10.9.5*     |65,282,969 |0.32 ms |0.03 |12.65 ms |411
 |*Ubuntu 16.04*   |78,039,162 |0.10 ms |0.01 |3.03 ms |293
-
+|*Scientific Linux 6.6-rt*   |79.753.643 |0.08 ms|0.01 |0.15 ms |7
 |========
 
 ==	Conclusion
