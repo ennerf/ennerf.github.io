@@ -14,9 +14,9 @@
 
 // Arbitrary requirements are bad. Not much information out there. Planning on blog series about various aspects.
 
-Latency is one of those topics that is important to many applications, but very often misunderstood. I've spent many hours looking for information on the latency of various components, but there is almost no informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or measure it incorrectly.
+Latency is an important topic for many applications that is often misunderstood. I've spent many hours looking for information on the latency of various components, but there is very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or measure it incorrectly.
 
-My own background is in robotics. I've spent 6 years as a staff software engineer at the Robotics Institute at Carnegie Mellon University and am a co-founder of HEBI Robotics, a startup developing modular robotic components. We build many types of robots, including collaborative arms, walking robots, wheeled robots, legged robots and even snake robots.
+My own background is in robotics. I've spent 6 years as a staff software engineer at the Robotics Institute at Carnegie Mellon University and am a co-founder of HEBI Robotics, a startup developing modular robotic components. We've worked on many different types of robots, including collaborative arms, walking robots, wheeled robots, legged robots and even snake robots.
 
 Robots are controlled in _real-time_, which means that a command gets executed within a _deadline_ (fixed period of time). There are _hard real-time_ systems that can never exceed the given deadline, and _soft real-time_ systems that are able to occasionally handle reasonable outliers. Missing deadlines can result in 'jerky' behavior and overall unwanted motions.
  
