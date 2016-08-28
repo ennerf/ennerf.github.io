@@ -1,29 +1,20 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Sun, 28 Aug 2016 00:22:02 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Sun, 28 Aug 2016 00:55:48 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
 <h2 id="_introduction">Introduction</h2>
 <div class="sectionbody">
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-TODO: should this blog be about real-time control or on latency with a focus on robotics (motivation section)?
-</td>
-</tr>
-</table>
+<div class="paragraph">
+<p>Latency is one of those topics that is important to many applications, but very often misunderstood. I&#8217;ve spent many hours looking for information on the latency of various components, but there is almost no informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or measure it incorrectly.</p>
 </div>
 <div class="paragraph">
-<p>Robotic systems tend to be controlled in <em>real-time</em>, which means that a command gets executed within a <em>deadline</em> (fixed period of time). There are <em>hard real-time</em> systems that can never exceed the given deadline, and <em>soft real-time</em> systems that are able to occasionally handle reasonable outliers.</p>
+<p>My own background is in robotics. I&#8217;ve spent 6 years as a staff software engineer at the Robotics Institute at Carnegie Mellon University and am a co-founder of HEBI Robotics, a startup developing modular robotic components. We build many types of robots, including collaborative arms, walking robots, wheeled robots, legged robots and even snake robots.</p>
 </div>
 <div class="paragraph">
-<p>Although there is a lot of information on the theoretial definition of these terms, it can be challenging to determine reasonable deadlines for a practical application. This is especially true for research environments that build unique mechanisms.</p>
+<p>Robots are controlled in <em>real-time</em>, which means that a command gets executed within a <em>deadline</em> (fixed period of time). There are <em>hard real-time</em> systems that can never exceed the given deadline, and <em>soft real-time</em> systems that are able to occasionally handle reasonable outliers. Missing deadlines can result in 'jerky' behavior and overall unwanted motions.</p>
+</div>
+<div class="paragraph">
+<p>Although there is a lot of information on the theoretical definition of these terms, it can be challenging to determine good deadlines for practical applications. This is especially true for research environments that build unique mechanisms.</p>
 </div>
 <div class="paragraph">
 <p>Unfortunately, the control scheme is a systemic concern that can impact the entire system architecture. This can be very difficult to change later on, so there is a tendency towards high requirements with regards to determinism. However, requirements that are too high can result in significant development efforts that may not yield any benefits in the real world.</p>
-</div>
-<div class="paragraph">
-<p>There is also a lot of folklore about the reliablity and performance of various components. I have been in countless debates where people have tried to convince me that a proposed system has no chance of working, not knowing that it had already been implemented and been running without issues. This is partly because there is very little useful data on latency out there. Most benchmarks focus only on throughput, and some that do include latency were measured incorrectly.</p>
 </div>
 <div class="paragraph">
 <p>Over a series of blog posts, I&#8217;ll try to share some my own experiences and data sets. Today&#8217;s post will focus on operating systems.</p>
