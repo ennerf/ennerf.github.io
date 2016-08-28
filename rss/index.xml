@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Sun, 28 Aug 2016 01:43:02 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Sun, 28 Aug 2016 01:45:36 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
 <h2 id="_introduction">Introduction</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -19,6 +19,20 @@
 <div class="paragraph">
 <p>Over a series of blog posts, I&#8217;ll try to share some my own experiences and data sets. Today&#8217;s post will focus on operating systems.</p>
 </div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_operating_systems">Operating Systems</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The operating system is the base of everything. No matter how amazing the software stack is, the system is fundamentally bound by the capabilities of the OS, it&#8217;s scheduler, and the overall load on the system. Before you start optimizing your own software, you should make sure that your goal is actually achievable on the underlying platform.</p>
+</div>
+<div class="paragraph">
+<p>There is a trade-off between responding in a timely manner and overall performance, battery life, and many other concerns. As a result, the major consumer operating systems don&#8217;t guarantee to meet hard deadlines and can theoretically have arbitrarily long pauses.</p>
+</div>
+<div class="paragraph">
+<p>However, commodity operating systems can significantly ease development. It is worth evaluating their actual performance before prematurely dismissing them for real-time control systems. Even though there may not be any theoretical guarantees, the practical differences are often not noticeable.</p>
+</div>
 <div class="sect2">
 <h3 id="_measuring_latency">Measuring Latency</h3>
 <div class="paragraph">
@@ -33,20 +47,6 @@
 <div class="paragraph">
 <p>Lastly, I&#8217;m using <a href="https://github.com/ennerf/HdrHistogramVisualizer">HdrHistogramVisualizer</a> which is a tool that I&#8217;ve written for visualizing the recorded data.</p>
 </div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_operating_systems">Operating Systems</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>The operating system is the base of everything. No matter how amazing the software stack is, the system is fundamentally bound by the capabilities of the OS, it&#8217;s scheduler, and the overall load on the system. Before you start optimizing your own software, you should make sure that your goal is actually achievable on the underlying platform.</p>
-</div>
-<div class="paragraph">
-<p>There is a trade-off between responding in a timely manner and overall performance, battery life, and many other concerns. As a result, the major consumer operating systems don&#8217;t guarantee to meet hard deadlines and can theoretically have arbitrarily long pauses.</p>
-</div>
-<div class="paragraph">
-<p>However, commodity operating systems can significantly ease development. It is worth evaluating their actual performance before prematurely dismissing them for real-time control systems. Even though there may not be any theoretical guarantees, the practical differences are often not noticeable.</p>
 </div>
 <div class="sect2">
 <h3 id="_benchmark_setup">Benchmark Setup</h3>
