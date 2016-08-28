@@ -1,14 +1,14 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Sun, 28 Aug 2016 01:14:59 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Sun, 28 Aug 2016 01:27:25 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div class="sect1">
 <h2 id="_introduction">Introduction</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Latency is an important topic for many applications that is often misunderstood. I&#8217;ve spent many hours looking for information on the latency of various components, but there is very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or measure it incorrectly.</p>
+<p>Latency is an important topic for many applications that is unfortunately often misunderstood. I&#8217;ve spent many hours looking for information on the latency of various components, but have found very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or measure it incorrectly.</p>
 </div>
 <div class="paragraph">
-<p>My own background is in robotics. I&#8217;ve spent 6 years as a staff software engineer at the Robotics Institute at Carnegie Mellon University and am a co-founder of HEBI Robotics, a startup developing modular robotic components. We&#8217;ve worked on many different types of robots, including collaborative arms, walking robots, wheeled robots, legged robots and even snake robots.</p>
+<p>My own background is in robotics research. I&#8217;ve spent several years as a staff software engineer at the Robotics Institute at Carnegie Mellon University and am a co-founder of HEBI Robotics, a startup developing modular robotic components. We&#8217;ve worked on many different types of robots, including collaborative arms, wheeled robots, walking robots and snake robots.</p>
 </div>
 <div class="paragraph">
-<p>Robots are controlled in <em>real-time</em>, which means that a command gets executed within a <em>deadline</em> (fixed period of time). There are <em>hard real-time</em> systems that can never exceed the given deadline, and <em>soft real-time</em> systems that are able to occasionally handle reasonable outliers. Missing deadlines can result in 'jerky' behavior and overall unwanted motions.</p>
+<p>Robots are controlled in <em>real-time</em>, which means that a command gets executed within a <em>deadline</em> (fixed period of time). There are <em>hard real-time</em> systems that must never exceed their deadline, and <em>soft real-time</em> systems that are able to occasionally handle reasonable outliers. Missing deadlines can result in unwanted motions and 'jerky' behavior.</p>
 </div>
 <div class="paragraph">
 <p>Although there is a lot of information on the theoretical definition of these terms, it can be challenging to determine good deadlines for practical applications. This is especially true for research environments that build unique mechanisms.</p>
@@ -25,7 +25,7 @@
 <p>The first important realization when looking at latency is that data does not follow a Gaussian distribution. I have seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Looking at only the mean and standard deviation tends to provide an extremely optimistic view that can be misleading.</p>
 </div>
 <div class="paragraph">
-<p>A better way to look at latency is via histograms and percentile plots, e.g., 99.9% of measurements have been below Xms. There are already several good resources about recording latency out there, so I won&#8217;t go into detail. Please refer to <a href="http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html">HdrHistogram: A better latency capture method</a> or <a href="https://youtu.be/lJ8ydIuPFeU">How NOT to Measure Latency</a> for more information.</p>
+<p>A better way to look at latency is via histograms and percentile plots, e.g., "99.9% of measurements were below X ms". There are already several good resources about recording latency out there, so I won&#8217;t go into detail. Please refer to <a href="http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html">HdrHistogram: A better latency capture method</a> or <a href="https://youtu.be/lJ8ydIuPFeU">How NOT to Measure Latency</a> for more information.</p>
 </div>
 <div class="paragraph">
 <p><a href="https://www.azul.com">Azul Systems</a> sells products targeted at latency sensitive applications and they have created a variety of useful tools to measure latency. <a href="https://www.azul.com/jhiccup/">jHiccup</a> is a tool that allows us to measure and record system level hiccups (~jitter).It measures the time for <em>sleep(1ms)</em> and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms 'hiccup'. Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. By running it on an idle system, we can measure the best case scenario. jHiccup uses <a href="https://github.com/HdrHistogram/HdrHistogram">HdrHistogram</a> for the actual recording of samples.</p>
@@ -40,7 +40,7 @@
 <h2 id="_operating_systems">Operating Systems</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The operating system is the base of everything. No matter how amazing the software stack is, the system is fundamentally bound by the capabilities of the OS, it&#8217;s scheduler, and the overall load on the system. Before you start optimizing your own software, you should make sure that your goal is actually feasible on your platform.</p>
+<p>The operating system is the base of everything. No matter how amazing the software stack is, the system is fundamentally bound by the capabilities of the OS, it&#8217;s scheduler, and the overall load on the system. Before you start optimizing your own software, you should make sure that your goal is actually achievable on the underlying platform.</p>
 </div>
 <div class="paragraph">
 <p>There is a trade-off between responding in a timely manner and overall performance, battery life, and many other concerns. As a result, the major consumer operating systems don&#8217;t guarantee to meet hard deadlines and can theoretically have arbitrarily long pauses.</p>
@@ -107,7 +107,7 @@ TODO: Confirm that system timer was set to 1ms for test.
 </ul>
 </div>
 <div class="paragraph">
-<p>Each image below contains two charts. The top section shows the worst hiccup that occured within a given interval window, e.g., data point 1 shows the worst hiccup within the first 3 minutes, data point 2 shows the worst hiccup within the next 3 minutes. The bottom chart shows the percentiles of all measurements across the entire duration. Each 24 hour data set contains roughly 70-80 million actual measurements.</p>
+<p>Each image below contains two charts. The top section shows the worst hiccup that occured within a given interval window, i.e., the first data point shows the worst hiccup within the first 3 minutes and the next data point shows the worst hiccup within the next 3 minutes. The bottom chart shows the percentiles of all measurements across the entire duration. Each 24 hour data set contains roughly 70-80 million actual measurements.</p>
 </div>
 <div class="imageblock">
 <div class="content">
