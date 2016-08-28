@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Sun, 28 Aug 2016 23:18:32 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div id="preamble">
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Sun, 28 Aug 2016 23:28:47 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
 <p>Latency is an important topic for many applications that is unfortunately often misunderstood. I&#8217;ve spent many hours looking for information on the latency of various components, but have found very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or measure it incorrectly.</p>
@@ -288,11 +288,4 @@ sudo chrt -p 98 $pid</code></pre>
 <p>text</p>
 </div>
 </div>
-</div>]]></description><link>https://ennerf.github.io/2016/08/23/First-Post.html</link><guid isPermaLink="true">https://ennerf.github.io/2016/08/23/First-Post.html</guid><dc:creator><![CDATA[Florian Enner]]></dc:creator><pubDate>Tue, 23 Aug 2016 00:00:00 GMT</pubDate></item><item><title><![CDATA[2nd Post]]></title><description><![CDATA[<div class="sect1">
-<h2 id="_2nd_header">2nd Header</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>second text</p>
-</div>
-</div>
-</div>]]></description><link>https://ennerf.github.io/2016/08/23/2nd-Post.html</link><guid isPermaLink="true">https://ennerf.github.io/2016/08/23/2nd-Post.html</guid><dc:creator><![CDATA[Florian Enner]]></dc:creator><pubDate>Tue, 23 Aug 2016 00:00:00 GMT</pubDate></item></channel></rss>
+</div>]]></description><link>https://ennerf.github.io/2016/08/23/First-Post.html</link><guid isPermaLink="true">https://ennerf.github.io/2016/08/23/First-Post.html</guid><dc:creator><![CDATA[Florian Enner]]></dc:creator><pubDate>Tue, 23 Aug 2016 00:00:00 GMT</pubDate></item></channel></rss>
