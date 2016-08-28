@@ -38,9 +38,9 @@
     <link href="//fonts.googleapis.com/" rel="dns-prefetch">
     <link href="//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Open+Sans:700,400&subset=latin,latin-ext" rel="stylesheet">
 
-    <link rel="stylesheet" href="//ennerf.github.io/themes/ghostium/assets/css/main.min.css?v=1472324409457"/>
-    <link rel="stylesheet" href="//ennerf.github.io/themes/ghostium/assets/css/custom.css?v=1472324409457"/>
-    <link rel="stylesheet" href="//ennerf.github.io/themes/ghostium/assets/css/asciidoctor-foundation.css?v=1472324409457"/>
+    <link rel="stylesheet" href="//ennerf.github.io/themes/ghostium/assets/css/main.min.css?v=1472342800598"/>
+    <link rel="stylesheet" href="//ennerf.github.io/themes/ghostium/assets/css/custom.css?v=1472342800598"/>
+    <link rel="stylesheet" href="//ennerf.github.io/themes/ghostium/assets/css/asciidoctor-foundation.css?v=1472342800598"/>
 
 
 
@@ -70,7 +70,7 @@
       GHOSTIUM.enablePjax = typeof enable_pjax !== 'undefined' ? enable_pjax : true;
     </script>
 
-    <script src="//ennerf.github.io/themes/ghostium/assets/js/head-scripts.min.js?v=1472324409457"></script>
+    <script src="//ennerf.github.io/themes/ghostium/assets/js/head-scripts.min.js?v=1472342800598"></script>
 
     <link rel="canonical" href="https://ennerf.github.io/2016/08/24/Latency-Operating-Systems.html" />
     <meta name="referrer" content="origin" />
@@ -226,7 +226,13 @@ TODO: should this blog be about real-time control or on latency with a focus on 
 <p>The first important realization when looking at latency is that data does not follow a Gaussian distribution. I have seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Looking at only the mean and standard deviation tends to provide an extremely optimistic view that can be misleading.</p>
 </div>
 <div class="paragraph">
-<p>A better way to look at latency is via histograms and percentile plots, e.g., 99.9% of measurements have been below Xms. There are already several good resources about recording latency out there, so I won&#8217;t go into detail here. Please refer to <a href="http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html">HdrHistogram: A better latency capture method</a> and <a href="https://youtu.be/lJ8ydIuPFeU">How NOT to Measure Latency</a> for more information.</p>
+<p>A better way to look at latency is via histograms and percentile plots, e.g., 99.9% of measurements have been below Xms. There are already several good resources about recording latency out there, so I won&#8217;t go into detail. Please refer to <a href="http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html">HdrHistogram: A better latency capture method</a> or <a href="https://youtu.be/lJ8ydIuPFeU">How NOT to Measure Latency</a> for more information.</p>
+</div>
+<div class="paragraph">
+<p><a href="https://www.azul.com">Azul Systems</a> sells products targeted at latency sensitive applications and they have created a variety of useful tools to measure latency. <a href="https://www.azul.com/jhiccup/">jHiccup</a> is a tool that allows us to measure and record system level hiccups (~jitter). Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. jHiccup measures the time for <em>sleep(1ms)</em> and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms hiccup value.</p>
+</div>
+<div class="paragraph">
+<p>By running it on an idle system, we can measure the best case scenario. It uses <a href="https://github.com/HdrHistogram/HdrHistogram">HdrHistogram</a> for the actual recording of samples. Lastly, I&#8217;m using <a href="https://github.com/ennerf/HdrHistogramVisualizer">HdrHistogramVisualizer</a> which is a tool that I&#8217;ve written for visualizing the recorded data.</p>
 </div>
 </div>
 </div>
@@ -235,7 +241,7 @@ TODO: should this blog be about real-time control or on latency with a focus on 
 <h2 id="_operating_systems">Operating Systems</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The operating system is the base of everything. No matter how amazing the software stack is, the system is fundamentally bound by the capabilities of the OS, it&#8217;s scheduler, and the overall load on the system.</p>
+<p>The operating system is the base of everything. No matter how amazing the software stack is, the system is fundamentally bound by the capabilities of the OS, it&#8217;s scheduler, and the overall load on the system. Before you start optimizing your own software, you should make sure that your goal is actually feasible on your platform.</p>
 </div>
 <div class="paragraph">
 <p>There is a trade-off between responding in a timely manner and overall performance, battery life, and many other concerns. As a result, the major consumer operating systems don&#8217;t guarantee to meet hard deadlines and can theoretically have arbitrarily long pauses.</p>
@@ -245,12 +251,6 @@ TODO: should this blog be about real-time control or on latency with a focus on 
 </div>
 <div class="sect2">
 <h3 id="_benchmark_setup">Benchmark Setup</h3>
-<div class="paragraph">
-<p><a href="https://www.azul.com">Azul Systems</a> sells products targeted at latency sensitive applications and they have created a variety of useful tools to measure latency. <a href="https://www.azul.com/jhiccup/">jHiccup</a> is a tool that allows us to measure and record hiccups (~jitter) at the OS level. By running it on an idle system, we can measure the best case scenario. It uses <a href="https://github.com/HdrHistogram/HdrHistogram">HdrHistogram</a> for the actual recording of samples. Lastly, I&#8217;m using <a href="https://github.com/ennerf/HdrHistogramVisualizer">HdrHistogramVisualizer</a> which is a tool that I&#8217;ve written for visualizing the recorded data.</p>
-</div>
-<div class="paragraph">
-<p>Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. jHiccup measures the time for sleep(1ms) and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms hiccup value.</p>
-</div>
 <div class="paragraph">
 <p>I&#8217;ve setup two standard desktop computers, one for Windows/Linux and one for Mac tests.</p>
 </div>
@@ -263,6 +263,30 @@ TODO: should this blog be about real-time control or on latency with a focus on 
 <p>Mac Mini 2014, i7-3720QM @ 2.6 GHz, 16 GB 1600 MHz DDR3</p>
 </li>
 </ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+When doing latency tests on Windows you should be aware of the system timer. It has variable timer intervals that range from 0.5ms to 15.6ms. By calling <em>timeBeginPeriod</em> and <em>endTimePeriod</em> applications can notify the OS whenever they need a higher resolution. The timer interrupt is a global resource that gets set to the lowest interrupt interval requested by any application. For example, watching a video in Chrome requests a timer interrupt interval of 0.5ms. A lower period results in a more responsive system at the cost of overall throughput and battery life. <a href="https://vvvv.org/contribution/windows-system-timer-tool">System Timer Tool</a> is a little utility that let&#8217;s you view the current state. Calling Java&#8217;s <em>Thread.sleep()</em> with a value of below 10ms automatically requests a 1ms timer interval.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+TODO: Confirm that system timer was set to 1ms for test.
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect2">
@@ -283,30 +307,6 @@ TODO: should this blog be about real-time control or on latency with a focus on 
 </li>
 </ul>
 </div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-When doing latency tests you should be aware of the Windows system timer. It has variable timer intervals that range from 0.5ms to 15.6ms. By calling <em>timeBeginPeriod</em> and <em>endTimePeriod</em> applications can notify the OS whenever they need a higher resolution. The timer interrupt is a global resource that gets set to the lowest interrupt interval requested by any application. For example, watching a video in Chrome requests a timer interrupt interval of 0.5ms. A lower period results in a more responsive system at the cost of overall throughput and battery life. <a href="https://vvvv.org/contribution/windows-system-timer-tool">System Timer Tool</a> is a little utility that let&#8217;s you view the current state. Calling Java&#8217;s <em>Thread.sleep()</em> with a value of below 10ms automatically requests a 1ms timer interval.
-</td>
-</tr>
-</table>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-TODO: Confirm that system timer was set to 1ms for test.
-</td>
-</tr>
-</table>
-</div>
 <div class="paragraph">
 <p>Each image below contains two charts. The top section shows the worst hiccup that occured within a given interval window, e.g., data point 1 shows the worst hiccup within the first 3 minutes, data point 2 shows the worst hiccup within the next 3 minutes. The bottom chart shows the percentiles of all measurements across the entire duration. Each 24 hour data set contains roughly 70-80 million actual measurements.</p>
 </div>
@@ -324,7 +324,7 @@ TODO: Confirm that system timer was set to 1ms for test.
 </div>
 </div>
 <div class="paragraph">
-<p>While Windows and OSX both have relatively frequent spikes, Ubuntu 16.04 has very little hiccups.</p>
+<p>Overall Ubuntu 16.04 seems to have very little hiccups compared to Windows and OSX.</p>
 </div>
 </div>
 <div class="sect2">
@@ -363,7 +363,7 @@ TODO: Confirm that system timer was set to 1ms for test.
 </div>
 <div class="paragraph">
 <p>The process priority was set to 98, which is the highest priority available for real-time threads. I&#8217;d advise consulting
-<a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_MRG/2/html/Realtime_Tuning_Guide/chap-Realtime-Specific_Tuning.html#Setting_scheduler_priorities">scheduler priorities</a> before running anything that actually uses cpu time.</p>
+<a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_MRG/2/html/Realtime_Tuning_Guide/chap-Realtime-Specific_Tuning.html#Setting_scheduler_priorities">scheduler priorities</a> before deciding on priorities for tasks that actually use cpu time.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -408,10 +408,10 @@ sudo chrt -p 98 $pid</code></pre>
 <h2 id="_final_notes">Final Notes</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>I&#8217;ve tried to provide a basic idea of the out of box performance of various off the shelf operating systems. It&#8217;s almost impossible to make any recommendations because the requirements are so specific to the use case. While some safety critical applications may require a real time operating system, others may run perfectly fine on Windows. My goal is to provide an overview that allows you to select a suitable choice after you&#8217;ve established your requirements. I&#8217;m planning on doing a future post on actually figuring out sane requirements.</p>
+<p>I&#8217;ve tried to provide a basic idea of the out of the box performance of various off the shelf operating systems. Actual requirements are heavily dependent on the specific use case, so it&#8217;s impossible to make a general recommendation. While some safety critical applications may require a real time operating system (RTOS), others may run perfectly fine on commodity systems. My goal is to provide an overview that allows you to make a more informed decision about suitable platform after you&#8217;ve established your requirements. I&#8217;m planning on doing a future post on actually figuring out sane requirements.</p>
 </div>
 <div class="paragraph">
-<p>Note that these are not your only options. There are many different <a href="https://en.wikipedia.org/wiki/Comparison_of_real-time_operating_systems">RTOS</a> out there. There are even RT extensions for Windows, e.g.,  <a href="http://www.tenasys.com/overview-ifw">INtime</a> or <a href="http://kithara.com/en/products/realtime-suite">Kithara</a>. However, since integrating such systems can be very expensive or time consuming, I&#8217;d recommend going with simple and community supported solutions unless necessary.</p>
+<p>Note that these are not your only options. There are many different <a href="https://en.wikipedia.org/wiki/Comparison_of_real-time_operating_systems">RTOS</a> out there. There are even real-time extensions for Windows, e.g., <a href="http://www.tenasys.com/overview-ifw">INtime</a> or <a href="http://kithara.com/en/products/realtime-suite">Kithara</a>. However, since integrating such systems can be very expensive or time consuming, I&#8217;d recommend going with simple and community supported solutions unless necessary.</p>
 </div>
 <div class="sect2">
 <h3 id="_latency_is_not_gaussian">Latency is not Gaussian</h3>
@@ -555,7 +555,7 @@ sudo chrt -p 98 $pid</code></pre>
         hljs.initHighlightingOnLoad();
       </script>
 
-    <script src="//ennerf.github.io/themes/ghostium/assets/js/foot-scripts.min.js?v=1472324409457"></script>
+    <script src="//ennerf.github.io/themes/ghostium/assets/js/foot-scripts.min.js?v=1472342800598"></script>
 
     <script>
     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
