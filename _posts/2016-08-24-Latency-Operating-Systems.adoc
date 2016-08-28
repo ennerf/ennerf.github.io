@@ -32,26 +32,27 @@ Over a series of blog posts, I'll try to share some my own experiences and data 
 
 The first important realization when looking at latency is that data does not follow a Gaussian distribution. I have seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Looking at only the mean and standard deviation tends to provide an extremely optimistic view that can be misleading.
 
-A better way to look at latency is via histograms and percentile plots, e.g., 99.9% of measurements have been below Xms. There are already several good resources about recording latency out there, so I won't go into detail here. Please refer to link:http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html[HdrHistogram: A better latency capture method] and link:https://youtu.be/lJ8ydIuPFeU[How NOT to Measure Latency] for more information.
+A better way to look at latency is via histograms and percentile plots, e.g., 99.9% of measurements have been below Xms. There are already several good resources about recording latency out there, so I won't go into detail. Please refer to link:http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html[HdrHistogram: A better latency capture method] or link:https://youtu.be/lJ8ydIuPFeU[How NOT to Measure Latency] for more information.
 
 //link:http://latencytipoftheday.blogspot.com/[Gil Tene]
 //video::lJ8ydIuPFeU[youtube]
+
+link:https://www.azul.com[Azul Systems] sells products targeted at latency sensitive applications and they have created a variety of useful tools to measure latency. link:https://www.azul.com/jhiccup/[jHiccup] is a tool that allows us to measure and record system level hiccups (~jitter). Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. jHiccup measures the time for _sleep(1ms)_ and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms hiccup value.
+
+By running it on an idle system, we can measure the best case scenario. It uses link:https://github.com/HdrHistogram/HdrHistogram[HdrHistogram] for the actual recording of samples. Lastly, I'm using link:https://github.com/ennerf/HdrHistogramVisualizer[HdrHistogramVisualizer] which is a tool that I've written for visualizing the recorded data.
+
 
 == Operating Systems
 
 //jHiccup is a great tool developed by Azul Systems that allows us to measure and record hiccups ('jitter')  at the OS level. These can be caused by a large number of reasons, including swap, indexing tasks, and many more. By running it on an idle system, we can measure the best case scenario.
  
-The operating system is the base of everything. No matter how amazing the software stack is, the system is fundamentally bound by the capabilities of the OS, it's scheduler, and the overall load on the system.
- 
+The operating system is the base of everything. No matter how amazing the software stack is, the system is fundamentally bound by the capabilities of the OS, it's scheduler, and the overall load on the system. Before you start optimizing your own software, you should make sure that your goal is actually feasible on your platform.
+
 There is a trade-off between responding in a timely manner and overall performance, battery life, and many other concerns. As a result, the major consumer operating systems don't guarantee to meet hard deadlines and can theoretically have arbitrarily long pauses.
 
 However, before dismissing consumer OS for real-time control systems, it is worth looking at their actual performance. Even though there are no theoretical guarantees, the practical performance may be good enough for many applications.
 
 === Benchmark Setup
-
-link:https://www.azul.com[Azul Systems] sells products targeted at latency sensitive applications and they have created a variety of useful tools to measure latency. link:https://www.azul.com/jhiccup/[jHiccup] is a tool that allows us to measure and record hiccups (~jitter) at the OS level. By running it on an idle system, we can measure the best case scenario. It uses link:https://github.com/HdrHistogram/HdrHistogram[HdrHistogram] for the actual recording of samples. Lastly, I'm using link:https://github.com/ennerf/HdrHistogramVisualizer[HdrHistogramVisualizer] which is a tool that I've written for visualizing the recorded data.
-
-Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. jHiccup measures the time for sleep(1ms) and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms hiccup value.
 
 I've setup two standard desktop computers, one for Windows/Linux and one for Mac tests.
 
@@ -64,6 +65,10 @@ I've setup two standard desktop computers, one for Windows/Linux and one for Mac
 
 * Gigabyte Brix BXi7-4770R, i7-4770R @ 3.2 GHz, 16 GB 1600 MHz DDR3
 * Mac Mini 2014, i7-3720QM @ 2.6 GHz, 16 GB 1600 MHz DDR3
+
+NOTE: When doing latency tests on Windows you should be aware of the system timer. It has variable timer intervals that range from 0.5ms to 15.6ms. By calling _timeBeginPeriod_ and _endTimePeriod_ applications can notify the OS whenever they need a higher resolution. The timer interrupt is a global resource that gets set to the lowest interrupt interval requested by any application. For example, watching a video in Chrome requests a timer interrupt interval of 0.5ms. A lower period results in a more responsive system at the cost of overall throughput and battery life. link:https://vvvv.org/contribution/windows-system-timer-tool[System Timer Tool] is a little utility that let's you view the current state. Calling Java's _Thread.sleep()_ with a value of below 10ms automatically requests a 1ms timer interval.
+
+NOTE: TODO: Confirm that system timer was set to 1ms for test.
 
 === Windows / Mac / Linux
 
@@ -82,10 +87,6 @@ Let's first look at the performance of consumer operating systems: Windows, Mac 
 * OS X, version 10.9.5
 * Ubuntu 16.04 Desktop, kernel 4.4.0-31-generic
 
-NOTE: When doing latency tests you should be aware of the Windows system timer. It has variable timer intervals that range from 0.5ms to 15.6ms. By calling _timeBeginPeriod_ and _endTimePeriod_ applications can notify the OS whenever they need a higher resolution. The timer interrupt is a global resource that gets set to the lowest interrupt interval requested by any application. For example, watching a video in Chrome requests a timer interrupt interval of 0.5ms. A lower period results in a more responsive system at the cost of overall throughput and battery life. link:https://vvvv.org/contribution/windows-system-timer-tool[System Timer Tool] is a little utility that let's you view the current state. Calling Java's _Thread.sleep()_ with a value of below 10ms automatically requests a 1ms timer interval.
-
-NOTE: TODO: Confirm that system timer was set to 1ms for test.
-
 Each image below contains two charts. The top section shows the worst hiccup that occured within a given interval window, e.g., data point 1 shows the worst hiccup within the first 3 minutes, data point 2 shows the worst hiccup within the next 3 minutes. The bottom chart shows the percentiles of all measurements across the entire duration. Each 24 hour data set contains roughly 70-80 million actual measurements.
 
 // 24 hour plot: -/+ 20 min on each side to avoid start/stop noise => sec 1200 to 87600 in aggregate 180 intervals
@@ -96,7 +97,7 @@ Up to the 90th percentile all three systems respond relatively similarly, but th
 // 10 min plot: 36005 to 36590 in aggregate 1 intervals
 image::os/osx-win-ubuntu_10m.png[osx windows ubuntu latency over 10 minutes, link="/images/os/osx-win-ubuntu_10m.png"]
 
-While Windows and OSX both have relatively frequent spikes, Ubuntu 16.04 has very little hiccups.
+Overall Ubuntu 16.04 seems to have very little hiccups compared to Windows and OSX.
 
 === Real Time Linux
 
@@ -114,7 +115,7 @@ Note that there is a huge number of tuning options that may improve the performa
 * _chkconfig --level 0123456 cpuspeed off_
 
 The process priority was set to 98, which is the highest priority available for real-time threads. I'd advise consulting  
-link:https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_MRG/2/html/Realtime_Tuning_Guide/chap-Realtime-Specific_Tuning.html#Setting_scheduler_priorities[scheduler priorities] before running anything that actually uses cpu time.
+link:https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_MRG/2/html/Realtime_Tuning_Guide/chap-Realtime-Specific_Tuning.html#Setting_scheduler_priorities[scheduler priorities] before deciding on priorities for tasks that actually use cpu time.
 
 [source,shell]
 ---------------------------------------------------------------------
@@ -127,8 +128,6 @@ echo $(chrt -p $pid)
 # set priority
 sudo chrt -p 98 $pid
 ---------------------------------------------------------------------
-
-//Untuned systems aren't good enough for 1KHz control. Describe Linux setup: SCL6, RT kernel, basic optimizations, highest priority.
 
 Below is a comparison of the two Linux variants. 24 hours with 3 minute intervals,
 
@@ -145,10 +144,9 @@ image::os/scl_24h.png[scientific linux latency over 24 hours, link="/images/os/s
 ==	Final Notes
 
 //It's easy to do 100 Hz control in just about any OS. 1KHz hard real-time requires lots of tuning. Rates are highly dependent on the application. Hard to generalize.
+I've tried to provide a basic idea of the out of the box performance of various off the shelf operating systems. Actual requirements are heavily dependent on the specific use case, so it's impossible to make a general recommendation. While some safety critical applications may require a real time operating system (RTOS), others may run perfectly fine on commodity systems. My goal is to provide an overview that allows you to make a more informed decision about suitable platform after you've established your requirements. I'm planning on doing a future post on actually figuring out sane requirements.
 
-I've tried to provide a basic idea of the out of box performance of various off the shelf operating systems. It's almost impossible to make any recommendations because the requirements are so specific to the use case. While some safety critical applications may require a real time operating system, others may run perfectly fine on Windows. My goal is to provide an overview that allows you to select a suitable choice after you've established your requirements. I'm planning on doing a future post on actually figuring out sane requirements.
-
-Note that these are not your only options. There are many different link:https://en.wikipedia.org/wiki/Comparison_of_real-time_operating_systems[RTOS] out there. There are even RT extensions for Windows, e.g.,  link:http://www.tenasys.com/overview-ifw[INtime] or link:http://kithara.com/en/products/realtime-suite[Kithara]. However, since integrating such systems can be very expensive or time consuming, I'd recommend going with simple and community supported solutions unless necessary.
+Note that these are not your only options. There are many different link:https://en.wikipedia.org/wiki/Comparison_of_real-time_operating_systems[RTOS] out there. There are even real-time extensions for Windows, e.g., link:http://www.tenasys.com/overview-ifw[INtime] or link:http://kithara.com/en/products/realtime-suite[Kithara]. However, since integrating such systems can be very expensive or time consuming, I'd recommend going with simple and community supported solutions unless necessary.
 
 === Latency is not Gaussian
 
