@@ -38,9 +38,9 @@
     <link href="//fonts.googleapis.com/" rel="dns-prefetch">
     <link href="//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Open+Sans:700,400&subset=latin,latin-ext" rel="stylesheet">
 
-    <link rel="stylesheet" href="//ennerf.github.io/themes/ghostium/assets/css/main.min.css?v=1472347953965"/>
-    <link rel="stylesheet" href="//ennerf.github.io/themes/ghostium/assets/css/custom.css?v=1472347953965"/>
-    <link rel="stylesheet" href="//ennerf.github.io/themes/ghostium/assets/css/asciidoctor-foundation.css?v=1472347953965"/>
+    <link rel="stylesheet" href="//ennerf.github.io/themes/ghostium/assets/css/main.min.css?v=1472348582303"/>
+    <link rel="stylesheet" href="//ennerf.github.io/themes/ghostium/assets/css/custom.css?v=1472348582303"/>
+    <link rel="stylesheet" href="//ennerf.github.io/themes/ghostium/assets/css/asciidoctor-foundation.css?v=1472348582303"/>
 
 
 
@@ -70,7 +70,7 @@
       GHOSTIUM.enablePjax = typeof enable_pjax !== 'undefined' ? enable_pjax : true;
     </script>
 
-    <script src="//ennerf.github.io/themes/ghostium/assets/js/head-scripts.min.js?v=1472347953965"></script>
+    <script src="//ennerf.github.io/themes/ghostium/assets/js/head-scripts.min.js?v=1472348582303"></script>
 
     <link rel="canonical" href="https://ennerf.github.io/2016/08/24/Latency-Operating-Systems.html" />
     <meta name="referrer" content="origin" />
@@ -220,7 +220,7 @@ null
 <p>A better way to look at latency is via histograms and percentile plots, e.g., "99.9% of measurements were below X ms". There are already several good resources about recording latency out there, so I won&#8217;t go into detail. Please refer to <a href="http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html">HdrHistogram: A better latency capture method</a> or <a href="https://youtu.be/lJ8ydIuPFeU">How NOT to Measure Latency</a> for more information.</p>
 </div>
 <div class="paragraph">
-<p><a href="https://www.azul.com">Azul Systems</a> sells products targeted at latency sensitive applications and they have created a variety of useful tools to measure latency. <a href="https://www.azul.com/jhiccup/">jHiccup</a> is a tool that allows us to measure and record system level hiccups (~jitter).It measures the time for <em>sleep(1ms)</em> and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms 'hiccup'. Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. By running it on an idle system, we can measure the best case scenario. jHiccup uses <a href="https://github.com/HdrHistogram/HdrHistogram">HdrHistogram</a> for the actual recording of samples.</p>
+<p><a href="https://www.azul.com">Azul Systems</a> sells products targeted at latency sensitive applications and they have created a variety of useful tools to measure latency. <a href="https://www.azul.com/jhiccup/">jHiccup</a> is a tool that allows us to measure and record system level hiccups (~jitter).It measures the time for <em>sleep(1ms)</em> and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms 'hiccup'. Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. By running it on an idle system, we can measure the best case scenario. jHiccup uses <a href="https://github.com/HdrHistogram/HdrHistogram">HdrHistogram</a> for the recording of samples.</p>
 </div>
 <div class="paragraph">
 <p>Lastly, I&#8217;m using <a href="https://github.com/ennerf/HdrHistogramVisualizer">HdrHistogramVisualizer</a> which is a tool that I&#8217;ve written for visualizing the recorded data.</p>
@@ -238,7 +238,7 @@ null
 <p>There is a trade-off between responding in a timely manner and overall performance, battery life, and many other concerns. As a result, the major consumer operating systems don&#8217;t guarantee to meet hard deadlines and can theoretically have arbitrarily long pauses.</p>
 </div>
 <div class="paragraph">
-<p>However, commodity operating systems can significantly ease development. Before prematurely dismissing them for real-time control systems, it is worth looking at their actual performance. Even though there are no theoretical guarantees, the practical differences may not be noticeable for many applications.</p>
+<p>However, commodity operating systems can significantly ease development. It is worth evaluating their actual performance before prematurely dismissing them for real-time control systems. Even though there may not be any theoretical guarantees, the practical differences are often not noticeable.</p>
 </div>
 <div class="sect2">
 <h3 id="_benchmark_setup">Benchmark Setup</h3>
@@ -299,7 +299,7 @@ TODO: Confirm that system timer was set to 1ms for test.
 </ul>
 </div>
 <div class="paragraph">
-<p>Each image below contains two charts. The top section shows the worst hiccup that occured within a given interval window, i.e., the first data point shows the worst hiccup within the first 3 minutes and the next data point shows the worst hiccup within the next 3 minutes. The bottom chart shows the percentiles of all measurements across the entire duration. Each 24 hour data set contains roughly 70-80 million measurements.</p>
+<p>Each image below contains two charts. The top section shows the worst hiccup that occured within a given interval window, i.e., the first data point shows the worst hiccup within the first 3 minutes and the next data point shows the worst hiccup within the next 3 minutes. The bottom chart shows the percentiles of all measurements across the entire duration. Each 24 hour data set contains roughly 70-80 million samples.</p>
 </div>
 <div class="imageblock">
 <div class="content">
@@ -546,7 +546,7 @@ sudo chrt -p 98 $pid</code></pre>
         hljs.initHighlightingOnLoad();
       </script>
 
-    <script src="//ennerf.github.io/themes/ghostium/assets/js/foot-scripts.min.js?v=1472347953965"></script>
+    <script src="//ennerf.github.io/themes/ghostium/assets/js/foot-scripts.min.js?v=1472348582303"></script>
 
     <script>
     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
