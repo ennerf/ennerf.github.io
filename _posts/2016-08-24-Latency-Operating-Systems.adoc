@@ -37,10 +37,9 @@ A better way to look at latency is via histograms and percentile plots, e.g., 99
 //link:http://latencytipoftheday.blogspot.com/[Gil Tene]
 //video::lJ8ydIuPFeU[youtube]
 
-link:https://www.azul.com[Azul Systems] sells products targeted at latency sensitive applications and they have created a variety of useful tools to measure latency. link:https://www.azul.com/jhiccup/[jHiccup] is a tool that allows us to measure and record system level hiccups (~jitter). Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. jHiccup measures the time for _sleep(1ms)_ and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms hiccup value.
+link:https://www.azul.com[Azul Systems] sells products targeted at latency sensitive applications and they have created a variety of useful tools to measure latency. link:https://www.azul.com/jhiccup/[jHiccup] is a tool that allows us to measure and record system level hiccups (~jitter). Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. jHiccup measures the time for _sleep(1ms)_ and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms hiccup value. By running it on an idle system, we can measure the best case scenario. jHiccup uses link:https://github.com/HdrHistogram/HdrHistogram[HdrHistogram] for the actual recording of samples.
 
-By running it on an idle system, we can measure the best case scenario. It uses link:https://github.com/HdrHistogram/HdrHistogram[HdrHistogram] for the actual recording of samples. Lastly, I'm using link:https://github.com/ennerf/HdrHistogramVisualizer[HdrHistogramVisualizer] which is a tool that I've written for visualizing the recorded data.
-
+Lastly, I'm using link:https://github.com/ennerf/HdrHistogramVisualizer[HdrHistogramVisualizer] which is a tool that I've written for visualizing the recorded data.
 
 == Operating Systems
 
