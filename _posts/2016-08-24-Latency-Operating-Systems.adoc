@@ -51,7 +51,7 @@ The operating system is the base of everything. No matter how amazing the softwa
 
 There is a trade-off between responding in a timely manner and overall performance, battery life, and many other concerns. As a result, the major consumer operating systems don't guarantee to meet hard deadlines and can theoretically have arbitrarily long pauses.
 
-However, commodity operating systems can significantly ease development. Before prematurely dismissing them for real-time control systems, it is worth looking at their actual performance. Even though there are no theoretical guarantees, the practical differences may not be noticeable.
+However, commodity operating systems can significantly ease development. Before prematurely dismissing them for real-time control systems, it is worth looking at their actual performance. Even though there are no theoretical guarantees, the practical differences may not be noticeable for many applications.
 
 === Benchmark Setup
 
