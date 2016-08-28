@@ -38,9 +38,9 @@
     <link href="//fonts.googleapis.com/" rel="dns-prefetch">
     <link href="//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Open+Sans:700,400&subset=latin,latin-ext" rel="stylesheet">
 
-    <link rel="stylesheet" href="//ennerf.github.io/themes/ghostium/assets/css/main.min.css?v=1472348736424"/>
-    <link rel="stylesheet" href="//ennerf.github.io/themes/ghostium/assets/css/custom.css?v=1472348736424"/>
-    <link rel="stylesheet" href="//ennerf.github.io/themes/ghostium/assets/css/asciidoctor-foundation.css?v=1472348736424"/>
+    <link rel="stylesheet" href="//ennerf.github.io/themes/ghostium/assets/css/main.min.css?v=1472349865469"/>
+    <link rel="stylesheet" href="//ennerf.github.io/themes/ghostium/assets/css/custom.css?v=1472349865469"/>
+    <link rel="stylesheet" href="//ennerf.github.io/themes/ghostium/assets/css/asciidoctor-foundation.css?v=1472349865469"/>
 
 
 
@@ -70,7 +70,7 @@
       GHOSTIUM.enablePjax = typeof enable_pjax !== 'undefined' ? enable_pjax : true;
     </script>
 
-    <script src="//ennerf.github.io/themes/ghostium/assets/js/head-scripts.min.js?v=1472348736424"></script>
+    <script src="//ennerf.github.io/themes/ghostium/assets/js/head-scripts.min.js?v=1472349865469"></script>
 
     <link rel="canonical" href="https://ennerf.github.io/2016/08/24/Latency-Operating-Systems.html" />
     <meta name="referrer" content="origin" />
@@ -78,7 +78,7 @@
     <meta property="og:site_name" content="Software for Robots" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Latency : Operating Systems" />
-    <meta property="og:description" content="Introduction Latency is an important topic for many applications that is unfortunately often misunderstood. I&amp;#8217;ve spent many hours looking for information on the latency of various components, but have found very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency," />
+    <meta property="og:description" content="Latency is an important topic for many applications that is unfortunately often misunderstood. I&amp;#8217;ve spent many hours looking for information on the latency of various components, but have found very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or" />
     <meta property="og:url" content="https://ennerf.github.io/2016/08/24/Latency-Operating-Systems.html" />
     <meta property="article:tag" content="jHiccup" />
     <meta property="article:tag" content=" Latency" />
@@ -93,7 +93,7 @@
     
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="Latency : Operating Systems" />
-    <meta name="twitter:description" content="Introduction Latency is an important topic for many applications that is unfortunately often misunderstood. I&amp;#8217;ve spent many hours looking for information on the latency of various components, but have found very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency," />
+    <meta name="twitter:description" content="Latency is an important topic for many applications that is unfortunately often misunderstood. I&amp;#8217;ve spent many hours looking for information on the latency of various components, but have found very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or" />
     <meta name="twitter:url" content="https://ennerf.github.io/2016/08/24/Latency-Operating-Systems.html" />
     
     <script type="application/ld+json">
@@ -190,8 +190,7 @@ null
             </div>
           </aside>
           <div itemprop="articleBody" class="post-body">
-            <div class="sect1">
-<h2 id="_introduction">Introduction</h2>
+            <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
 <p>Latency is an important topic for many applications that is unfortunately often misunderstood. I&#8217;ve spent many hours looking for information on the latency of various components, but have found very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or measure it incorrectly.</p>
@@ -231,10 +230,18 @@ null
 <p>The first important realization when looking at latency is that data does not follow a Gaussian distribution. I have seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Looking at only the mean and standard deviation tends to provide an extremely optimistic view that can be misleading.</p>
 </div>
 <div class="paragraph">
-<p>A better way to look at latency is via histograms and percentile plots, e.g., "99.9% of measurements were below X ms". There are already several good resources about recording latency out there, so I won&#8217;t go into detail. Please refer to <a href="http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html">HdrHistogram: A better latency capture method</a> or <a href="https://youtu.be/lJ8ydIuPFeU">How NOT to Measure Latency</a> for more information.</p>
+<p>A better way to look at latency is via histograms and percentile plots, e.g., "<em>99.9% of measurements were below X ms</em>". There are already several good resources about recording latency out there, so I won&#8217;t go into detail. Please refer to <a href="http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html">HdrHistogram: A better latency capture method</a> or <a href="https://youtu.be/lJ8ydIuPFeU">How NOT to Measure Latency</a> for more information.</p>
 </div>
 <div class="paragraph">
-<p><a href="https://www.azul.com">Azul Systems</a> sells products targeted at latency sensitive applications and they have created a variety of useful tools to measure latency. <a href="https://www.azul.com/jhiccup/">jHiccup</a> is a tool that allows us to measure and record system level hiccups (~jitter).It measures the time for <em>sleep(1ms)</em> and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms 'hiccup'. Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. By running it on an idle system, we can measure the best case scenario. jHiccup uses <a href="https://github.com/HdrHistogram/HdrHistogram">HdrHistogram</a> for the recording of samples.</p>
+<p><a href="https://www.azul.com">Azul Systems</a> sells products targeted at latency sensitive applications and they have created a variety of useful tools to measure latency. <a href="https://github.com/giltene/jHiccup">jHiccup</a> is a tool that allows us to measure and record system level 'hiccups'. It measures the time for <em>sleep(1ms)</em> and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms hiccup. Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. By running it on an idle system, we can measure the best case scenario. jHiccup uses <a href="https://github.com/HdrHistogram/HdrHistogram">HdrHistogram</a> for the recording of samples. It can be started with the following command.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre># record logs each second for 48 hours
+intervalMs=1000
+runtimeMs=172800000
+java -javaagent:jHiccup.jar="-d 0 -i ${intervalMs}" -cp jHiccup.jar org.jhiccup.Idle -t ${runtimeMs}</pre>
+</div>
 </div>
 <div class="paragraph">
 <p>Lastly, I&#8217;m using <a href="https://github.com/ennerf/HdrHistogramVisualizer">HdrHistogramVisualizer</a> which is a tool that I&#8217;ve written for visualizing the recorded data.</p>
@@ -546,7 +553,7 @@ sudo chrt -p 98 $pid</code></pre>
         hljs.initHighlightingOnLoad();
       </script>
 
-    <script src="//ennerf.github.io/themes/ghostium/assets/js/foot-scripts.min.js?v=1472348736424"></script>
+    <script src="//ennerf.github.io/themes/ghostium/assets/js/foot-scripts.min.js?v=1472349865469"></script>
 
     <script>
     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
