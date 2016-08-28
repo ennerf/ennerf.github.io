@@ -1,5 +1,0 @@
-= 2nd Post
-
-== 2nd Header
-
-second text
