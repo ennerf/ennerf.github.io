@@ -14,11 +14,11 @@
 
 // Arbitrary requirements are bad. Not much information out there. Planning on blog series about various aspects.
 
-Latency is an important topic for many applications that is often misunderstood. I've spent many hours looking for information on the latency of various components, but there is very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or measure it incorrectly.
+Latency is an important topic for many applications that is unfortunately often misunderstood. I've spent many hours looking for information on the latency of various components, but have found very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or measure it incorrectly.
 
-My own background is in robotics. I've spent 6 years as a staff software engineer at the Robotics Institute at Carnegie Mellon University and am a co-founder of HEBI Robotics, a startup developing modular robotic components. We've worked on many different types of robots, including collaborative arms, walking robots, wheeled robots, legged robots and even snake robots.
+My own background is in robotics research. I've spent several years as a staff software engineer at the Robotics Institute at Carnegie Mellon University and am a co-founder of HEBI Robotics, a startup developing modular robotic components. We've worked on many different types of robots, including collaborative arms, wheeled robots, walking robots and snake robots.
 
-Robots are controlled in _real-time_, which means that a command gets executed within a _deadline_ (fixed period of time). There are _hard real-time_ systems that can never exceed the given deadline, and _soft real-time_ systems that are able to occasionally handle reasonable outliers. Missing deadlines can result in 'jerky' behavior and overall unwanted motions.
+Robots are controlled in _real-time_, which means that a command gets executed within a _deadline_ (fixed period of time). There are _hard real-time_ systems that must never exceed their deadline, and _soft real-time_ systems that are able to occasionally handle reasonable outliers. Missing deadlines can result in unwanted motions and 'jerky' behavior.
  
 Although there is a lot of information on the theoretical definition of these terms, it can be challenging to determine good deadlines for practical applications. This is especially true for research environments that build unique mechanisms.
 
@@ -34,7 +34,7 @@ Over a series of blog posts, I'll try to share some my own experiences and data 
 
 The first important realization when looking at latency is that data does not follow a Gaussian distribution. I have seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Looking at only the mean and standard deviation tends to provide an extremely optimistic view that can be misleading.
 
-A better way to look at latency is via histograms and percentile plots, e.g., 99.9% of measurements have been below Xms. There are already several good resources about recording latency out there, so I won't go into detail. Please refer to link:http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html[HdrHistogram: A better latency capture method] or link:https://youtu.be/lJ8ydIuPFeU[How NOT to Measure Latency] for more information.
+A better way to look at latency is via histograms and percentile plots, e.g., "99.9% of measurements were below X ms". There are already several good resources about recording latency out there, so I won't go into detail. Please refer to link:http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html[HdrHistogram: A better latency capture method] or link:https://youtu.be/lJ8ydIuPFeU[How NOT to Measure Latency] for more information.
 
 //link:http://latencytipoftheday.blogspot.com/[Gil Tene]
 //video::lJ8ydIuPFeU[youtube]
@@ -47,7 +47,7 @@ Lastly, I'm using link:https://github.com/ennerf/HdrHistogramVisualizer[HdrHisto
 
 //jHiccup is a great tool developed by Azul Systems that allows us to measure and record hiccups ('jitter')  at the OS level. These can be caused by a large number of reasons, including swap, indexing tasks, and many more. By running it on an idle system, we can measure the best case scenario.
  
-The operating system is the base of everything. No matter how amazing the software stack is, the system is fundamentally bound by the capabilities of the OS, it's scheduler, and the overall load on the system. Before you start optimizing your own software, you should make sure that your goal is actually feasible on your platform.
+The operating system is the base of everything. No matter how amazing the software stack is, the system is fundamentally bound by the capabilities of the OS, it's scheduler, and the overall load on the system. Before you start optimizing your own software, you should make sure that your goal is actually achievable on the underlying platform.
 
 There is a trade-off between responding in a timely manner and overall performance, battery life, and many other concerns. As a result, the major consumer operating systems don't guarantee to meet hard deadlines and can theoretically have arbitrarily long pauses.
 
@@ -88,7 +88,7 @@ Let's first look at the performance of consumer operating systems: Windows, Mac 
 * OS X, version 10.9.5
 * Ubuntu 16.04 Desktop, kernel 4.4.0-31-generic
 
-Each image below contains two charts. The top section shows the worst hiccup that occured within a given interval window, e.g., data point 1 shows the worst hiccup within the first 3 minutes, data point 2 shows the worst hiccup within the next 3 minutes. The bottom chart shows the percentiles of all measurements across the entire duration. Each 24 hour data set contains roughly 70-80 million actual measurements.
+Each image below contains two charts. The top section shows the worst hiccup that occured within a given interval window, i.e., the first data point shows the worst hiccup within the first 3 minutes and the next data point shows the worst hiccup within the next 3 minutes. The bottom chart shows the percentiles of all measurements across the entire duration. Each 24 hour data set contains roughly 70-80 million actual measurements.
 
 // 24 hour plot: -/+ 20 min on each side to avoid start/stop noise => sec 1200 to 87600 in aggregate 180 intervals
 image::os/osx-win-ubuntu_24h.png[osx windows ubuntu latency over 24 hours, link="/images/os/osx-win-ubuntu_24h.png"]
