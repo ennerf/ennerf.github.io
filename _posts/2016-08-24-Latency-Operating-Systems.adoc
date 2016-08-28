@@ -28,6 +28,16 @@ Unfortunately, the control scheme is a systemic concern that can impact the enti
 
 Over a series of blog posts, I'll try to share some my own experiences and data sets. Today's post will focus on operating systems.
 
+== Operating Systems
+
+//jHiccup is a great tool developed by Azul Systems that allows us to measure and record hiccups ('jitter')  at the OS level. These can be caused by a large number of reasons, including swap, indexing tasks, and many more. By running it on an idle system, we can measure the best case scenario.
+ 
+The operating system is the base of everything. No matter how amazing the software stack is, the system is fundamentally bound by the capabilities of the OS, it's scheduler, and the overall load on the system. Before you start optimizing your own software, you should make sure that your goal is actually achievable on the underlying platform.
+
+There is a trade-off between responding in a timely manner and overall performance, battery life, and many other concerns. As a result, the major consumer operating systems don't guarantee to meet hard deadlines and can theoretically have arbitrarily long pauses.
+
+However, commodity operating systems can significantly ease development. It is worth evaluating their actual performance before prematurely dismissing them for real-time control systems. Even though there may not be any theoretical guarantees, the practical differences are often not noticeable.
+
 === Measuring Latency
 
 // Data is not normally distributed. What is a better way to look at latency? What are tools that do this? How does jHiccup work? Gil Tene mentions coordinated omission, but that is less of a problem for request/response systems.
@@ -42,16 +52,6 @@ A better way to look at latency is via histograms and percentile plots, e.g., "9
 link:https://www.azul.com[Azul Systems] sells products targeted at latency sensitive applications and they have created a variety of useful tools to measure latency. link:https://www.azul.com/jhiccup/[jHiccup] is a tool that allows us to measure and record system level hiccups (~jitter).It measures the time for _sleep(1ms)_ and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms 'hiccup'. Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. By running it on an idle system, we can measure the best case scenario. jHiccup uses link:https://github.com/HdrHistogram/HdrHistogram[HdrHistogram] for the recording of samples.
 
 Lastly, I'm using link:https://github.com/ennerf/HdrHistogramVisualizer[HdrHistogramVisualizer] which is a tool that I've written for visualizing the recorded data.
-
-== Operating Systems
-
-//jHiccup is a great tool developed by Azul Systems that allows us to measure and record hiccups ('jitter')  at the OS level. These can be caused by a large number of reasons, including swap, indexing tasks, and many more. By running it on an idle system, we can measure the best case scenario.
- 
-The operating system is the base of everything. No matter how amazing the software stack is, the system is fundamentally bound by the capabilities of the OS, it's scheduler, and the overall load on the system. Before you start optimizing your own software, you should make sure that your goal is actually achievable on the underlying platform.
-
-There is a trade-off between responding in a timely manner and overall performance, battery life, and many other concerns. As a result, the major consumer operating systems don't guarantee to meet hard deadlines and can theoretically have arbitrarily long pauses.
-
-However, commodity operating systems can significantly ease development. It is worth evaluating their actual performance before prematurely dismissing them for real-time control systems. Even though there may not be any theoretical guarantees, the practical differences are often not noticeable.
 
 === Benchmark Setup
 
