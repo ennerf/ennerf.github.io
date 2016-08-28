@@ -10,8 +10,6 @@
 // http://asciidoctor.org/docs/asciidoc-writers-guide/#links-and-images
 // https://github.com/HubPress/hubpress.io/blob/master/Writers_Guide.adoc
 
-== Introduction
-
 // Arbitrary requirements are bad. Not much information out there. Planning on blog series about various aspects.
 
 Latency is an important topic for many applications that is unfortunately often misunderstood. I've spent many hours looking for information on the latency of various components, but have found very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or measure it incorrectly.
@@ -44,12 +42,20 @@ However, commodity operating systems can significantly ease development. It is w
 
 The first important realization when looking at latency is that data does not follow a Gaussian distribution. I have seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Looking at only the mean and standard deviation tends to provide an extremely optimistic view that can be misleading.
 
-A better way to look at latency is via histograms and percentile plots, e.g., "99.9% of measurements were below X ms". There are already several good resources about recording latency out there, so I won't go into detail. Please refer to link:http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html[HdrHistogram: A better latency capture method] or link:https://youtu.be/lJ8ydIuPFeU[How NOT to Measure Latency] for more information.
+A better way to look at latency is via histograms and percentile plots, e.g., "_99.9% of measurements were below X ms_". There are already several good resources about recording latency out there, so I won't go into detail. Please refer to link:http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html[HdrHistogram: A better latency capture method] or link:https://youtu.be/lJ8ydIuPFeU[How NOT to Measure Latency] for more information.
 
 //link:http://latencytipoftheday.blogspot.com/[Gil Tene]
 //video::lJ8ydIuPFeU[youtube]
 
-link:https://www.azul.com[Azul Systems] sells products targeted at latency sensitive applications and they have created a variety of useful tools to measure latency. link:https://www.azul.com/jhiccup/[jHiccup] is a tool that allows us to measure and record system level hiccups (~jitter).It measures the time for _sleep(1ms)_ and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms 'hiccup'. Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. By running it on an idle system, we can measure the best case scenario. jHiccup uses link:https://github.com/HdrHistogram/HdrHistogram[HdrHistogram] for the recording of samples.
+link:https://www.azul.com[Azul Systems] sells products targeted at latency sensitive applications and they have created a variety of useful tools to measure latency. link:https://github.com/giltene/jHiccup[jHiccup] is a tool that allows us to measure and record system level 'hiccups'. It measures the time for _sleep(1ms)_ and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms hiccup. Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. By running it on an idle system, we can measure the best case scenario. jHiccup uses link:https://github.com/HdrHistogram/HdrHistogram[HdrHistogram] for the recording of samples. It can be started with the following command.
+
+[code,shell]
+-----------
+# record logs each second for 48 hours
+intervalMs=1000
+runtimeMs=172800000
+java -javaagent:jHiccup.jar="-d 0 -i ${intervalMs}" -cp jHiccup.jar org.jhiccup.Idle -t ${runtimeMs}
+-----------
 
 Lastly, I'm using link:https://github.com/ennerf/HdrHistogramVisualizer[HdrHistogramVisualizer] which is a tool that I've written for visualizing the recorded data.
 
