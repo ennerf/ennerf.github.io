@@ -12,17 +12,17 @@
 
     <link rel="shortcut icon" href="https://ennerf.github.io/favicon.ico">
 
-    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/vendor/fastclick.js?v=1472439585007"></script>
-    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/vendor/modernizr.js?v=1472439585007"></script>
+    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/vendor/fastclick.js?v=1472503522566"></script>
+    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/vendor/modernizr.js?v=1472503522566"></script>
 
 
-    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/normalize.css?v=1472439585007" />
-    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/foundation.min.css?v=1472439585007" />
+    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/normalize.css?v=1472503522566" />
+    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/foundation.min.css?v=1472503522566" />
     <!--[if lte IE 8]>
-        <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/outdatedBrowser.min.css?v=1472439585007">
+        <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/outdatedBrowser.min.css?v=1472503522566">
     <![endif]-->
-    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/fonts/foundation-icons/foundation-icons.css?v=1472439585007" />
-    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/styles.css?v=1472439585007" />
+    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/fonts/foundation-icons/foundation-icons.css?v=1472503522566" />
+    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/styles.css?v=1472503522566" />
     <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Open+Sans:300,700,400|Source+Sans+Pro:300,400,600,700,900,300italic,400italic,600italic,700italic,900italic" />
 
     <link rel="canonical" href="https://ennerf.github.io/2016/08/24/Latency-Operating-Systems.html" />
@@ -214,18 +214,6 @@ java -javaagent:jHiccup.jar="-d 0 -i ${intervalMs}" -cp jHiccup.jar org.jhiccup.
 </td>
 <td class="content">
 When doing latency tests on Windows you should be aware of the system timer. It has variable timer intervals that range from 0.5ms to 15.6ms. By calling <em>timeBeginPeriod</em> and <em>endTimePeriod</em> applications can notify the OS whenever they need a higher resolution. The timer interrupt is a global resource that gets set to the lowest interrupt interval requested by any application. For example, watching a video in Chrome requests a timer interrupt interval of 0.5ms. A lower period results in a more responsive system at the cost of overall throughput and battery life. <a href="https://vvvv.org/contribution/windows-system-timer-tool">System Timer Tool</a> is a little utility that let&#8217;s you view the current state. Calling Java&#8217;s <em>Thread.sleep()</em> with a value of below 10ms automatically requests a 1ms timer interval.
-</td>
-</tr>
-</table>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-TODO: Confirm that system timer was set to 1ms for test.
 </td>
 </tr>
 </table>
@@ -499,9 +487,9 @@ sudo chrt -p 98 $pid</code></pre>
       </script>
 
     <!--[if lte IE 8]>
-        <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/outdatedBrowser.min.js?v=1472439585007"></script>
+        <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/outdatedBrowser.min.js?v=1472503522566"></script>
     <![endif]-->
-    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/min/built.js?v=1472439585007"></script>
+    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/min/built.js?v=1472503522566"></script>
 
     <script>
       $(document).foundation();
