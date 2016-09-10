@@ -1,6 +1,7 @@
 = Latency : Operating Systems
 :published_at: 2016-08-24
 :hp-tags: jHiccup, Latency, Sleep, Operating System, Windows, OSX, Ubuntu, Scientific Linux, Real-Time, Control
+:imagesdir: ../images
 
 //NOTE: Keep X in Mind
 //image::cover-image.jpg[150, 250, link="http://docs.hebi.us"]
