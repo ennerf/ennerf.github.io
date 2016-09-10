@@ -13,21 +13,30 @@
 
 // Arbitrary requirements are bad. Not much information out there. Planning on blog series about various aspects.
 
-// NOTE: TODO: give OSX example for mean/std-dev and let readers guess the maximum. Re-read https://www.azul.com/giltene-how-java-got-the-hiccups/ .
+// NOTE: TODO: give OSX example for mean/std-dev and let readers guess the maximum?. Re-read https://www.azul.com/giltene-how-java-got-the-hiccups/ .
 
-Latency is an important topic for many applications that is unfortunately often misunderstood. I've spent many hours looking for information on the latency of various components, but have found very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or measure it incorrectly.
+// latency matters, but not nearly as much as people may think it does
+// hard-real time systems are tremendously difficult to build
+// we've gained lots of benefits by running things on Windows in MATLAB with WiFi etc. (discuss wheeled robot video and link code)
+// through folklore we know that rt-linux > linux > windows, but how bad is it really? There isn't much data out there
+// MechEs like working in Windows (e.g. CAD software)
+// what are good deadlines? no data out there. depends on position/velocity/torque control and overall control architecture
 
-My own background is in robotics research. I've spent several years as a staff software engineer at the Robotics Institute at Carnegie Mellon University and am a co-founder of HEBI Robotics, a startup developing modular robotic components. We've worked on many different types of robots, including collaborative arms, wheeled robots, walking robots and snake robots.
+Latency is a critical topic in the robotics world that is unfortunately often poorly understood. I've spent many hours looking for information on the latency of various components, but have found very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or measure it incorrectly.
 
-Robots are controlled in _real-time_, which means that a command gets executed within a _deadline_ (fixed period of time). There are _hard real-time_ systems that must never exceed their deadline, and _soft real-time_ systems that are able to occasionally handle reasonable outliers. Missing deadlines can result in unwanted motions and 'jerky' behavior.
- 
-Although there is a lot of information on the theoretical definition of these terms, it can be challenging to determine good deadlines for practical applications. This is especially true for research environments that build unique mechanisms.
+Robots are controlled in _real-time_, which means that a command gets executed within a _deadline_ (fixed period of time). There are _hard real-time_ systems that must never exceed their deadline, and _soft real-time_ systems that are able to occasionally handle reasonable outliers. Missing deadlines can result in unwanted motions and 'jerky' behavior. 
 
-Unfortunately, the control scheme is a systemic concern that can impact the entire system architecture. This can be very difficult to change later on, so there is a tendency towards high requirements with regards to determinism. However, requirements that are too high can result in significant development efforts that may not yield any benefits in the real world.
+Although there is a lot of information on the theoretical definition of these terms, it can be challenging to determine good deadlines for practical applications. This is especially true for research insitutions that build unique mechanisms. Many research groups end up either hoping for the best, or assuming that everything needs to be hard real-time with very low deadlines. Both approaches can end up in a lot of unnecessary development efforts.
+
+My own background is in academic research. I've spent several years as a staff software engineer at the Robotics Institute at Carnegie Mellon University and am a co-founder of HEBI Robotics, a startup developing modular robotic components. We've worked on many different types of robots, including collaborative arms, wheeled robots, walking robots and snake robots.
+
+//Unfortunately, the control scheme is a systemic concern that can impact the entire system architecture. This can be very difficult to change later on, so there is a tendency towards high requirements with regards to determinism. However, requirements that are too high can result in significant development efforts that may not yield any benefits in the real world.
 
 // There is also a lot of folklore about the reliablity and performance of various components. I have been in countless debates where people have tried to convince me that a proposed system has no chance of working, not knowing that it had already been implemented and been running without issues. This is partly because there is very little useful data on latency out there. Most benchmarks focus only on throughput, and some that do include latency were measured incorrectly.
 
-Over a series of blog posts, I'll try to share some my own experiences and data sets. Today's post will focus on operating systems.
+In general, our experience so far has been that most systems are less latency sensitive than people would assume, and that it's worth leveraging common consumer technologies to significantly reduce development time. For example, the high-level control in https://youtu.be/zaPtxre4tFc[Teleop Taxi] was done over WiFi from MATLAB running on Windows, while simultaneously streaming video from an Android phone in the back of the robot. Running the same code on a co-located Linux computer with a wired connection resulted in no perceivable difference. However, by keeping the system simple it took only 20-30 lines of code (see  https://gist.github.com/ennerf/b349c56d320da1db89b298fd807f00e4[simplified], https://gist.github.com/ennerf/7d59a9765da25ed7c02117da1805551c[full]) to run the entire demo. This is of course an extreme example, but we've seen similar results with more complex systems.
+
+Over a series of blog posts, I'll try to share some of my own impressions and data sets. Today's post will focus on operating systems.
 
 == Operating Systems
 
@@ -43,14 +52,16 @@ However, commodity operating systems can significantly ease development. It is w
 
 // Data is not normally distributed. What is a better way to look at latency? What are tools that do this? How does jHiccup work? Gil Tene mentions coordinated omission, but that is less of a problem for request/response systems.
 
-The first important realization when looking at latency is that data does not follow a Gaussian distribution. I have seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Looking at only the mean and standard deviation tends to provide an extremely optimistic view that can be misleading.
+//The first important realization when looking at latency is that data does not follow a Gaussian distribution. I have seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Looking at only the mean and standard deviation tends to provide an extremely optimistic view that can be misleading.
+
+Many benchmarks and tools make the assumption that latency follows a Gaussian distribution and report only the mean and the standard deviation. Unfortunately, latency is multi-modal and can have extremely bad outliers. In 99% of the cases a system's latency tends to behave as we would intuitively expect. However, the leftover 1% can be worse than the all of the 99% combined. Looking at only the mean and standard deviation is a great way to ignore and be oblivious to the more systemic issues. For example, I've seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Such stutters can become problematic when working on real robtic systems.
 
 A better way to look at latency is via histograms and percentile plots, e.g., "_99.9% of measurements were below X ms_". There are already several good resources about recording latency out there, so I won't go into detail. Please refer to link:http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html[HdrHistogram: A better latency capture method] or link:https://youtu.be/lJ8ydIuPFeU[How NOT to Measure Latency] for more information.
 
 //link:http://latencytipoftheday.blogspot.com/[Gil Tene]
 //video::lJ8ydIuPFeU[youtube]
 
-link:https://www.azul.com[Azul Systems] sells products targeted at latency sensitive applications and they have created a variety of useful tools to measure latency. link:https://github.com/giltene/jHiccup[jHiccup] is a tool that allows us to measure and record system level 'hiccups'. It measures the time for _sleep(1ms)_ and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms hiccup. Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. By running it on an idle system, we can measure the best case scenario. jHiccup uses link:https://github.com/HdrHistogram/HdrHistogram[HdrHistogram] for the recording of samples. It can be started with the following command.
+link:https://www.azul.com[Azul Systems] sells products targeted at latency sensitive applications and they've created a variety of useful tools to measure latency. link:https://github.com/giltene/jHiccup[jHiccup] is a tool that measures and records system level latency spikes, which they call 'hiccups'. It measures the time for _sleep(1ms)_ and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms hiccup. Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. By running it on an otherwise idle system, we can get an idea of the behavior of the underlying platform. It can be started with the following command:
 
 [code,shell]
 -----------
@@ -60,7 +71,9 @@ runtimeMs=172800000
 java -javaagent:jHiccup.jar="-d 0 -i ${intervalMs}" -cp jHiccup.jar org.jhiccup.Idle -t ${runtimeMs}
 -----------
 
-Lastly, I'm using link:https://github.com/ennerf/HdrHistogramVisualizer[HdrHistogramVisualizer] which is a tool that I've written for visualizing the recorded data.
+jHiccup uses link:https://github.com/HdrHistogram/HdrHistogram[HdrHistogram] to record samples and to generate the output log. There are a variety of tools and utilities for interacting and visualizing these logs. The graphs in this post were generated by link:https://github.com/ennerf/HdrHistogramVisualizer[HdrHistogramVisualizer], which is a tool that I've written myself.
+
+//Lastly, I'm using link:https://github.com/ennerf/HdrHistogramVisualizer[HdrHistogramVisualizer] which is a tool that I've written for visualizing the recorded data.
 
 === Benchmark Setup
 
