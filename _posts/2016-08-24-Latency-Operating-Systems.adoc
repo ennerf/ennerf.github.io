@@ -86,16 +86,7 @@ I've setup two standard desktop computers, one for Mac tests and one for everyth
 
 === Windows / Mac / Linux
 
-Let's first look at the performance of consumer operating systems: Windows, Mac and Linux. Each test started off with a clean install for each OS. The only two modifications to the stock installation were to disable sleep mode and to install JDK8 (update 101) to run jHiccup. I then started the test, unplugged all external cables and let the computer sit 'idle' for >24 hours. The actual OS versions were,
-
-//[width="100%",frame="topbot"]
-//|=========
-//| *OS* |*Version* 
-//|*Windows* | Windows 10 Enterprise, version 1511 (OS build: 10586.545)
-//|*Mac* | OS X, version 10.9.5
-//|*Linux* | Ubuntu 16.04 Desktop, kernel 4.4.0-31-generic
-//|*RT Linux* |  Scientific Linux 6.6, kernel 3.10.0-327.rt56.194.el6rt.x86_64
-//|=========
+Let's first look at the performance of consumer operating systems: Windows, Mac and Linux. Each test started off with a clean install for each OS. The only two modifications to the stock installation were to disable sleep mode and to install JDK8 (update 101). I then started jHiccup, unplugged all external cables and let the computer sit 'idle' for >24 hours. The actual OS versions were,
 
 * Windows 10 Enterprise, version 1511 (OS build: 10586.545)
 * OS X, version 10.9.5
@@ -106,14 +97,18 @@ Note that when doing latency tests on Windows it is important to be aware of the
 Each image below contains two charts. The top section shows the worst hiccup that occured within a given interval window, i.e., the first data point shows the worst hiccup within the first 3 minutes and the next data point shows the worst hiccup within the next 3 minutes. The bottom chart shows the percentiles of all measurements across the entire duration. Each 24 hour data set contains roughly 70-80 million samples.
 
 // 24 hour plot: -/+ 20 min on each side to avoid start/stop noise => sec 1200 to 87600 in aggregate 180 intervals
-image::os/osx-win-ubuntu_24h.png[osx windows ubuntu latency over 24 hours, link="/images/os/osx-win-ubuntu_24h.png"]
+.Windows vs. Linux vs. Mac hiccups (24h)
+image::os/osx-win-ubuntu_24h.png[Windows vs. Linux vs. Mac hiccups (24h), link="/images/os/osx-win-ubuntu_24h.png"]
 
-Up to the 90th percentile all three systems respond relatively similarly, but there are significant differences at the higher percentiles. There also seems to have been a period of increased system activity on OSX after 7 hours. The chart below shows a zoomed in view of a 10 minute time period starting at 10 hours.
+These results confirm the common knowledge that Linux tends to be more deterministic than Windows. Up to the 90th percentile all three systems respond relatively similarly, but there are significant differences at the higher percentiles. There also seems to have been a period of increased system activity on OSX after 7 hours. The chart below shows a zoomed in view of a 10 minute time period starting at 10 hours.
 
 // 10 min plot: 36005 to 36590 in aggregate 1 intervals
-image::os/osx-win-ubuntu_10m.png[osx windows ubuntu latency over 10 minutes, link="/images/os/osx-win-ubuntu_10m.png"]
+.Windows vs. Linux vs. Mac hiccups (10min)
+image::os/osx-win-ubuntu_10m.png[Windows vs. Linux vs. Mac hiccups (10 min), link="/images/os/osx-win-ubuntu_10m.png"]
 
-Overall Ubuntu 16.04 seems to have very little hiccups compared to Windows and OSX.
+Zoomed in we can see that the Windows hiccups are actually very repeatable. 99.9% are below 2ms, but there are frequent spikes to a single value at around 16ms. It's rare to see that the worst case is basically equal to the 99.99% percentile. It's also interesting that the distribution for 10 minutes looks identical to the 24 hour char. OSX shows similar behavior, but with lower spikes. Ubuntu 16.04 is overall very quiet.
+
+It's debatable whether this makes any difference in practice. All of the systems I've worked with either had hard real-time requirements below 1ms, in which case none of these OS would be sufficient, or they were soft real-time systems that could easily handle occasional hiccups to 25 or even 100 ms. I have yet to see a robotic system that performed perceivably worse on Windows versus Linux.
 
 === Real Time Linux
 
@@ -145,24 +140,32 @@ echo $(chrt -p $pid)
 sudo chrt -p 98 $pid
 ---------------------------------------------------------------------
 
-Below is a comparison of the two Linux variants. 24 hours with 3 minute intervals,
+Below is a comparison of the two Linux variants.
 
-image::os/ubuntu-scl_24h.png[ubuntu scientific linux latency over 24 hours, link="/images/os/ubuntu-scl_24h.png"]
+.Linux vs. RT Linux hiccups (24h)
+image::os/ubuntu-scl_24h.png[Linux vs. RT Linux hiccups (24h), link="/images/os/ubuntu-scl_24h.png"]
 
-and 10 minutes at 1 second intervals.
+Looking at the 24 hour chart (above) and the 10 minute chart (below), we can see that worst case has gone down significantly. While Ubuntu 16.04 was barely visible when compared to Windows, it looks very noisy compared to the real-time variant. All measurements were within a 150us range, which should be good enough for almost all applications.
 
-image::os/ubuntu-scl_10m.png[ubuntu scientific linux latency over 10 minutes, link="/images/os/ubuntu-scl_10m.png"]
+.Linux vs. RT Linux hiccups (10 min)
+image::os/ubuntu-scl_10m.png[Linux vs. RT Linux hiccups (10 min), link="/images/os/ubuntu-scl_10m.png"]
 
-I've also added the 24 hour chart for only the real-time variant to provide a better scale. Note that this resolution is getting close to what we can measure and record.
+I've also added the 24 hour chart for the real-time variant by itself to provide a better scale. Note that this resolution is getting close to what we can measure and record.
 
-image::os/scl_24h.png[scientific linux latency over 24 hours, link="/images/os/scl_24h.png"]
+.RT Linux hiccups (24h)
+image::os/scl_24h.png[RT Linux hiccups (24h), link="/images/os/scl_24h.png"]
 
 ==	Final Notes
 
-//It's easy to do 100 Hz control in just about any OS. 1KHz hard real-time requires lots of tuning. Rates are highly dependent on the application. Hard to generalize.
-I've tried to provide a basic idea of the out of the box performance of various off the shelf operating systems. Actual requirements are heavily dependent on the specific use case, so it's impossible to make a general recommendation. While some safety critical applications may require a real time operating system (RTOS), others may run perfectly fine on commodity systems. My goal is to provide an overview that allows you to make a more informed decision about suitable platform after you've established your requirements. I'm planning on doing a future post on actually figuring out sane requirements.
+I've tried to provide a basic idea of the out of the box performance of various off the shelf operating systems. In my experience the three major consumer OS can be treated relatively equal, i.e., either software will work fine on all of them, or won't work on any of them. If you do work on a problem that does have hard deadlines, there are many different link:https://en.wikipedia.org/wiki/Comparison_of_real-time_operating_systems[RTOS] to choose from. Aside from the mentioned real-time Linux and the various embedded solutions, there are even real-time extensions for Windows, e.g., link:http://www.tenasys.com/overview-ifw[INtime] or link:http://kithara.com/en/products/realtime-suite[Kithara].
 
-Note that these are not your only options. There are many different link:https://en.wikipedia.org/wiki/Comparison_of_real-time_operating_systems[RTOS] out there. There are even real-time extensions for Windows, e.g., link:http://www.tenasys.com/overview-ifw[INtime] or link:http://kithara.com/en/products/realtime-suite[Kithara]. However, since integrating such systems can be very expensive or time consuming, I'd recommend going with simple and community supported solutions unless necessary.
+We've made very good experiences with implementing the low-level control (pid loops, motor control, safety features, etc.) on RTOS running on dedicated microcontrollers that are built into each actuator. That way all of the safety critical and latency sensitive pieces are encapsulated and independent of user code. The high-level controller (trajectories and multi-joint coordination) then only needs to update set targets (e.g. position/velocity/torque), which is far less sensitive to latency. This approach enables quick prototyping of high-level behaviors using 'non-deterministic' technologies, such as Windows, MATLAB and standard UDP messages.
+
+Developing hard real-time systems has a lot of pitfalls and can require a lot of development effort. Requiring researchers to write hard real-time compliant code is not something that I would recommend.
+
+// Actual requirements are heavily dependent on the specific use case, so it's impossible to make a general recommendation. While some safety critical applications may require a real time operating system (RTOS), others may run perfectly fine on commodity systems. My goal is to provide an overview that allows you to make a more informed decision about suitable platform after you've established your requirements. I'm planning on doing a future post on actually figuring out sane requirements.
+
+// Note that these are not your only options. There are many different  out there. There are even real-time extensions for Windows, e.g., link:http://www.tenasys.com/overview-ifw[INtime] or link:http://kithara.com/en/products/realtime-suite[Kithara]. However, since integrating such systems can be very expensive or time consuming, I'd recommend going with simple and community supported solutions unless necessary.
 
 === Latency is not Gaussian
 
