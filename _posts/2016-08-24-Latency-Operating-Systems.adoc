@@ -15,18 +15,7 @@
 
 // NOTE: TODO: give OSX example for mean/std-dev and let readers guess the maximum?. Re-read https://www.azul.com/giltene-how-java-got-the-hiccups/ .
 
-// latency matters, but not nearly as much as people may think it does
-// hard-real time systems are tremendously difficult to build
-// we've gained lots of benefits by running things on Windows in MATLAB with WiFi etc. (discuss wheeled robot video and link code)
-// through folklore we know that rt-linux > linux > windows, but how bad is it really? There isn't much data out there
-// MechEs like working in Windows (e.g. CAD software)
-// what are good deadlines? no data out there. depends on position/velocity/torque control and overall control architecture
-
-Latency is a critical topic in the robotics world that is unfortunately often poorly understood. I've spent many hours looking for information on the latency of various components, but have found very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or measure it incorrectly.
-
-Robots are controlled in _real-time_, which means that a command gets executed within a _deadline_ (fixed period of time). There are _hard real-time_ systems that must never exceed their deadline, and _soft real-time_ systems that are able to occasionally handle reasonable outliers. Missing deadlines can result in unwanted motions and 'jerky' behavior. 
-
-Although there is a lot of information on the theoretical definition of these terms, it can be challenging to determine good deadlines for practical applications. This is especially true for research insitutions that build unique mechanisms. Many research groups end up either hoping for the best, or assuming that everything needs to be hard real-time with very low deadlines. Both approaches can end up in a lot of unnecessary development efforts.
+Latency is an important practical concern in the robotics world that is often poorly understood. I've spent many hours looking for information on the latency of various *software components (operating systems, networking, etc.)*, but have found very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or measure it incorrectly. This post will hit 2 main topics: 1. The details of how you measure latency matters. 2. The OS that you use affects your latency.
 
 My own background is in academic research. I've spent several years as a staff software engineer at the Robotics Institute at Carnegie Mellon University and am a co-founder of HEBI Robotics, a startup developing modular robotic components. We've worked on many different types of robots, including collaborative arms, wheeled robots, walking robots and snake robots.
 
@@ -34,36 +23,30 @@ My own background is in academic research. I've spent several years as a staff s
 
 // There is also a lot of folklore about the reliablity and performance of various components. I have been in countless debates where people have tried to convince me that a proposed system has no chance of working, not knowing that it had already been implemented and been running without issues. This is partly because there is very little useful data on latency out there. Most benchmarks focus only on throughput, and some that do include latency were measured incorrectly.
 
-In general, our experience so far has been that most systems are less latency sensitive than people would assume, and that it's worth leveraging common consumer technologies to significantly reduce development time. For example, the high-level control in https://youtu.be/zaPtxre4tFc[Teleop Taxi] was done over Wi-Fi from MATLAB running on Windows, while simultaneously streaming video from an Android phone in the back of the robot. Running the same code on a co-located Linux computer with a wired connection resulted in no perceivable difference. However, by keeping the system simple it took only 20-30 lines of code (see  https://gist.github.com/ennerf/b349c56d320da1db89b298fd807f00e4[simplified], https://gist.github.com/ennerf/7d59a9765da25ed7c02117da1805551c[full]) to run the entire demo. This is of course an extreme example, but we've seen similar results with more complex systems.
+In general, our experience so far has been that many systems are less sensitive to latency than people would assume, and that it's worth leveraging common consumer technologies to significantly reduce development time. For example, the high-level control in https://youtu.be/zaPtxre4tFc[Teleop Taxi] was done over Wi-Fi from MATLAB running on Windows, while simultaneously streaming video from an Android phone in the back of the robot. Running the same code on a co-located Linux computer with a wired connection resulted in no perceivable difference. However, by keeping the system simple it took only 20-30 lines of code (see  https://gist.github.com/ennerf/b349c56d320da1db89b298fd807f00e4[simplified], https://gist.github.com/ennerf/7d59a9765da25ed7c02117da1805551c[full]) to run the entire demo. This is of course an extreme example, but we've seen similar results with more complex systems.
 
 Over a series of blog posts, I'll try to share some of my own impressions and data sets. Today's post will focus on operating systems and measuring latency.
 
 == Measuring Latency
 
+Robots are controlled in _real-time_, which means that a command gets executed within a _deadline_ (fixed period of time). There are _hard real-time_ systems that must never exceed their deadline, and _soft real-time_ systems that are able to occasionally handle reasonable outliers. Missing deadlines when performing motor control of a robot can result in unwanted motions and 'jerky' behavior. 
+
+Although there is a lot of information on the theoretical definition of these terms, it can be challenging to determine *good* deadlines for practical applications. This is especially true for research institutions that build unique mechanisms. Many research groups end up either hoping for the best, or assuming that everything needs to be hard real-time with very stringent deadlines. Both approaches can end up in a lot of unnecessary development efforts.
+
 // Data is not normally distributed. What is a better way to look at latency? What are tools that do this? How does jHiccup work? Gil Tene mentions coordinated omission, but that is less of a problem for request/response systems.
 
 //The first important realization when looking at latency is that data does not follow a Gaussian distribution. I have seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Looking at only the mean and standard deviation tends to provide an extremely optimistic view that can be misleading.
 
-Many benchmarks and tools make the assumption that latency follows a Gaussian distribution and report only the mean and the standard deviation. Unfortunately, latency is multi-modal and can have extremely bad outliers. In 99% of the cases a system's latency tends to behave as we would intuitively expect. However, the leftover 1% can be worse than the all of the 99% combined. Looking at only the mean and standard deviation is a great way to ignore and be oblivious to the more systemic issues. For example, I've seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Such stutters can become problematic when working on real robtic systems.
+Many benchmarks and tools make the assumption that latency follows a Gaussian distribution and report only the mean and the standard deviation. Unfortunately, latency is typically multi-modal and the most important part of the distribution when it comes to *performance* are the 'outliers'. In 99% of the cases a system's latency tends to behave as we would intuitively expect. However, the leftover 1% can be worse than the all of the 99% combined. Looking at only the mean and standard deviation is a great way to ignore and be oblivious to the more systemic issues. For example, I've seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Such stutters can become problematic when working on real robtic systems.
 
-A better way to look at latency is via histograms and percentile plots, e.g., "_99.9% of measurements were below X ms_". There are already several good resources about recording latency out there, so I won't go into detail. Please refer to link:http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html[HdrHistogram: A better latency capture method] or link:https://youtu.be/lJ8ydIuPFeU[How NOT to Measure Latency] for more information.
+[TODO]
+====
+Dave: Putting a figure up here, even if its a dummy figure showing what you mean in terms of outliers or non-gaussian, and since you mention that visual tools like histograms and percentile plots are important.
 
-//link:http://latencytipoftheday.blogspot.com/[Gil Tene]
-//video::lJ8ydIuPFeU[youtube]
+Maybe a histogram and percentile distribution of the windows latency data?  That might also help the flow into the next section.
+====
 
-link:https://www.azul.com[Azul Systems] sells products targeted at latency sensitive applications and they've created a variety of useful tools to measure latency. link:https://github.com/giltene/jHiccup[jHiccup] is a tool that measures and records system level latency spikes, which they call 'hiccups'. It measures the time for _sleep(1ms)_ and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms hiccup. Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. By running it on an otherwise idle system, we can get an idea of the behavior of the underlying platform. It can be started with the following command:
-
-[code,shell]
------------
-# record logs each second for 48 hours
-intervalMs=1000
-runtimeMs=172800000
-java -javaagent:jHiccup.jar="-d 0 -i ${intervalMs}" -cp jHiccup.jar org.jhiccup.Idle -t ${runtimeMs}
------------
-
-jHiccup uses link:https://github.com/HdrHistogram/HdrHistogram[HdrHistogram] to record samples and to generate the output log. There are a variety of tools and utilities for interacting and visualizing these logs. The graphs in this post were generated by my own link:https://github.com/ennerf/HdrHistogramVisualizer[HdrHistogramVisualizer].
-
-//Lastly, I'm using link:https://github.com/ennerf/HdrHistogramVisualizer[HdrHistogramVisualizer] which is a tool that I've written for visualizing the recorded data.
+Because of this, a more efficient way to look at latency is via histograms and percentile plots, e.g., "_99.9% of measurements were below X ms_". There are several good resources about recording latency out there that I recommend checking out, such as link:https://youtu.be/lJ8ydIuPFeU[How NOT to Measure Latency] or link:http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html[HdrHistogram: A better latency capture method].
 
 == Operating Systems
 
@@ -77,12 +60,29 @@ However, using operating systems that users are familiar with can significantly 
 
 The Biorobotics lab at CMU has always built a lot of custom hardware, so many of the people there have a MechE or ECE background and tend to be most comfortable in Windows or OSX. In the past, a limitation to support only C++ and Linux has posed a significant barrier to doing research. After we've started to add cross-platform support and bindings for MATLAB (in ~2011), we were surprised to see how much this sped up research. The lab's snake robot related paper output actually doubled. We've also seen new complex behaviors that would've been difficult to prototype beforehand (see https://youtu.be/NJ1FIsjt0yE[compliant control] or https://youtu.be/0CNQMiQnesc[inside pipes]).
 
-=== Hardware Setup
+=== Benchmark Setup
 
 I've setup two standard desktop computers, one for Mac tests and one for everything else.
 
 * Mac Mini 2014, i7-3720QM @ 2.6 GHz, 16 GB 1600 MHz DDR3
 * Gigabyte Brix BXi7-4770R, i7-4770R @ 3.2 GHz, 16 GB 1600 MHz DDR3
+
+[TODO]
+====
+the paragraphs below were moved from above. make them match this section
+====
+
+link:https://www.azul.com[Azul Systems] sells products targeted at latency sensitive applications and they've created a variety of useful tools to measure latency. link:https://github.com/giltene/jHiccup[jHiccup] is a tool that measures and records system level latency spikes, which they call 'hiccups'. It measures the time for _sleep(1ms)_ and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms hiccup. Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. By running it on an otherwise idle system, we can get an idea of the behavior of the underlying platform. It can be started with the following command:
+
+[code,shell]
+-----------
+# record logs each second for 48 hours
+intervalMs=1000
+runtimeMs=172800000
+java -javaagent:jHiccup.jar="-d 0 -i ${intervalMs}" -cp jHiccup.jar org.jhiccup.Idle -t ${runtimeMs}
+-----------
+
+jHiccup uses link:https://github.com/HdrHistogram/HdrHistogram[HdrHistogram] to record samples and to generate the output log. There are a variety of tools and utilities for interacting and visualizing these logs. The graphs in this post were generated by my own link:https://github.com/ennerf/HdrHistogramVisualizer[HdrHistogramVisualizer].
 
 === Windows / Mac / Linux
 
@@ -100,13 +100,13 @@ Each image below contains two charts. The top section shows the worst hiccup tha
 .Windows vs. Linux vs. Mac hiccups (24h)
 image::os/osx-win-ubuntu_24h.png[Windows vs. Linux vs. Mac hiccups (24h), link="/images/os/osx-win-ubuntu_24h.png"]
 
-These results confirm the common knowledge that Linux tends to be more deterministic than Windows. Up to the 90th percentile all three systems respond relatively similarly, but there are significant differences at the higher percentiles. There also seems to have been a period of increased system activity on OSX after 7 hours. The chart below shows a zoomed in view of a 10 minute time period starting at 10 hours.
+These results show that Linux tends to be more deterministic than Windows. Up to the 90th percentile all three systems respond relatively similarly, but there are significant differences at the higher percentiles. There also seems to have been a period of increased system activity on OSX after 7 hours. The chart below shows a zoomed in view of a 10 minute time period starting at 10 hours.
 
 // 10 min plot: 36005 to 36590 in aggregate 1 intervals
 .Windows vs. Linux vs. Mac hiccups (10min)
 image::os/osx-win-ubuntu_10m.png[Windows vs. Linux vs. Mac hiccups (10 min), link="/images/os/osx-win-ubuntu_10m.png"]
 
-Zoomed in we can see that the Windows hiccups are actually very repeatable. 99.9% are below 2ms, but there are frequent spikes to a single value at around 16ms. It's rare to see that the worst case is basically equal to the 99.99% percentile. It's also interesting that the distribution for 10 minutes looks identical to the 24 hour char. OSX shows similar behavior, but with lower spikes. Ubuntu 16.04 is overall very quiet.
+Zoomed in we can see that the Windows hiccups are actually very repeatable. 99.9% are below 2ms, but there are frequent spikes to a single value at around 16ms. This also highlights the importance of looking at the details of the latency distribution. In most other data sets it would be rare for the worst case to be equal to the 99.99% percentile. It's also interesting that the distribution for 10 minutes looks identical to the 24 hour chart. OSX shows similar behavior, but with lower spikes. Ubuntu 16.04 is overall very quiet.
 
 It's debatable whether this makes any difference in practice. All of the systems I've worked with either had hard real-time requirements below 1ms, in which case none of these OS would be sufficient, or they were soft real-time systems that could easily handle occasional hiccups to 25 or even 100 ms. I have yet to see a robotic system that performed perceivably worse on Windows versus Linux.
 
@@ -159,13 +159,14 @@ image::os/scl_24h.png[RT Linux hiccups (24h), link="/images/os/scl_24h.png"]
 
 I've tried to provide a basic idea of the out of the box performance of various off the shelf operating systems. In my experience the three major consumer OS can be treated relatively equal, i.e., either software will work fine on all of them, or won't work on any of them. If you do work on a problem that does have hard deadlines, there are many different link:https://en.wikipedia.org/wiki/Comparison_of_real-time_operating_systems[RTOS] to choose from. Aside from the mentioned real-time Linux and the various embedded solutions, there are even real-time extensions for Windows, e.g., link:http://www.tenasys.com/overview-ifw[INtime] or link:http://kithara.com/en/products/realtime-suite[Kithara].
 
+[TODO]
+====
+Dave: I might move the following paragraph up to the intro.  And add a sentence saying that what we advocate is finding ways to soften the requirements of hard-realtime comms for robotic systems.  For us a big part of it is engineering a modular low-level block that does RT control, but we still care a lot about understanding and measuring latency details at the high level.
+====
+
 We've made very good experiences with implementing the low-level control (pid loops, motor control, safety features, etc.) on RTOS running on dedicated microcontrollers that are built into each actuator. That way all of the safety critical and latency sensitive pieces are encapsulated and independent of user code. The high-level controller (trajectories and multi-joint coordination) then only needs to update set targets (e.g. position/velocity/torque), which is far less sensitive to latency. This approach enables quick prototyping of high-level behaviors using 'non-deterministic' technologies, such as Windows, MATLAB and standard UDP messages.
 
 Developing hard real-time systems has a lot of pitfalls and can require a lot of development effort. Requiring researchers to write hard real-time compliant code is not something that I would recommend.
-
-// Actual requirements are heavily dependent on the specific use case, so it's impossible to make a general recommendation. While some safety critical applications may require a real time operating system (RTOS), others may run perfectly fine on commodity systems. My goal is to provide an overview that allows you to make a more informed decision about suitable platform after you've established your requirements. I'm planning on doing a future post on actually figuring out sane requirements.
-
-// Note that these are not your only options. There are many different  out there. There are even real-time extensions for Windows, e.g., link:http://www.tenasys.com/overview-ifw[INtime] or link:http://kithara.com/en/products/realtime-suite[Kithara]. However, since integrating such systems can be very expensive or time consuming, I'd recommend going with simple and community supported solutions unless necessary.
 
 === Latency is not Gaussian
 
@@ -180,7 +181,12 @@ Finally, I'd like to stress again that latency practically never follows a Gauss
 |*Scientific Linux 6.6-rt*   |79.753.643 |0.08 ms|0.01 |0.15 ms |7
 |========
 
-The max for OSX is more than 400 standard deviations away from the mean. Using only mean/stddev for any sort of latency comparison can produce unwanted results. Aside from giving little to no information about the higher percentiles, there are many cases where systems with seemingly better values exhibit worse actual performance.
+[TODO]
+====
+Dave: I think it would be really effective to have a figure show histograms of the actual distributions along with the classic ‘bell-curve’ gaussian with the parameters from your table. 
+====
+
+The max for OSX is more than 400 standard deviations away from the mean. Using only mean/stddev for any sort of latency comparison can produce unwanted results. Aside from giving little to no information about the higher percentiles, there are many cases where systems with seemingly 'better' values exhibit worse actual performance.
 
 
 
