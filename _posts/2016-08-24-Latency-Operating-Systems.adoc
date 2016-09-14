@@ -15,7 +15,13 @@
 
 // NOTE: TODO: give OSX example for mean/std-dev and let readers guess the maximum?. Re-read https://www.azul.com/giltene-how-java-got-the-hiccups/ .
 
-Latency is an important practical concern in the robotics world that is often poorly understood. I've spent many hours looking for information on the latency of various *software components (operating systems, networking, etc.)*, but have found very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or measure it incorrectly. This post will hit 2 main topics: 1. The details of how you measure latency matters. 2. The OS that you use affects your latency.
+Latency is an important practical concern in the robotics world that is often poorly understood. I've spent many hours looking for information on the latency of various *software components (operating systems, networking, etc.)*, but have found very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or measure it incorrectly. 
+
+This post will hit 2 main topics: 
+
+1. The details of how you measure latency matters.
+
+2. The OS that you use affects your latency.
 
 My own background is in academic research. I've spent several years as a staff software engineer at the Robotics Institute at Carnegie Mellon University and am a co-founder of HEBI Robotics, a startup developing modular robotic components. We've worked on many different types of robots, including collaborative arms, wheeled robots, walking robots and snake robots.
 
@@ -41,9 +47,7 @@ Many benchmarks and tools make the assumption that latency follows a Gaussian di
 
 [NOTE]
 ====
-Dave: Putting a figure up here, even if its a dummy figure showing what you mean in terms of outliers or non-gaussian, and since you mention that visual tools like histograms and percentile plots are important.
-
-Maybe a histogram and percentile distribution of the windows latency data?  That might also help the flow into the next section.
+Dave: Putting a figure up here, even if its a dummy figure showing what you mean in terms of outliers or non-gaussian, and since you mention that visual tools like histograms and percentile plots are important. Maybe a histogram and percentile distribution of the windows latency data?  That might also help the flow into the next section.
 ====
 
 Because of this, a more efficient way to look at latency is via histograms and percentile plots, e.g., "_99.9% of measurements were below X ms_". There are several good resources about recording latency out there that I recommend checking out, such as link:https://youtu.be/lJ8ydIuPFeU[How NOT to Measure Latency] or link:http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html[HdrHistogram: A better latency capture method].
@@ -170,7 +174,7 @@ Developing hard real-time systems has a lot of pitfalls and can require a lot of
 
 === Latency is not Gaussian
 
-Finally, I'd like to stress again that latency practically never follows a Gaussian distribution. The table for these data sets is below.
+Finally, I'd like to stress again that latency practically never follows a Gaussian distribution. For example, the maximum for OSX is more than 400 standard deviations away from the average. The table for these data sets is below.
 
 [width="80%"]
 |========
@@ -181,12 +185,12 @@ Finally, I'd like to stress again that latency practically never follows a Gauss
 |*Scientific Linux 6.6-rt*   |79.753.643 |0.08 ms|0.01 |0.15 ms |7
 |========
 
-[NOTE]
-====
-Dave: I think it would be really effective to have a figure show histograms of the actual distributions along with the classic ‘bell-curve’ gaussian with the parameters from your table. 
-====
+The figure below compares the data's actual distribution for Windows to the theoretical gaussian distribution. Rather than a classic 'bell-curve', it shows several spikes that are spread apart in regular intervals. The distance between these spikes is almost exactly one millisecond, which matches the Windows' timer interrupt interval that was set while gathering the data. Interestingly, the spikes at above 2ms all seem to happen at roughly the same likelihood.
 
-The max for OSX is more than 400 standard deviations away from the mean. Using only mean/stddev for any sort of latency comparison can produce unwanted results. Aside from giving little to no information about the higher percentiles, there are many cases where systems with seemingly 'better' values exhibit worse actual performance.
+.Actual Distribution compared to Gaussian-fit (Windows)
+image::os/windows-gaussian_distribution_24h.png[Actual vs Gaussian Distribution for Windows, link="/images/os/windows-gaussian_distribution_24h.png"]
+
+Using only mean/stddev for any sort of latency comparison can produce unwanted results. Aside from giving little to no information about the higher percentiles, there are many cases where systems with seemingly 'better' values exhibit worse actual performance.
 
 
 
