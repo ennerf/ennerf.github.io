@@ -39,7 +39,7 @@ Although there is a lot of information on the theoretical definition of these te
 
 Many benchmarks and tools make the assumption that latency follows a Gaussian distribution and report only the mean and the standard deviation. Unfortunately, latency is typically multi-modal and the most important part of the distribution when it comes to *performance* are the 'outliers'. In 99% of the cases a system's latency tends to behave as we would intuitively expect. However, the leftover 1% can be worse than the all of the 99% combined. Looking at only the mean and standard deviation is a great way to ignore and be oblivious to the more systemic issues. For example, I've seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Such stutters can become problematic when working on real robtic systems.
 
-[TODO]
+[NOTE]
 ====
 Dave: Putting a figure up here, even if its a dummy figure showing what you mean in terms of outliers or non-gaussian, and since you mention that visual tools like histograms and percentile plots are important.
 
@@ -67,7 +67,7 @@ I've setup two standard desktop computers, one for Mac tests and one for everyth
 * Mac Mini 2014, i7-3720QM @ 2.6 GHz, 16 GB 1600 MHz DDR3
 * Gigabyte Brix BXi7-4770R, i7-4770R @ 3.2 GHz, 16 GB 1600 MHz DDR3
 
-[TODO]
+[NOTE]
 ====
 the paragraphs below were moved from above. make them match this section
 ====
@@ -159,7 +159,7 @@ image::os/scl_24h.png[RT Linux hiccups (24h), link="/images/os/scl_24h.png"]
 
 I've tried to provide a basic idea of the out of the box performance of various off the shelf operating systems. In my experience the three major consumer OS can be treated relatively equal, i.e., either software will work fine on all of them, or won't work on any of them. If you do work on a problem that does have hard deadlines, there are many different link:https://en.wikipedia.org/wiki/Comparison_of_real-time_operating_systems[RTOS] to choose from. Aside from the mentioned real-time Linux and the various embedded solutions, there are even real-time extensions for Windows, e.g., link:http://www.tenasys.com/overview-ifw[INtime] or link:http://kithara.com/en/products/realtime-suite[Kithara].
 
-[TODO]
+[NOTE]
 ====
 Dave: I might move the following paragraph up to the intro.  And add a sentence saying that what we advocate is finding ways to soften the requirements of hard-realtime comms for robotic systems.  For us a big part of it is engineering a modular low-level block that does RT control, but we still care a lot about understanding and measuring latency details at the high level.
 ====
@@ -181,7 +181,7 @@ Finally, I'd like to stress again that latency practically never follows a Gauss
 |*Scientific Linux 6.6-rt*   |79.753.643 |0.08 ms|0.01 |0.15 ms |7
 |========
 
-[TODO]
+[NOTE]
 ====
 Dave: I think it would be really effective to have a figure show histograms of the actual distributions along with the classic ‘bell-curve’ gaussian with the parameters from your table. 
 ====
