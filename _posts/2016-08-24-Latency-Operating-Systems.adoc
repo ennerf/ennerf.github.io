@@ -25,11 +25,14 @@ This post will hit 2 main topics:
 
 My own background is in academic research. I've spent several years as a staff software engineer at the Robotics Institute at Carnegie Mellon University and am a co-founder of HEBI Robotics, a startup developing modular robotic components. We've worked on many different types of robots, including collaborative arms, wheeled robots, walking robots and snake robots.
 
-//Unfortunately, the control scheme is a systemic concern that can impact the entire system architecture. This can be very difficult to change later on, so there is a tendency towards high requirements with regards to determinism. However, requirements that are too high can result in significant development efforts that may not yield any benefits in the real world.
+In general, our experience so far has been that it is worth designing systems such that they are less sensitive to latency. This enables leveraging common consumer technologies that can significantly reduce development time. For example, the Biorobotics lab at CMU has always built a lot of custom hardware, so many of the people there have a MechE or ECE background and tend to be most comfortable in Windows or OSX. In the past, a limitation to support only C++ and Linux has posed a significant barrier to doing research. After we've started to add cross-platform support and bindings for MATLAB (in ~2011), we ended up seeing a significant speed up in research that roughly doubled the lab's snake robot related paper output. We've also seen new complex behaviors that would've been difficult to prototype beforehand (see https://youtu.be/NJ1FIsjt0yE[compliant control] or https://youtu.be/0CNQMiQnesc[inside pipes]).
 
-// There is also a lot of folklore about the reliablity and performance of various components. I have been in countless debates where people have tried to convince me that a proposed system has no chance of working, not knowing that it had already been implemented and been running without issues. This is partly because there is very little useful data on latency out there. Most benchmarks focus only on throughput, and some that do include latency were measured incorrectly.
+[NOTE]
+====
+TODO: Add paragraph about decoupling low and high-level control and maybe add old paragraph back in.
 
-In general, our experience so far has been that many systems are less sensitive to latency than people would assume, and that it's worth leveraging common consumer technologies to significantly reduce development time. For example, the high-level control in https://youtu.be/zaPtxre4tFc[Teleop Taxi] was done over Wi-Fi from MATLAB running on Windows, while simultaneously streaming video from an Android phone in the back of the robot. Running the same code on a co-located Linux computer with a wired connection resulted in no perceivable difference. However, by keeping the system simple it took only 20-30 lines of code (see  https://gist.github.com/ennerf/b349c56d320da1db89b298fd807f00e4[simplified], https://gist.github.com/ennerf/7d59a9765da25ed7c02117da1805551c[full]) to run the entire demo. This is of course an extreme example, but we've seen similar results with more complex systems.
+For example, the high-level control in https://youtu.be/zaPtxre4tFc[Teleop Taxi] was done over Wi-Fi from MATLAB running on Windows, while simultaneously streaming video from an Android phone in the back of the robot. By keeping the system simple it took only 20-30 lines of code (see  https://gist.github.com/ennerf/b349c56d320da1db89b298fd807f00e4[simplified], https://gist.github.com/ennerf/7d59a9765da25ed7c02117da1805551c[full]) to run the entire demo. This is of course an extreme example, but we've seen similar results with more complex systems.
+====
 
 Over a series of blog posts, I'll try to share some of my own impressions and data sets. Today's post will focus on operating systems and measuring latency.
 
@@ -43,12 +46,7 @@ Although there is a lot of information on the theoretical definition of these te
 
 //The first important realization when looking at latency is that data does not follow a Gaussian distribution. I have seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Looking at only the mean and standard deviation tends to provide an extremely optimistic view that can be misleading.
 
-Many benchmarks and tools make the assumption that latency follows a Gaussian distribution and report only the mean and the standard deviation. Unfortunately, latency is typically multi-modal and the most important part of the distribution when it comes to *performance* are the 'outliers'. In 99% of the cases a system's latency tends to behave as we would intuitively expect. However, the leftover 1% can be worse than the all of the 99% combined. Looking at only the mean and standard deviation is a great way to ignore and be oblivious to the more systemic issues. For example, I've seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Such stutters can become problematic when working on real robtic systems.
-
-[NOTE]
-====
-Dave: Putting a figure up here, even if its a dummy figure showing what you mean in terms of outliers or non-gaussian, and since you mention that visual tools like histograms and percentile plots are important. Maybe a histogram and percentile distribution of the windows latency data?  That might also help the flow into the next section.
-====
+Many benchmarks and tools make the assumption that latency follows a Gaussian distribution and report only the mean and the standard deviation. Unfortunately, latency is typically multi-modal and the most important part of the distribution when it comes to determinism the 'outliers'. Even if a system's latency behaves as expected in 99% of the cases, the leftover 1% may be worse than all of the 99% of measurements combined. Looking at only the mean and standard deviation is a great way to ignore and be oblivious to the more systemic issues. For example, I've seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Such stutters can become problematic when working on real robtic systems.
 
 Because of this, a more efficient way to look at latency is via histograms and percentile plots, e.g., "_99.9% of measurements were below X ms_". There are several good resources about recording latency out there that I recommend checking out, such as link:https://youtu.be/lJ8ydIuPFeU[How NOT to Measure Latency] or link:http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html[HdrHistogram: A better latency capture method].
 
@@ -61,8 +59,6 @@ The operating system is at the base of everything. No matter how performant the 
 There is a trade-off between responding in a timely manner and overall performance, battery life, as well as several other concerns. As a result, the major consumer operating systems don't guarantee to meet hard deadlines and can theoretically have arbitrarily long pauses. 
 
 However, using operating systems that users are familiar with can significantly ease development. Thus, it is worth evaluating their actual performance before prematurely dismissing commodity systems for real-time control. Even though there may not be any theoretical guarantees, the practical differences are often not noticeable.
-
-The Biorobotics lab at CMU has always built a lot of custom hardware, so many of the people there have a MechE or ECE background and tend to be most comfortable in Windows or OSX. In the past, a limitation to support only C++ and Linux has posed a significant barrier to doing research. After we've started to add cross-platform support and bindings for MATLAB (in ~2011), we were surprised to see how much this sped up research. The lab's snake robot related paper output actually doubled. We've also seen new complex behaviors that would've been difficult to prototype beforehand (see https://youtu.be/NJ1FIsjt0yE[compliant control] or https://youtu.be/0CNQMiQnesc[inside pipes]).
 
 === Benchmark Setup
 
