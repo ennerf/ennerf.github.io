@@ -15,7 +15,7 @@
 
 // NOTE: TODO: give OSX example for mean/std-dev and let readers guess the maximum?. Re-read https://www.azul.com/giltene-how-java-got-the-hiccups/ .
 
-Latency is an important practical concern in the robotics world that is often poorly understood. I've spent many hours looking for information on the latency of various robotic components, but have found very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or measure it incorrectly. 
+Latency is an important practical concern in the robotics world that is often poorly understood. I've spent many hours looking for information on the latency characteristics of various robotic components, but have found very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or measure it incorrectly. 
 
 This post will hit 2 main topics: 
 
