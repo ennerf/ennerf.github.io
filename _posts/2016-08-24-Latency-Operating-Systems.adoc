@@ -92,13 +92,13 @@ Each image below contains two charts. The top section shows the worst hiccup tha
 .Windows vs. Linux vs. Mac hiccups (24h)
 image::os/osx-win-ubuntu_24h.png[Windows vs. Linux vs. Mac hiccups (24h), link="/images/os/osx-win-ubuntu_24h.png"]
 
-These results show that Linux tends to be more deterministic than Windows. Up to the 90th percentile all three systems respond relatively similarly, but there are significant differences at the higher percentiles. There also seems to have been a period of increased system activity on OSX after 7 hours. The chart below shows a zoomed in view of a 10 minute time period starting at 10 hours.
+These results show that Linux had fewer and lower outliers than Windows. Up to the 90th percentile all three systems respond relatively similarly, but there are significant differences at the higher percentiles. There also seems to have been a period of increased system activity on OSX after 7 hours. The chart below shows a zoomed in view of a 10 minute time period starting at 10 hours.
 
 // 10 min plot: 36005 to 36590 in aggregate 1 intervals
 .Windows vs. Linux vs. Mac hiccups (10min)
 image::os/osx-win-ubuntu_10m.png[Windows vs. Linux vs. Mac hiccups (10 min), link="/images/os/osx-win-ubuntu_10m.png"]
 
-Zoomed in we can see that the Windows hiccups are actually very repeatable. 99.9% are below 2ms, but there are frequent spikes to a single value at around 16ms. This also highlights the importance of looking at the details of the latency distribution. In other data sets that I've seen, it is rare for the worst case to be equal to the 99.99% percentile. It's also interesting that the distribution for 10 minutes looks identical to the 24 hour chart. OSX shows similar behavior, but with lower spikes. Ubuntu 16.04 is overall very quiet.
+Zoomed in we can see that the Windows hiccups are actually very repeatable. 99.9% are below 2ms, but there are frequent spikes to relatively discrete values up to 16ms. This also highlights the importance of looking at the details of the latency distribution. In other data sets that I've seen, it is rare for the worst case to be equal to the 99.99% percentile. It's also interesting that the distribution for 10 minutes looks identical to the 24 hour chart. OSX shows similar behavior, but with lower spikes. Ubuntu 16.04 is comparatively quiet.
 
 It's debatable whether this makes any difference for robotic systems in practice. All of the systems I've worked with either had hard real-time requirements below 1ms, in which case none of these OS would be sufficient, or they were soft real-time systems that could handle occasional hiccups to 25 or even 100 ms. I have yet to see one of our robotic systems perform perceivably worse on Windows versus Linux.
 
