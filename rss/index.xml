@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Fri, 16 Sep 2016 01:07:51 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div id="preamble">
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Tue, 20 Sep 2016 00:46:40 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Latency : Operating Systems]]></title><description><![CDATA[<div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
 <p>Latency is an important practical concern in the robotics world that is often poorly understood. I&#8217;ve spent many hours looking for information on the latency characteristics of various robotic components, but have found very little informative data out there. Most benchmarks focus on the maximum throughput and either completely neglect latency, or measure it incorrectly.</p>
@@ -116,7 +116,7 @@ java -javaagent:jHiccup.jar="-d 0 -i ${intervalMs}" -cp jHiccup.jar org.jhiccup.
 <div class="paragraph">
 <p>Each image below contains two charts. The top section shows the worst hiccup that occured within a given interval window, i.e., the first data point shows the worst hiccup within the first 3 minutes and the next data point shows the worst hiccup within the next 3 minutes. The bottom chart shows the percentiles of all measurements across the entire duration. Each 24 hour data set contains roughly 70-80 million samples.</p>
 </div>
-<div class="imageblock">
+<div class="imageblock text-center">
 <div class="content">
 <a class="image" href="/images/os/osx-win-ubuntu_24h.png"><img src="https://ennerf.github.io/images/os/osx-win-ubuntu_24h.png" alt="Windows vs. Linux vs. Mac hiccups (24h)"></a>
 </div>
@@ -125,7 +125,7 @@ java -javaagent:jHiccup.jar="-d 0 -i ${intervalMs}" -cp jHiccup.jar org.jhiccup.
 <div class="paragraph">
 <p>These results show that Linux had fewer and lower outliers than Windows. Up to the 90th percentile all three systems respond relatively similarly, but there are significant differences at the higher percentiles. There also seems to have been a period of increased system activity on OSX after 7 hours. The chart below shows a zoomed in view of a 10 minute time period starting at 10 hours.</p>
 </div>
-<div class="imageblock">
+<div class="imageblock text-center">
 <div class="content">
 <a class="image" href="/images/os/osx-win-ubuntu_10m.png"><img src="https://ennerf.github.io/images/os/osx-win-ubuntu_10m.png" alt="Windows vs. Linux vs. Mac hiccups (10 min)"></a>
 </div>
@@ -144,7 +144,7 @@ java -javaagent:jHiccup.jar="-d 0 -i ${intervalMs}" -cp jHiccup.jar org.jhiccup.
 <p>Now that we have an understanding of how traditional systems without tuning perform, let&#8217;s take a look at the performance of Linux with a real-time kernel. The rt kernel (PREEMPT_RT patch) can preempt lower priority tasks, which results in worse overall performance, but more deterministic behavior with respect to latency.</p>
 </div>
 <div class="paragraph">
-<p>I&#8217;ve chosen Scientific Linux 6 because of it&#8217;s support for <a href="https://access.redhat.com/products/red-hat-enterprise-mrg-realtime">Red Hat&#174; Enterprise MRG Realtime&#174;</a>. You can download the  <a href="http://ftp.scientificlinux.org/linux/scientific/">ISO</a> and find instructions for installing MRG Realtime <a href="http://linux.web.cern.ch/linux/mrg/">here</a>. The version I&#8217;ve tested was,</p>
+<p>I chose Scientific Linux 6 because of it&#8217;s support for <a href="https://access.redhat.com/products/red-hat-enterprise-mrg-realtime">Red Hat&#174; Enterprise MRG Realtime&#174;</a>. You can download the  <a href="http://ftp.scientificlinux.org/linux/scientific/">ISO</a> and find instructions for installing MRG Realtime <a href="http://linux.web.cern.ch/linux/mrg/">here</a>. The version I&#8217;ve tested was,</p>
 </div>
 <div class="ulist">
 <ul>
@@ -191,7 +191,7 @@ sudo chrt -p 98 $pid</code></pre>
 <div class="paragraph">
 <p>Below is a comparison of the two Linux variants.</p>
 </div>
-<div class="imageblock">
+<div class="imageblock text-center">
 <div class="content">
 <a class="image" href="/images/os/ubuntu-scl_24h.png"><img src="https://ennerf.github.io/images/os/ubuntu-scl_24h.png" alt="Linux vs. RT Linux hiccups (24h)"></a>
 </div>
@@ -200,7 +200,7 @@ sudo chrt -p 98 $pid</code></pre>
 <div class="paragraph">
 <p>Looking at the 24 hour chart (above) and the 10 minute chart (below), we can see that worst case has gone down significantly. While Ubuntu 16.04 was barely visible when compared to Windows, it looks very noisy compared to the real-time variant. All measurements were within a 150us range, which is good enough for most applications.</p>
 </div>
-<div class="imageblock">
+<div class="imageblock text-center">
 <div class="content">
 <a class="image" href="/images/os/ubuntu-scl_10m.png"><img src="https://ennerf.github.io/images/os/ubuntu-scl_10m.png" alt="Linux vs. RT Linux hiccups (10 min)"></a>
 </div>
@@ -209,7 +209,7 @@ sudo chrt -p 98 $pid</code></pre>
 <div class="paragraph">
 <p>I&#8217;ve also added the 24 hour chart for the real-time variant by itself to provide a better scale. Note that this resolution is getting close to the resolution of what we can measure and record.</p>
 </div>
-<div class="imageblock">
+<div class="imageblock text-center">
 <div class="content">
 <a class="image" href="/images/os/scl_24h.png"><img src="https://ennerf.github.io/images/os/scl_24h.png" alt="RT Linux hiccups (24h)"></a>
 </div>
@@ -290,7 +290,7 @@ sudo chrt -p 98 $pid</code></pre>
 <div class="paragraph">
 <p>The figure below compares the data&#8217;s actual distribution for Windows to a theoretical gaussian distribution. Rather than a classic 'bell-curve', it shows several spikes that are spread apart in regular intervals. The distance between these spikes is almost exactly one millisecond, which matches the Windows timer interrupt interval that was set while gathering the data. Interestingly, the spikes at above 2ms all seem to happen at roughly the same likelihood.</p>
 </div>
-<div class="imageblock">
+<div class="imageblock text-center">
 <div class="content">
 <a class="image" href="/images/os/windows-gaussian_distribution_24h.png"><img src="https://ennerf.github.io/images/os/windows-gaussian_distribution_24h.png" alt="Actual vs Gaussian Distribution for Windows"></a>
 </div>
