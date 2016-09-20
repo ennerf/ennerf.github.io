@@ -89,12 +89,14 @@ Let's first look at the performance of consumer operating systems: Windows, Mac 
 Each image below contains two charts. The top section shows the worst hiccup that occured within a given interval window, i.e., the first data point shows the worst hiccup within the first 3 minutes and the next data point shows the worst hiccup within the next 3 minutes. The bottom chart shows the percentiles of all measurements across the entire duration. Each 24 hour data set contains roughly 70-80 million samples.
 
 // 24 hour plot: -/+ 20 min on each side to avoid start/stop noise => sec 1200 to 87600 in aggregate 180 intervals
+[.text-center]
 .Windows vs. Linux vs. Mac hiccups (24h)
 image::os/osx-win-ubuntu_24h.png[Windows vs. Linux vs. Mac hiccups (24h), link="/images/os/osx-win-ubuntu_24h.png"]
 
 These results show that Linux had fewer and lower outliers than Windows. Up to the 90th percentile all three systems respond relatively similarly, but there are significant differences at the higher percentiles. There also seems to have been a period of increased system activity on OSX after 7 hours. The chart below shows a zoomed in view of a 10 minute time period starting at 10 hours.
 
 // 10 min plot: 36005 to 36590 in aggregate 1 intervals
+[.text-center]
 .Windows vs. Linux vs. Mac hiccups (10min)
 image::os/osx-win-ubuntu_10m.png[Windows vs. Linux vs. Mac hiccups (10 min), link="/images/os/osx-win-ubuntu_10m.png"]
 
@@ -106,7 +108,7 @@ It's debatable whether this makes any difference for robotic systems in practice
 
 Now that we have an understanding of how traditional systems without tuning perform, let's take a look at the performance of Linux with a real-time kernel. The rt kernel (PREEMPT_RT patch) can preempt lower priority tasks, which results in worse overall performance, but more deterministic behavior with respect to latency.
 
-I've chosen Scientific Linux 6 because of it's support for link:https://access.redhat.com/products/red-hat-enterprise-mrg-realtime[Red Hat(R) Enterprise MRG Realtime(R)]. You can download the  link:http://ftp.scientificlinux.org/linux/scientific/[ISO] and find instructions for installing MRG Realtime link:http://linux.web.cern.ch/linux/mrg/[here]. The version I've tested was,
+I chose Scientific Linux 6 because of it's support for link:https://access.redhat.com/products/red-hat-enterprise-mrg-realtime[Red Hat(R) Enterprise MRG Realtime(R)]. You can download the  link:http://ftp.scientificlinux.org/linux/scientific/[ISO] and find instructions for installing MRG Realtime link:http://linux.web.cern.ch/linux/mrg/[here]. The version I've tested was,
 
 * Scientific Linux 6.6, kernel 3.10.0-327.rt56.194.el6rt.x86_64
 
@@ -134,16 +136,19 @@ sudo chrt -p 98 $pid
 
 Below is a comparison of the two Linux variants.
 
+[.text-center]
 .Linux vs. RT Linux hiccups (24h)
 image::os/ubuntu-scl_24h.png[Linux vs. RT Linux hiccups (24h), link="/images/os/ubuntu-scl_24h.png"]
 
 Looking at the 24 hour chart (above) and the 10 minute chart (below), we can see that worst case has gone down significantly. While Ubuntu 16.04 was barely visible when compared to Windows, it looks very noisy compared to the real-time variant. All measurements were within a 150us range, which is good enough for most applications.
 
+[.text-center]
 .Linux vs. RT Linux hiccups (10 min)
 image::os/ubuntu-scl_10m.png[Linux vs. RT Linux hiccups (10 min), link="/images/os/ubuntu-scl_10m.png"]
 
 I've also added the 24 hour chart for the real-time variant by itself to provide a better scale. Note that this resolution is getting close to the resolution of what we can measure and record.
 
+[.text-center]
 .RT Linux hiccups (24h)
 image::os/scl_24h.png[RT Linux hiccups (24h), link="/images/os/scl_24h.png"]
 
@@ -172,6 +177,7 @@ Finally, I'd like to stress again that latency practically never follows a Gauss
 
 The figure below compares the data's actual distribution for Windows to a theoretical gaussian distribution. Rather than a classic 'bell-curve', it shows several spikes that are spread apart in regular intervals. The distance between these spikes is almost exactly one millisecond, which matches the Windows timer interrupt interval that was set while gathering the data. Interestingly, the spikes at above 2ms all seem to happen at roughly the same likelihood.
 
+[.text-center]
 .Actual Distribution compared to Gaussian-fit (Windows)
 image::os/windows-gaussian_distribution_24h.png[Actual vs Gaussian Distribution for Windows, link="/images/os/windows-gaussian_distribution_24h.png"]
 
