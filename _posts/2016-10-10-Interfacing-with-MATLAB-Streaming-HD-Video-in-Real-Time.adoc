@@ -1,4 +1,4 @@
-= Interfacing with MATLAB : Real-Time HD Video Streaming
+= Interfacing with MATLAB : Streaming HD Video in Real-Time
 :published_at: 2016-10-10
 //:hp-tags: 
 :imagesdir: ../images
