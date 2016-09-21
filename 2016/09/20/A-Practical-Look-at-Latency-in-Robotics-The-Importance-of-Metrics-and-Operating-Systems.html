@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <title>A Practical Look at Latency in Robotics : The Importance of Metrics and Operating Systems</title>
+    <meta name="description" content="" />
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="shortcut icon" href="https://ennerf.github.io/favicon.ico">
+
+    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/vendor/fastclick.js?v=1474470485151"></script>
+    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/vendor/modernizr.js?v=1474470485151"></script>
+
+
+    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/normalize.css?v=1474470485151" />
+    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/foundation.min.css?v=1474470485151" />
+    <!--[if lte IE 8]>
+        <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/outdatedBrowser.min.css?v=1474470485151">
+    <![endif]-->
+    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/fonts/foundation-icons/foundation-icons.css?v=1474470485151" />
+    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/styles.css?v=1474470485151" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Open+Sans:300,700,400|Source+Sans+Pro:300,400,600,700,900,300italic,400italic,600italic,700italic,900italic" />
+
+    <link rel="canonical" href="https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html" />
+    <meta name="referrer" content="origin" />
+    
+    <meta property="og:site_name" content="Software for Robots" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="A Practical Look at Latency in Robotics : The Importance of Metrics and Operating Systems" />
+    <meta property="og:description" content="This is the first in a series of blog posts where I will try to share some of my own impressions and findings that have stemmed from several years of creating tools for robotics research. Communication latency is an important practical concern in the robotics world that is often poorly" />
+    <meta property="og:url" content="https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html" />
+    <meta property="article:tag" content="Latency" />
+    <meta property="article:tag" content=" Operating System" />
+    <meta property="article:tag" content=" Windows" />
+    <meta property="article:tag" content=" OSX" />
+    <meta property="article:tag" content=" Ubuntu" />
+    <meta property="article:tag" content=" Scientific Linux" />
+    <meta property="article:tag" content=" Sleep" />
+    <meta property="article:tag" content=" Real-Time" />
+    <meta property="article:tag" content=" HdrHistogram" />
+    
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="A Practical Look at Latency in Robotics : The Importance of Metrics and Operating Systems" />
+    <meta name="twitter:description" content="This is the first in a series of blog posts where I will try to share some of my own impressions and findings that have stemmed from several years of creating tools for robotics research. Communication latency is an important practical concern in the robotics world that is often poorly" />
+    <meta name="twitter:url" content="https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html" />
+    
+    <script type="application/ld+json">
+null
+    </script>
+
+    <meta name="generator" content="HubPress" />
+    <link rel="alternate" type="application/rss+xml" title="Software for Robots" href="https://ennerf.github.io/rss/" />
+</head>
+<body class="post-template tag-Latency tag-Operating-System tag-Windows tag-OSX tag-Ubuntu tag-Scientific-Linux tag-Sleep tag-Real-Time tag-Hdr-Histogram">
+
+<div id="outdated">
+    <h6>Your browser is out-of-date!</h6>
+    <p>Update your browser to view this website correctly. <a id="btnUpdate" href="http://outdatedbrowser.com/">Update my browser now</a></p>
+</div>
+
+<nav class="top-bar hide-for-large-up" data-topbar style="background: none">
+  <ul class="title-area">
+    <li class="name">
+
+    </li>
+    <li class="home"><a class="fi-home" href="https://ennerf.github.io"></a></li>
+    <li class="toggle-topbar"><a href="#" id="trigger-overlay" class="fi-list"></a></li>
+  </ul>
+
+<div class="overlay overlay-scale">
+    <button type="button" class="overlay-close">Close</button>
+    <nav>
+        <ul>
+            <li><a href="https://ennerf.github.io">Home</a></li>
+        </ul>
+    </nav>
+</div>
+
+</nav>
+
+<div class="row">
+
+<div class="small-16 medium-16 large-4 columns right head-area bgimage" style="background-image: url(https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg)">
+
+<header class="site-head">
+    <div class="vertical">
+        <div class="site-head-content inner">
+            <ul class="side-nav blog-menu show-for-large-up">
+                <li><a class="fi-home" href="https://ennerf.github.io"></a></li>
+                <li><a class="fi-torso" href="https://ennerf.github.io/about"></a></li>
+                <li><a class="fi-mail" href="https://ennerf.github.io/contact"></a></li>
+            </ul>
+            <a class="blog-logo" href="https://ennerf.github.io"><img alt="Software for Robots" src="https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg" alt="Blog Logo" /></a>
+            <h1 class="blog-title">Software for Robots</h1>
+            <hr>
+            <p class="blog-description">Real-Time Control, Networking, Operating Systems, Languages</p>
+            <div class="blog-network">
+<!--                 <a href="#" class="fi-social-pinterest"></a>
+                <a href="#" class="fi-social-linkedin"></a>
+                <a href="#" class="fi-social-behance"></a>
+                <a href="#" class="fi-social-deviant-art"></a>
+                <a href="#" class="fi-social-dribbble"></a>
+                <a href="#" class="fi-social-flickr"></a>
+                <a href="#" class="fi-social-github"></a>
+                <a href="#" class="fi-social-skype"></a>
+                <a href="#" class="fi-social-snapchat"></a>
+                <a href="#" class="fi-social-steam"></a>
+                <a href="#" class="fi-social-xbox"></a>
+                <a href="#" class="fi-social-reddit"></a> -->
+                  <a href="https://github.com/ennerf" class="fi-social-github"></a>
+            </div>
+        </div>
+    </div>
+</header>
+
+</div>
+
+
+<div class="small-16 medium-16 large-12 columns main-column left">
+    
+
+<main class="content" role="main">
+
+    <article class="post tag-Latency tag-Operating-System tag-Windows tag-OSX tag-Ubuntu tag-Scientific-Linux tag-Sleep tag-Real-Time tag-Hdr-Histogram">
+
+
+            <h1 class="post-title">A Practical Look at Latency in Robotics : The Importance of Metrics and Operating Systems</h1>
+
+            <span class="post-meta label"><time datetime="2016-09-20">20 Sep 2016</time></span>
+
+            <section class="post-content">
+                <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This is the first in a series of blog posts where I will try to share some of my own impressions and findings that have stemmed from several years of creating tools for robotics research.</p>
+</div>
+<div class="paragraph">
+<p>Communication latency is an important practical concern in the robotics world that is often poorly understood. I feel that a better understanding of latency can help robotics researchers and engineers make design and architecture decisions that greatly streamline accelerate the R&amp;D process. I&#8217;ve personally spent many hours looking for information on the latency characteristics of various robotic components, but have had difficulty finding anything that is clearly presented or backed by solid data. From what I&#8217;ve found, most benchmarks focus on the maximum throughput and either ignore the subject of latency or measure it incorrectly.</p>
+</div>
+<div class="paragraph">
+<p>Because of this my first post is on the topic of latency and will cover two main topics:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>The details of how you measure latency matters.</p>
+</li>
+<li>
+<p>The OS that you use affects your latency.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>My own background is in academic research. I&#8217;ve spent several years as a staff software engineer at the Robotics Institute at Carnegie Mellon University and I am a co-founder of HEBI Robotics, a startup developing modular robotic components. The teams I&#8217;ve been part of have worked on many different types of robots, including <a href="https://youtu.be/heOXsEnGb20">collaborative manipulators</a>, <a href="https://www.youtube.com/watch?v=zaPtxre4tFc">wheeled robots</a>, <a href="https://www.youtube.com/watch?v=7Mh3kqxle1c">walking robots</a> and <a href="https://www.youtube.com/watch?v=DUgt3NwzN-c">snake robots</a>.</p>
+</div>
+<div class="paragraph">
+<p>Over time, we have come to believe that robotics research can be greatly accelerated by designing systems that relax hard real-time requirements on the software that is exposed to users. One approach is to implement low-level control (motor control and safety features) in dedicated components that are decoupled from high-level control (position, velocity, torque, etc.). In many cases, this can enable users to leverage common consumer hardware and software tools that can accelerate development.</p>
+</div>
+<div class="paragraph">
+<p>For example, the Biorobotics lab at Carnegie Mellon has researchers that tend to be mechanical or electrical engineers, rather than computer scientists or software engineers. As such tend they to be less familiar with Linux and C/C++ and much more comfortable with Windows/macOS and scripting languages like MATLAB. After our lab started providing cross-platform support and bindings for MATLAB (in ~2011), we ended up seeing a significant increase in our research output that roughly doubled the lab&#8217;s paper publications related to snake robots. In particular, the lab has been able to develop and demonstrate new complex behaviors that would have been difficult to prototype beforehand (see <a href="https://youtu.be/NJ1FIsjt0yE">compliant control</a> or <a href="https://youtu.be/0CNQMiQnesc">inside pipes</a>).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_measuring_latency">Measuring Latency</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Robots are controlled in <em>real-time</em>, which means that a command gets executed within a <em>deadline</em> (fixed period of time). There are <em>hard real-time</em> systems that must never exceed their deadline, and <em>soft real-time</em> systems that are able to occasionally exceed their deadline. Missing deadlines when performing motor control of a robot can result in unwanted motions and 'jerky' behavior.</p>
+</div>
+<div class="paragraph">
+<p>Although there is a lot of information on the theoretical definition of these terms, it can be challenging to determine the maximum deadline (point at which a system&#8217;s performance starts to degrade or become unsafe) for practical applications. This is especially true for research institutions that build novel mechanisms and target cutting-edge applications. Many research groups end up assuming that everything needs to be hard real-time with very stringent deadlines. While this approach provides solid performance guarantees, it can also create a lot of unnecessary development overhead.</p>
+</div>
+<div class="paragraph">
+<p>Many benchmarks and tools make the assumption that latency follows a <a href="https://en.wikipedia.org/wiki/Gaussian_function">Gaussian distribution</a> and report only the mean and the standard deviation. Unfortunately, latency tends to be very <a href="https://en.wikipedia.org/wiki/Multimodal_distribution">multi-modal</a> and the most important part of the distribution when it comes to determinism are the 'outliers'. Even if a system&#8217;s latency behaves as expected in 99% of the cases, the leftover 1% can be worse than all of the other 99% of measurements combined. Looking at only the mean and standard deviation completely fails to capture the more systemic issues. For example, I&#8217;ve seen many data sets where the worst observed case was more than 1000 standard deviations away from the mean. Such stutters are usually the main problem when working on real robotic systems.</p>
+</div>
+<div class="paragraph">
+<p>Because of this, a more appropriate way to look at latency is via histograms and percentile plots, e.g., <em>"99.9% of measurements were below X ms"</em>. There are several good resources about recording latency out there that I recommend checking out, such as <a href="https://youtu.be/lJ8ydIuPFeU">How NOT to Measure Latency</a> or <a href="http://psy-lob-saw.blogspot.com/2015/02/hdrhistogram-better-latency-capture.html">HdrHistogram: A better latency capture method</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_operating_systems">Operating Systems</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The operating system is at the base of everything. No matter how performant the high-level software stack is, the system is fundamentally bound by the capabilities of the OS, it&#8217;s scheduler, and the overall load on the system. Before you start optimizing your own software, you should make sure that your goal is actually achievable on the underlying platform.</p>
+</div>
+<div class="paragraph">
+<p>There are trade-offs between always responding in a timely manner and overall performance, battery life, as well as several other concerns. Because of this, the major consumer operating systems don&#8217;t guarantee to meet hard deadlines and can theoretically have arbitrarily long pauses.</p>
+</div>
+<div class="paragraph">
+<p>However, since using operating systems that users are familiar with can significantly ease development, it is worth evaluating their actual performance and capabilities. Even though there may not be any theoretical guarantees, the practical differences are often not noticeable.</p>
+</div>
+<div class="paragraph">
+<p>Developing hard real-time systems has a lot of pitfalls and can require a lot of development effort. Requiring researchers to write hard real-time compliant code is not something that I would recommend.</p>
+</div>
+<div class="sect2">
+<h3 id="_benchmark_setup">Benchmark Setup</h3>
+<div class="paragraph">
+<p><a href="https://www.azul.com">Azul Systems</a> sells products targeted at latency sensitive applications and they&#8217;ve created a variety of useful tools to measure latency. <a href="https://github.com/giltene/jHiccup">jHiccup</a> is a tool that measures and records system level latency spikes, which they call 'hiccups'. It measures the time for <em>sleep(1ms)</em> and records the delta to the fastest previously recorded sample. For example, if the fastest sample was 1ms, but it took 3ms to wake up, it will record a 2ms hiccup. Hiccups can be caused by a large number of reasons, including scheduling, paging, indexing, and many more. By running it on an otherwise idle system, we can get an idea of the behavior of the underlying platform. It can be started with the following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre># record logs each second for 48 hours
+intervalMs=1000
+runtimeMs=172800000
+java -javaagent:jHiccup.jar="-d 0 -i ${intervalMs}" -cp jHiccup.jar org.jhiccup.Idle -t ${runtimeMs}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>jHiccup uses <a href="https://github.com/HdrHistogram/HdrHistogram">HdrHistogram</a> to record samples and to generate the output log. There are a variety of tools and utilities for interacting and visualizing these logs. The graphs in this post were generated by my own <a href="https://github.com/ennerf/HdrHistogramVisualizer">HdrHistogramVisualizer</a>.</p>
+</div>
+<div class="paragraph">
+<p>To run these tests, I setup two standard desktop computers, one for Mac tests and one for everything else.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Mac Mini 2014, i7-3720QM @ 2.6 GHz, 16 GB 1600 MHz DDR3</p>
+</li>
+<li>
+<p>Gigabyte Brix BXi7-4770R, i7-4770R @ 3.2 GHz, 16 GB 1600 MHz DDR3</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Note that when doing latency tests on Windows it is important to be aware of the system timer. It has variable timer intervals that range from 0.5ms to 15.6ms. By calling <em>timeBeginPeriod</em> and <em>endTimePeriod</em> applications can notify the OS whenever they need a higher resolution. The timer interrupt is a global resource that gets set to the lowest interrupt interval requested by any application. For example, watching a video in Chrome requests a timer interrupt interval of 0.5ms. A lower period results in a more responsive system at the cost of overall throughput and battery life. <a href="https://vvvv.org/contribution/windows-system-timer-tool">System Timer Tool</a> is a little utility that let&#8217;s you view the current state. jHiccup automatically requests a 1ms timer interval by calling Java&#8217;s <em>Thread.sleep()</em> with a value of below 10ms.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_windows_mac_linux">Windows / Mac / Linux</h3>
+<div class="paragraph">
+<p>Let&#8217;s first look at the performance of consumer operating systems: Windows, Mac and Linux. Each test started off with a clean install for each OS. The only two modifications to the stock installation were to disable sleep mode and to install JDK8 (update 101). I then started jHiccup, unplugged all external cables and let the computer sit 'idle' for &gt;24 hours. The actual OS versions were,</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Windows 10 Enterprise, version 1511 (OS build: 10586.545)</p>
+</li>
+<li>
+<p>OS X, version 10.9.5</p>
+</li>
+<li>
+<p>Ubuntu 16.04 Desktop, kernel 4.4.0-31-generic</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Each image below contains two charts. The top section shows the worst hiccup that occured within a given interval window, i.e., the first data point shows the worst hiccup within the first 3 minutes and the next data point shows the worst hiccup within the next 3 minutes. The bottom chart shows the percentiles of all measurements across the entire duration. Each 24 hour data set contains roughly 70-80 million samples.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="/images/os/osx-win-ubuntu_24h.png"><img src="https://ennerf.github.io/images/os/osx-win-ubuntu_24h.png" alt="Windows vs. Linux vs. Mac hiccups (24h)"></a>
+</div>
+<div class="title">Figure 1. Windows vs. Linux vs. Mac hiccups (24h)</div>
+</div>
+<div class="paragraph">
+<p>These results show that Linux had fewer and lower outliers than Windows. Up to the 90th percentile all three systems respond relatively similarly, but there are significant differences at the higher percentiles. There also seems to have been a period of increased system activity on OSX after 7 hours. The chart below shows a zoomed in view of a 10 minute time period starting at 10 hours.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="/images/os/osx-win-ubuntu_10m.png"><img src="https://ennerf.github.io/images/os/osx-win-ubuntu_10m.png" alt="Windows vs. Linux vs. Mac hiccups (10 min)"></a>
+</div>
+<div class="title">Figure 2. Windows vs. Linux vs. Mac hiccups (10min)</div>
+</div>
+<div class="paragraph">
+<p>Zoomed in we can see that the Windows hiccups are actually very repeatable. 99.9% are below 2ms, but there are frequent spikes to relatively discrete values up to 16ms. This also highlights the importance of looking at the details of the latency distribution. In other data sets that I&#8217;ve seen, it is rare for the worst case to be equal to the 99.99% percentile. It&#8217;s also interesting that the distribution for 10 minutes looks identical to the 24 hour chart. OSX shows similar behavior, but with lower spikes. Ubuntu 16.04 is comparatively quiet.</p>
+</div>
+<div class="paragraph">
+<p>It&#8217;s debatable whether this makes any difference for robotic systems in practice. All of the systems I&#8217;ve worked with either had hard real-time requirements below 1ms, in which case none of these OS would be sufficient, or they were soft real-time systems that could handle occasional hiccups to 25 or even 100 ms. I have yet to see one of our robotic systems perform perceivably worse on Windows versus Linux.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_real_time_linux">Real Time Linux</h3>
+<div class="paragraph">
+<p>Now that we have an understanding of how traditional systems without tuning perform, let&#8217;s take a look at the performance of Linux with a real-time kernel. The rt kernel (PREEMPT_RT patch) can preempt lower priority tasks, which results in worse overall performance, but more deterministic behavior with respect to latency.</p>
+</div>
+<div class="paragraph">
+<p>I chose Scientific Linux 6 because of it&#8217;s support for <a href="https://access.redhat.com/products/red-hat-enterprise-mrg-realtime">Red Hat&#174; Enterprise MRG Realtime&#174;</a>. You can download the  <a href="http://ftp.scientificlinux.org/linux/scientific/">ISO</a> and find instructions for installing MRG Realtime <a href="http://linux.web.cern.ch/linux/mrg/">here</a>. The version I&#8217;ve tested was,</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Scientific Linux 6.6, kernel 3.10.0-327.rt56.194.el6rt.x86_64</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Note that there is a huge number of tuning options that may improve the performance of your application. There are various tuning guides that can provide more information, e.g., Red Hat&#8217;s <a href="http://linux.web.cern.ch/linux/mrg/2.3/Red_Hat_Enterprise_MRG-2-Realtime_Tuning_Guide-en-US.pdf">MRG Realtime Tuning Guide</a>. I&#8217;m not very familiar with tuning systems at this level, so I&#8217;ve only applied the following small list of changes.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>/boot/grub/menu.lst</em> &#8658; <em>transparent_hugepage=never</em></p>
+</li>
+<li>
+<p><em>/etc/sysctl.conf</em> &#8658; <em>vm.swappiness=0</em></p>
+</li>
+<li>
+<p><em>/etc/inittab</em> &#8658; <em>id:3:initdefault</em> (no GUI)</p>
+</li>
+<li>
+<p><em>chkconfig --level 0123456 cpuspeed off</em></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The process priority was set to 98, which is the highest priority available for real-time threads. I&#8217;d advise consulting
+<a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_MRG/2/html/Realtime_Tuning_Guide/chap-Realtime-Specific_Tuning.html#Setting_scheduler_priorities">scheduler priorities</a> before deciding on priorities for tasks that actually use cpu time.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-shell" data-lang="shell"># find process id
+pid=$(pgrep -f "[j]Hiccup.jar")
+
+# show current priority
+echo $(chrt -p $pid)
+
+# set priority
+sudo chrt -p 98 $pid</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Below is a comparison of the two Linux variants.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="/images/os/ubuntu-scl_24h.png"><img src="https://ennerf.github.io/images/os/ubuntu-scl_24h.png" alt="Linux vs. RT Linux hiccups (24h)"></a>
+</div>
+<div class="title">Figure 3. Linux vs. RT Linux hiccups (24h)</div>
+</div>
+<div class="paragraph">
+<p>Looking at the 24 hour chart (above) and the 10 minute chart (below), we can see that worst case has gone down significantly. While Ubuntu 16.04 was barely visible when compared to Windows, it looks very noisy compared to the real-time variant. All measurements were within a 150us range, which is good enough for most applications.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="/images/os/ubuntu-scl_10m.png"><img src="https://ennerf.github.io/images/os/ubuntu-scl_10m.png" alt="Linux vs. RT Linux hiccups (10 min)"></a>
+</div>
+<div class="title">Figure 4. Linux vs. RT Linux hiccups (10 min)</div>
+</div>
+<div class="paragraph">
+<p>I&#8217;ve also added the 24 hour chart for the real-time variant by itself to provide a better scale. Note that this resolution is getting close to the resolution of what we can measure and record.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="/images/os/scl_24h.png"><img src="https://ennerf.github.io/images/os/scl_24h.png" alt="RT Linux hiccups (24h)"></a>
+</div>
+<div class="title">Figure 5. RT Linux hiccups (24h)</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_summary">Summary</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>I&#8217;ve tried to provide a basic idea of the out of the box performance of various off the shelf operating systems. In my experience the three major consumer OS can be treated relatively equal, i.e., either software will work well on all of them, or won&#8217;t work correctly on any of them. If you do work on a problem that does have hard deadlines, there are many different <a href="https://en.wikipedia.org/wiki/Comparison_of_real-time_operating_systems">RTOS</a> to choose from. Aside from the mentioned real-time Linux and the various embedded solutions, there are even real-time extensions for Windows, such as <a href="http://www.tenasys.com/overview-ifw">INtime</a> or <a href="http://kithara.com/en/products/realtime-suite">Kithara</a>.</p>
+</div>
+<div class="paragraph">
+<p>We&#8217;ve had very good experiences with implementing the low-level control (PID loops, motor control, safety features, etc.) on a per actuator level. That way all of the safety critical and latency sensitive pieces get handled by a dedicated RTOS and are independent of user code. The high-level controller (trajectories and multi-joint coordination) then only needs to update set targets (e.g. position/velocity/torque), which is far less sensitive to latency and doesn&#8217;t require hard real-time communications. This approach enables quick prototyping of high-level behaviors using 'non-deterministic' technologies, such as Windows, MATLAB and standard UDP messages.</p>
+</div>
+<div class="paragraph">
+<p>For example, the high-level control in <a href="https://youtu.be/zaPtxre4tFc">Teleop Taxi</a> was done over Wi-Fi from MATLAB running on Windows, while simultaneously streaming video from an Android phone in the back of the robot. By removing the requirement for a local control computer, it only took 20-30 lines of code (see  <a href="https://gist.github.com/ennerf/b349c56d320da1db89b298fd807f00e4">simplified</a>, <a href="https://gist.github.com/ennerf/7d59a9765da25ed7c02117da1805551c">full</a>) to run the entire demo. Actually using a local computer resulted in no perceivable benefit. While not every system can be controlled entirely through Wi-Fi, we&#8217;ve seen similar results even with more complex systems.</p>
+</div>
+<div class="sect2">
+<h3 id="_latency_is_not_gaussian">Latency is not Gaussian</h3>
+<div class="paragraph">
+<p>Finally, I&#8217;d like to stress again that latency practically never follows a Gaussian distribution. For example, the maximum for OSX is more than 400 standard deviations away from the average. The table for these data sets is below.</p>
+</div>
+<table class="tableblock frame-all grid-all" style="width: 80%;">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.667%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Samples</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Mean</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>StdDev</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Max</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>(max-mean) /stddev</strong></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Windows 10</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">80,304,595</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.55 ms</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.37</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">17.17 ms</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">44.9</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>OSX 10.9.5</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">65,282,969</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.32 ms</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.03</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">12.65 ms</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">411</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Ubuntu 16.04</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">78,039,162</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.10 ms</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.03 ms</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">293</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Scientific Linux 6.6-rt</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">79.753.643</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.08 ms</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.15 ms</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The figure below compares the data&#8217;s actual distribution for Windows to a theoretical gaussian distribution. Rather than a classic 'bell-curve', it shows several spikes that are spread apart in regular intervals. The distance between these spikes is almost exactly one millisecond, which matches the Windows timer interrupt interval that was set while gathering the data. Interestingly, the spikes at above 2ms all seem to happen at roughly the same likelihood.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<a class="image" href="/images/os/windows-gaussian_distribution_24h.png"><img src="https://ennerf.github.io/images/os/windows-gaussian_distribution_24h.png" alt="Actual vs Gaussian Distribution for Windows"></a>
+</div>
+<div class="title">Figure 6. Actual Distribution compared to Gaussian-fit (Windows)</div>
+</div>
+<div class="paragraph">
+<p>Using only mean and standard deviation for any sort of latency comparison can produce deceptive results. Aside from giving little to no information about the higher percentiles, there are many cases where systems with seemingly 'better' values exhibit worse actual performance.</p>
+</div>
+</div>
+</div>
+</div>
+                        <aside class="tags fi-pricetag-multiple">Posted on <a href="https://ennerf.github.io/tag/Latency/">Latency</a>, <a href="https://ennerf.github.io/tag/Operating-System/"> Operating System</a>, <a href="https://ennerf.github.io/tag/Windows/"> Windows</a>, <a href="https://ennerf.github.io/tag/OSX/"> OSX</a>, <a href="https://ennerf.github.io/tag/Ubuntu/"> Ubuntu</a>, <a href="https://ennerf.github.io/tag/Scientific-Linux/"> Scientific Linux</a>, <a href="https://ennerf.github.io/tag/Sleep/"> Sleep</a>, <a href="https://ennerf.github.io/tag/Real-Time/"> Real-Time</a>, <a href="https://ennerf.github.io/tag/Hdr-Histogram/"> HdrHistogram</a></aside>
+            </section>
+            <hr>
+            <footer class="post-footer">
+
+                <section class="share">
+                    <h4>Liked this post ? Share it.</h4>
+                    <a class="fi-social-facebook" href="https://www.facebook.com/sharer/sharer.php?u=https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html"
+                        onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+                    </a>
+                    <a class="fi-social-twitter" href="https://twitter.com/share?text=A%20Practical%20Look%20at%20Latency%20in%20Robotics%20%3A%20The%20Importance%20of%20Metrics%20and%20Operating%20Systems&amp;url=https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html"
+                        onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                    </a>
+                    <a class="fi-social-google-plus" href="https://plus.google.com/share?url=https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html"
+                       onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+                    </a>
+                </section>
+
+                <section class="author">
+                    <header>
+                        <span>About the author</span>
+                    </header>
+                    <section>
+                        <h4>Florian Enner</h4>
+                        <img src="https://avatars.githubusercontent.com/u/5491587?v&#x3D;3">
+                        <span>Pittsburgh, PA</span>
+                        <a href="https://ennerf.github.io/">https://ennerf.github.io/</a>
+                    </section>
+                    <footer>
+                         <p>Principal Software Engineer at the Robotics Institute at Carnegie Mellon University and Co-Founder of HEBI Robotics.</p>
+                    </footer>
+                </section>
+
+        <div class="clearfix"></div>
+                    <hr>
+
+            </footer>
+
+        <h3 class="title-disqus"><span class="fi-comments"></span>Discussions</h3>
+
+
+
+
+        <section class="post-comments">
+          <div id="disqus_thread"></div>
+          <script type="text/javascript">
+          var disqus_shortname = 'ennerf'; // required: replace example with your forum shortname
+          /* * * DON'T EDIT BELOW THIS LINE * * */
+          (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+          })();
+          </script>
+          <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+          <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+        </section>
+
+
+    </article>
+
+</main>
+
+</div>
+
+</div>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment-with-locales.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js?v="></script> 
+      <script type="text/javascript">
+        jQuery( document ).ready(function() {
+          // change date with ago
+          jQuery('ago.ago').each(function(){
+            var element = jQuery(this).parent();
+            element.html( moment(element.text()).fromNow());
+          });
+        });
+
+        hljs.initHighlightingOnLoad();
+      </script>
+
+    <!--[if lte IE 8]>
+        <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/outdatedBrowser.min.js?v=1474470485151"></script>
+    <![endif]-->
+    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/min/built.js?v=1474470485151"></script>
+
+    <script>
+      $(document).foundation();
+    </script>
+
+    <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-83018359-1', 'auto');
+    ga('send', 'pageview');
+
+    </script>
+</body>
+</html>
