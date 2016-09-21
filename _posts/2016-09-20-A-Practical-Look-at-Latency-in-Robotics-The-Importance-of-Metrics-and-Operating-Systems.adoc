@@ -1,6 +1,6 @@
-= Latency : Operating Systems
-:published_at: 2016-08-24
-:hp-tags: jHiccup, Latency, Sleep, Operating System, Windows, OSX, Ubuntu, Scientific Linux, Real-Time, Control
+= A Practical Look at Latency in Robotics : The Importance of Metrics and Operating Systems
+:published_at: 2016-09-20
+:hp-tags: Latency, Operating System, Windows, OSX, Ubuntu, Scientific Linux, Sleep, Real-Time, HdrHistogram
 :imagesdir: ../images
 
 //NOTE: Keep X in Mind
