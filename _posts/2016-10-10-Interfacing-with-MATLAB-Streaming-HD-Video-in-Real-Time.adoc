@@ -2,3 +2,64 @@
 :published_at: 2016-10-10
 //:hp-tags: 
 :imagesdir: ../images
+
+In my quest to creating robot APIs for MATLAB I've encountered many problems. One of the most challenging ones was to find a way to acquire h264 video streams in real-time in order to enable quick prototyping of computer vision algorithms.
+
+The acquisition and decoding of a video stream can be a very computationally expensive operation, so in a typical (e.g. C++ or Java) program there would be a background thread acquiring the images and another thread that would run the actual algorithm. This approach doesn't work well for MATLAB since the language is fundamentally single threaded. There are ways to get multi-threading by interfacing with other languages, but there is a significant cost to crossing the barrier to MATLAB and converting the data into a compatible format.
+
+I've tried various different approaches in side projects between 2011 and 2013 to get this running, but I always ended up unsatisfied. Eventually in 2014 this became more of a priority and I finally found a good solution. 
+
+This blog post will provide an overview of the problem, the approaches that didn't work, and the final solution.
+
+== Vanilla MATLAB
+
+MATLAB provides a variety of toolboxes and hardware support packages for image acquisition. Below is a list of the ones that I'm aware of:
+
+[width="100%",options="header",cols="1a,3a"]
+|====================
+| Package | Problems 
+
+| link:http://www.mathworks.com/hardware-support/ip-camera.html[IP Camera Support] |
+* Didn't exist at the time
+* Limited to mjpeg over http
+
+| link:http://www.mathworks.com/hardware-support/matlab-webcam.html[USB Webcam Support] |
+* Only supports USB cameras
+
+| link:http://www.mathworks.com/help/matlab/ref/imread.html[imread], link:http://www.mathworks.com/help/matlab/ref/webread.html[webread] |
+* Does everything in the MATLAB thread, which is too slow (<2 fps) 
+* Limited to http
+
+|====================
+
+
+== Common Approach
+
+// Similar to ROS / LCM - acquire image in 1 process and publish as jpeg
+// --> quality reduction and huge load on the system
+// --> not feasible for >480p
+
+// MATLAB thread: retrieve encoded data, decode to raw, convert to matlab format
+
+Assuming a frame rate of 30 fps, the total time budget in the MATLAB thread is 33 ms per image. In order to be able to actually do useful operations on the images, the acquisition part shouldn't take more than 5-10 ms.
+
+== Dedicated System
+
+// implemented as much as possible in background thread, direct acquisition
+
+// MATLAB thread: convert to MATLAB format
+
+link:http://www.mathworks.com/matlabcentral/fileexchange/8028-mmread[mmread] uses MEX with FFMpeg. 
+link:https://github.com/kyamagu/mexopencv[mexopencv] uses MEX with OpenCV.
+
+
+== Efficient Data Exchange
+
+// MATLAB thread: 2 very cheap Java calls for locking and a memcpy operation
+
+
+
+
+
+
+

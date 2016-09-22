@@ -17,25 +17,27 @@ function [] = streaming_benchmark()
     benchmark('decodeJpeg_java', f);
     
     %% test java conversion
+    rnd480p = {480 640 3};
+    
     list = java.util.ArrayList();
-    list.add(uint8(rand(480,640,3)*255));
+    list.add(uint8(rand(rnd480p{:})*255));
     f = @() getFirstElement_Java(list);
-    benchmark('java 480p (3-dim)', f);
+    benchmark('java 480p (3d)', f);
 
     list = java.util.ArrayList();
     list.add(uint8(rand(480*640*3,1)*255));
     f = @() getFirstElement_Java(list);
-    benchmark('java 480p (1-dim)', f);
+    benchmark('java 480p (1d)', f);
 
     list = java.util.ArrayList();
     list.add(uint8(rand(720,1280,3)*255));
     f = @() getFirstElement_Java(list);
-    benchmark('java 720p (3-dim)', f);
+    benchmark('java 720p (3d)', f);
     
     list = java.util.ArrayList();
     list.add(uint8(rand(720*1280*3,1)*255));
     f = @() getFirstElement_Java(list);
-    benchmark('java 720p (1-dim)', f);
+    benchmark('java 720p (1d)', f);
     
 end
 
