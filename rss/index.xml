@@ -1,10 +1,10 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Thu, 22 Sep 2016 00:07:29 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[A Practical Look at Latency in Robotics : The Importance of Metrics and Operating Systems]]></title><description><![CDATA[<div id="preamble">
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Thu, 22 Sep 2016 01:10:56 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[A Practical Look at Latency in Robotics : The Importance of Metrics and Operating Systems]]></title><description><![CDATA[<div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
 <p>This is the first in a series of blog posts where I will try to share some of my own impressions and findings that have stemmed from several years of creating tools for robotics research.</p>
 </div>
 <div class="paragraph">
-<p>Latency is an important practical concern in the robotics world that is often poorly understood. I feel that a better understanding of latency can help robotics researchers and engineers make design and architecture decisions that greatly streamline accelerate the R&amp;D process. I&#8217;ve personally spent many hours looking for information on the latency characteristics of various robotic components, but have had difficulty finding anything that is clearly presented or backed by solid data. From what I&#8217;ve found, most benchmarks focus on the maximum throughput and either ignore the subject of latency or measure it incorrectly.</p>
+<p>Latency is an important practical concern in the robotics world that is often poorly understood. I feel that a better understanding of latency can help robotics researchers and engineers make design and architecture decisions that greatly streamline and accelerate the R&amp;D process. I&#8217;ve personally spent many hours looking for information on the latency characteristics of various robotic components, but have had difficulty finding anything that is clearly presented or backed by solid data. From what I&#8217;ve found, most benchmarks focus on the maximum throughput and either ignore the subject of latency or measure it incorrectly.</p>
 </div>
 <div class="paragraph">
 <p>Because of this my first post is on the topic of latency and will cover two main topics:</p>
@@ -92,7 +92,7 @@ java -javaagent:jHiccup.jar="-d 0 -i ${intervalMs}" -cp jHiccup.jar org.jhiccup.
 </ul>
 </div>
 <div class="paragraph">
-<p>Note that when doing latency tests on Windows it is important to be aware of the system timer. It has variable timer intervals that range from 0.5ms to 15.6ms. By calling <em>timeBeginPeriod</em> and <em>endTimePeriod</em> applications can notify the OS whenever they need a higher resolution. The timer interrupt is a global resource that gets set to the lowest interrupt interval requested by any application. For example, watching a video in Chrome requests a timer interrupt interval of 0.5ms. A lower period results in a more responsive system at the cost of overall throughput and battery life. <a href="https://vvvv.org/contribution/windows-system-timer-tool">System Timer Tool</a> is a little utility that let&#8217;s you view the current state. jHiccup automatically requests a 1ms timer interval by calling Java&#8217;s <em>Thread.sleep()</em> with a value of below 10ms.</p>
+<p>Note that when doing latency tests on Windows it is important to be aware of the system timer. It has variable timer intervals that range from 0.5ms to 15.6ms. By calling <em>timeBeginPeriod</em> and <em>timeEndPeriod</em> applications can notify the OS whenever they need a higher resolution. The timer interrupt is a global resource that gets set to the lowest interrupt interval requested by any application. For example, watching a video in Chrome requests a timer interrupt interval of 0.5ms. A lower period results in a more responsive system at the cost of overall throughput and battery life. <a href="https://vvvv.org/contribution/windows-system-timer-tool">System Timer Tool</a> is a little utility that let&#8217;s you view the current state. jHiccup automatically requests a 1ms timer interval by calling Java&#8217;s <em>Thread.sleep()</em> with a value of below 10ms.</p>
 </div>
 </div>
 <div class="sect2">
@@ -237,12 +237,12 @@ sudo chrt -p 98 $pid</code></pre>
 </div>
 <table class="tableblock frame-all grid-all spread">
 <colgroup>
-<col style="width: 16.6666%;">
-<col style="width: 16.6666%;">
-<col style="width: 16.6666%;">
-<col style="width: 16.6666%;">
-<col style="width: 16.6666%;">
-<col style="width: 16.667%;">
+<col style="width: 23.0769%;">
+<col style="width: 15.3846%;">
+<col style="width: 15.3846%;">
+<col style="width: 15.3846%;">
+<col style="width: 15.3846%;">
+<col style="width: 15.3847%;">
 </colgroup>
 <tbody>
 <tr>
