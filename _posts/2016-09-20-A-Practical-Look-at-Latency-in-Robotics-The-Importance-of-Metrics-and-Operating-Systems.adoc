@@ -168,7 +168,7 @@ For example, the high-level control in https://youtu.be/zaPtxre4tFc[Teleop Taxi]
 
 Finally, I'd like to stress again that latency practically never follows a Gaussian distribution. For example, the maximum for OSX is more than 400 standard deviations away from the average. The table for these data sets is below.
 
-[width="80%"]
+[width="100%"]
 |========
 | |*Samples* |*Mean* |*StdDev* |*Max* | *(max-mean) /stddev*
 |*Windows 10* |80,304,595 |0.55 ms |0.37 |17.17 ms |44.9
