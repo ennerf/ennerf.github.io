@@ -1,0 +1,5 @@
+= A Practical Look at Latency in Robotics : Ethernet and UDP
+:published_at: 2016-11-05
+:hp-tags: Latency, Ethernet, UDP
+:imagesdir: ../images
+
