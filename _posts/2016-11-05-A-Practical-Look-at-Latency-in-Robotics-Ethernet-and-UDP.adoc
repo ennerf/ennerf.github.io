@@ -3,3 +3,62 @@
 :hp-tags: Latency, Ethernet, UDP
 :imagesdir: ../images
 
+== Intro
+
+UDP is unreliable, packets can be reordered, dropped, and can have jitter. Thus, roboticsts often shy away from using standard UDP and instead use e.g. Serial or Ethercat. Although this is theoretically true, it may be irrelevant for modern networks in practice.
+
+Early networks were built using 'Hubs' that share a single bus for all network ports. Thus, when more than one component try to communicate, there may be a collision that causes packets to be dropped. Modern networks use 'Switches' that have dedicated connections for each port to isolate collision domains. Additionally, connections tend to be full-duplex, so there are dedicated lines for transmitting and receiving data. Depending on the architecture, packets get buffered and sent to the appropriate port (Store-and-Forward) or directly passed through without evaluation (Cut-Through). Thus, switched networks should never have any packets that get dropped due to collisions. Note that packets can still be lost due to buffer overflows and/or too much load on a system. There is also a latency cost associated with each 'hop' (or buffer) that a packet has to go through.
+
+// re-read
+// http://www.cisco.com/c/en/us/products/collateral/switches/nexus-5020-switch/white_paper_c11-465436.html
+// https://www.lantronix.com/resources/networking-tutorials/network-switching-tutorial/
+
+Similarly, reordering may be relevant for internet communications, but generally does not apply to local networks without redundant routes and load balancing. Depending on the driver implementation it can theoretically happen on a local network, but I have yet to observe a single case.
+
+Industrial standards are able to guarantee a level of determinism because they enforce tight control over the network traffic and usually limit the components that can be connected. However, if a standard network is similarly controlled, the results can be quite good.
+
+== Benchmark Setup
+
+In order to mitigate jitter caused by the operating system and it's device drivers, I've tried to setup a benchmark that measures the communications latency between two dedicated embedded systems.
+
+1. Sender sends packet to receiver in fixed intervals
+2. Receiver echoes packet back to sender
+3. Sender measures round trip time and sends results to logging server
+4. Logging server persists data to disk
+
+As the sender and receiver devices I'm using two HEBI Robotics I/O Boards. It's a product that we haven't advertised yet, but customers usually use it to integrate actuators with external devices or to get various sensor input into MATLAB. It has 48 pins that serve a variety of functions (analog/digitial I/O, PWM, Encoder input, etc.) that can be accessed remotely via network. It sports a STM32f407 microcontroller and a 100 Mbit network port. For this benchmark I've programmed custom firmware (<TODO: add code snippet for sender and receiver>) to test the network stack.
+
+image::udp/io-boards.jpg[HEBI Robotics IO Board]
+
+Since multi-day logs can't be stored directly on the device, I've setup a Java server for data logging. The main socket handler writes incoming packets into a double buffered structure that can be persisted by a background thread without halting the packet handler. The synchronization between the threads is done using a http://stuff-gil-says.blogspot.com/2014/11/writerreaderphaser-story-about-new.html[WriterReaderPhaser], which is a synchronization primitive that is very useful for persisting events that are represented by a small amount of data. <TODO: add code snippet>
+
+The resulting binary data was loaded into MATLAB(C) for analysis and to generate the plots.
+
+TODO: Structure of Ethernet frame and UDP packet. Header overhead etc.
+
+== Best case single hop
+
+test IO board to IO board (100)
+
+operating system jitter, network jitter, clock drift (reference IEEE 1588v2)
+
+== Latency cost of switch (100/1000)
+
+image::udp/io-boards-100mbit-switch.jpg[]
+
+http://www.downloads.netgear.com/files/GDC/GS105/GS105_datasheet_04Sept03.pdf[NETGEAR ProSAFE GS105]
+
+image::udp/io-boards-gbit-switch.jpg[]
+
+Gbit switch to switch vs going through a 3 port embedded switch in an X5.
+
+== Larger networks
+
+http://www.downloads.netgear.com/files/GDC/GS748Tv1/GS748T_ds_03Feb05.pdf[NETGEAR ProSAFE GS748T]
+
+40 IO boards responding within <1 us.
+
+image::udp/multiple-boards.jpg[]
+
+== Conclusion
+
