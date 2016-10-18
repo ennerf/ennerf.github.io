@@ -5,17 +5,23 @@
 
 == Intro
 
-UDP is unreliable, packets can be reordered, dropped, and can have jitter. Thus, roboticsts often shy away from using standard UDP and instead use e.g. Serial or Ethercat. Although this is theoretically true, it may be irrelevant for modern networks in practice.
+The User Datagram Protocol (UDP) is unreliable, packets may be lost, reordered, and could even be delayed by an arbitrarily long time. These shortcomings make standard UDP seem non-deterministic and a really bad choice for controlling real-time systems. Luckily modern network components have largely solved these issues and performance in practice can be surprisingly good.
 
-Early networks were built using 'Hubs' that share a single bus for all network ports. Thus, when more than one component try to communicate, there may be a collision that causes packets to be dropped. Modern networks use 'Switches' that have dedicated connections for each port to isolate collision domains. Additionally, connections tend to be full-duplex, so there are dedicated lines for transmitting and receiving data. Depending on the architecture, packets get buffered and sent to the appropriate port (Store-and-Forward) or directly passed through without evaluation (Cut-Through). Thus, switched networks should never have any packets that get dropped due to collisions. Note that packets can still be lost due to buffer overflows and/or too much load on a system. There is also a latency cost associated with each 'hop' (or buffer) that a packet has to go through.
+Early networks were built using 'Hubs' that share a single channel for all network ports. This results in a large https://en.wikipedia.org/wiki/Collision_domain[Collision Domain] that can cause packet loss whenever more than one sender transmits a packet at the same time. Nowadays Hubs have been replaced with 'Switches' that have dedicated connections for each port in order to isolate collision domains. Connections also tend to be full-duplex, which means that there are dedicated lines for transmitting and receiving data. Since all communications are done over dedicated lines, collisions on the physical (wire) level should be a thing of the past.
+
+In the common https://en.wikipedia.org/wiki/Store_and_forward[Store-and-Forward] switching architecture all packets get buffered by the Switch and are then forwarded to the appropriate receiver port. This adds a latency cost that scales linearly with the number of switches that a packet has to go through. The alternative https://en.wikipedia.org/wiki/Cut-through_switching[Cut-through] switching approach can forward packets before they are fully received, which can have positive impacts on latency especially with very large packets.
+
+<TODO: combine these concepts somehow>
+
+//When more than one component try to communicate, there may be a collision that causes packets to be dropped. Modern networks use 'Switches' that have dedicated connections for each port to isolate collision domains. Additionally, connections tend to be full-duplex, so there are dedicated lines for transmitting and receiving data. Depending on the architecture, packets get buffered and sent to the appropriate port (Store-and-Forward) or directly passed through without evaluation (Cut-Through). Thus, switched networks should never have any packets that get dropped due to collisions. Note that packets can still be lost due to buffer overflows and/or too much load on a system. There is also a latency cost associated with each 'hop' (or buffer) that a packet has to go through.
 
 // re-read
 // http://www.cisco.com/c/en/us/products/collateral/switches/nexus-5020-switch/white_paper_c11-465436.html
 // https://www.lantronix.com/resources/networking-tutorials/network-switching-tutorial/
 
-Similarly, reordering may be relevant for internet communications, but generally does not apply to local networks without redundant routes and load balancing. Depending on the driver implementation it can theoretically happen on a local network, but I have yet to observe a single case.
+Similarly, reordering (in the sense that a stream of packets coming from a single source can arrive out of order) may be relevant for internet communications, but generally does not apply to local networks without redundant routes and load balancing. Depending on the driver implementation it can theoretically happen on a local network, but I have yet to observe a single case.
 
-Industrial standards are able to guarantee a level of determinism because they enforce tight control over the network traffic and usually limit the components that can be connected. However, if a standard network is similarly controlled, the results can be quite good.
+There are a number of competing networking standards that originated in industrial automation that are built on top of standard Ethernet. They are able to guarantee certain levels of determinism by enforcing tight control over the network layout and by limiting the components that can be connected. However, controlling standard networks in a similar manner can also produce quite good results.
 
 == Benchmark Setup
 
@@ -36,7 +42,7 @@ The resulting binary data was loaded into MATLAB(C) for analysis and to generate
 
 TODO: Structure of Ethernet frame and UDP packet. Header overhead etc.
 
-== Best case single hop
+== Best case single switch
 
 test IO board to IO board (100)
 
@@ -46,11 +52,17 @@ operating system jitter, network jitter, clock drift (reference IEEE 1588v2)
 
 image::udp/io-boards-100mbit-switch.jpg[]
 
+http://ww1.microchip.com/downloads/en/DeviceDoc/KSZ8863MLL_FLL_RLL_DS.pdf[MICREL KSZ8863]
+
 http://www.downloads.netgear.com/files/GDC/GS105/GS105_datasheet_04Sept03.pdf[NETGEAR ProSAFE GS105]
 
 image::udp/io-boards-gbit-switch.jpg[]
 
 Gbit switch to switch vs going through a 3 port embedded switch in an X5.
+
+image::udp/comparison-switch-latency.png[]
+image::udp/comparison-switch-latency-percentiles.png[]
+
 
 == Larger networks
 
