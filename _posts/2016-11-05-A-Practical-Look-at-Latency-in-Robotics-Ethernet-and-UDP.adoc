@@ -40,7 +40,30 @@ Since multi-day logs can't be stored directly on the device, I've setup a Java s
 
 The resulting binary data was loaded into MATLAB(C) for analysis and to generate the plots.
 
-TODO: Structure of Ethernet frame and UDP packet. Header overhead etc.
+== Ethernet Packet Structure
+
+Data packets on the wire include various types of overhead in addition to the actual payload. The minimum overhead is 66 bytes. Additionally, Ethernet Frames have a minimum size of 84 bytes, which makes the minimum payload for a UDP datagram 18 bytes.
+
+.UDP/IP Packet Size
+[width="100%",options="header,footer",cols="a,a,a"]
+|====================
+| Protocol | Item | Size (byte) 
+
+| https://en.wikipedia.org/wiki/Ethernet_frame[Ethernet II] | Preamble | 7
+|  | Start of Frame Delimiter | 1
+|  | MAC Header + CRC checksum | 18 (no optional fields)
+|  | Interpacket gap | 12
+
+| https://en.wikipedia.org/wiki/IPv4[Internet Protocol (IPv4)] | IP Header | 20  (no optional fields)
+
+
+| https://en.wikipedia.org/wiki/User_Datagram_Protocol[User Datagram Protocol (UDP)] | UDP Header | 8
+
+|====================
+
+All of the benchmarks in this post were done using a payload of 200 bytes. Thus, the actual packet size on the wire is 266 bytes after including all overhead. This may seem high to users to are used to dealing with serial protocols, but it is representative of what we are using in practice. For comparison, the feedback packets of our actuators use about 185-215 bytes payload. Requesting the state of all pins of an I/O board currently fills about 300 bytes payload.
+
+The theoretical time to send 266 bytes over the wire is 20.3us over 100 Mbit/s Ethernet and 2.03us over 1 Gbit/s Ethernet.
 
 == Best case single switch
 
