@@ -79,6 +79,8 @@ http://ww1.microchip.com/downloads/en/DeviceDoc/KSZ8863MLL_FLL_RLL_DS.pdf[MICREL
 
 http://www.downloads.netgear.com/files/GDC/GS105/GS105_datasheet_04Sept03.pdf[NETGEAR ProSAFE GS105]
 
+https://routerboard.com/RB750Gr2[MikroTik RB750Gr2 (RouterBOARD hEX)]
+
 image::udp/io-boards-gbit-switch.jpg[]
 
 Gbit switch to switch vs going through a 3 port embedded switch in an X5.
