@@ -71,6 +71,10 @@ test IO board to IO board (100)
 
 operating system jitter, network jitter, clock drift (reference IEEE 1588v2)
 
+// The sporadic outliers at ~210us happen exactly every 5s according to system clock. If it were a cron job in the switch, the clock would eventually drift apart. Note that it may also be every 500 packets because there is almost zero jitter.
+
+// The small outlier bursts happen on average every 322.5s and last for on average 15.0105s
+
 == Latency cost of switch (100/1000)
 
 image::udp/io-boards-100mbit-switch.jpg[]
