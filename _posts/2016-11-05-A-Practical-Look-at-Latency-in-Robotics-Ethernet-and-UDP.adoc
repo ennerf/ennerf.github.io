@@ -61,11 +61,13 @@ Data packets on the wire include various types of overhead in addition to the ac
 
 |====================
 
-All of the benchmarks in this post were done using a payload of 200 bytes. Thus, the actual packet size on the wire is 266 bytes after including all overhead. This may seem high to users to are used to dealing with serial protocols, but it is representative of what we are using in practice. For comparison, the feedback packets of our actuators use about 185-215 bytes payload. Requesting the state of all pins of an I/O board currently fills about 300 bytes payload.
+All of the benchmarks in this post measure the round-trip time for a UDP datagram with a payload of 200 bytes. After including all overhead, the actual frame size on the wire is 266 bytes. This may seem high to users to are used to dealing with serial protocols, but is representative of our standard use cases. For comparison, the feedback packets of HEBI Robotic's X-Series actuators currently require a payload of 185-215 bytes. Requesting the state of all pins of an I/O board currently requires about 300 bytes.
 
 The theoretical time to send 266 bytes over the wire is 20.3us over 100 Mbit/s Ethernet and 2.03us over 1 Gbit/s Ethernet.
 
-== Best case single switch
+Note that the round trip times in practice are slightly faster because the outgoing packets (commands) are usually significantly smaller than response packets (feedback).
+
+== Baseline: Single Switch
 
 test IO board to IO board (100)
 
@@ -75,19 +77,20 @@ operating system jitter, network jitter, clock drift (reference IEEE 1588v2)
 
 // The small outlier bursts happen on average every 322.5s and last for on average 15.0105s
 
-== Latency cost of switch (100/1000)
+== Latency cost per Switch (100/1000)
 
-image::udp/io-boards-100mbit-switch.jpg[]
+As mentioned in the intro, all switches I currently have access to use a 'store-and-forward' approach that requires the switch to fully receive a packet before forwarding it appropriately. Therefore, the latency cost per switch is the time it takes a packet on the wire plus any switching overhead. The wire time is constant (2us or 20us for 266 bytes), but the overhead depends on the switch implementation. There is not much 3rd party data out there, so depending on your requirements you may need to conduct your own benchmarks if you need to evaluate hardware.
 
-http://ww1.microchip.com/downloads/en/DeviceDoc/KSZ8863MLL_FLL_RLL_DS.pdf[MICREL KSZ8863]
+For this benchmark I tested three switches that were individually added to the baseline setup: 
 
-http://www.downloads.netgear.com/files/GDC/GS105/GS105_datasheet_04Sept03.pdf[NETGEAR ProSAFE GS105]
+* http://ww1.microchip.com/downloads/en/DeviceDoc/KSZ8863MLL_FLL_RLL_DS.pdf[MICREL KSZ8863] (100 Mbit/s) embedded in an X5 actuator
+* http://www.downloads.netgear.com/files/GDC/GS105/GS105_datasheet_04Sept03.pdf[NETGEAR ProSAFE GS105] (1 Gbit/s)
+* https://routerboard.com/RB750Gr2[MikroTik RB750Gr2 (RouterBOARD hEX)] (1 Gbit/s) with DHCP disabled
 
-https://routerboard.com/RB750Gr2[MikroTik RB750Gr2 (RouterBOARD hEX)]
-
-image::udp/io-boards-gbit-switch.jpg[]
-
-Gbit switch to switch vs going through a 3 port embedded switch in an X5.
+.
+|====  
+| image:udp/io-boards-100mbit-switch.jpg[] | image:udp/io-boards-gbit-switch.jpg[]  
+|====
 
 image::udp/comparison-switch-latency.png[]
 image::udp/comparison-switch-latency-percentiles.png[]
