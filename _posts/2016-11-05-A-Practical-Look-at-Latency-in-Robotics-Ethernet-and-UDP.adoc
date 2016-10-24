@@ -9,7 +9,14 @@ The User Datagram Protocol (UDP) is unreliable, packets may be lost, reordered, 
 
 Early networks were built using 'Hubs' that share a single channel for all network ports. This results in a large https://en.wikipedia.org/wiki/Collision_domain[Collision Domain] that can cause packet loss whenever more than one sender transmits a packet at the same time. Nowadays Hubs have been replaced with 'Switches' that have dedicated connections for each port in order to isolate collision domains. Connections also tend to be full-duplex, which means that there are dedicated lines for transmitting and receiving data. Since all communications are done over dedicated lines, collisions on the physical (wire) level should be a thing of the past.
 
-In the common https://en.wikipedia.org/wiki/Store_and_forward[Store-and-Forward] switching architecture all packets get buffered by the Switch and are then forwarded to the appropriate receiver port. This adds a latency cost that scales linearly with the number of switches that a packet has to go through. The alternative https://en.wikipedia.org/wiki/Cut-through_switching[Cut-through] switching approach can forward packets before they are fully received, which can have positive impacts on latency especially with very large packets.
+Virtually all consumer switches today use the https://en.wikipedia.org/wiki/Store_and_forward[Store-and-Forward] switching architecture. They fully receive the packet, store them in an internal buffer, and then forward them to the appropriate receiver port. This adds a latency cost that scales linearly with the number of switches that a packet has to go through. There is an alternative approach called https://en.wikipedia.org/wiki/Cut-through_switching[Cut-through] switching that can forward packets while they are being received. While this can theoretically lower latency, it is not very popular because it's more difficult to implement and only works well if both ports negotiate the same speed and the receiver port isn't in use. There is also still a requirement to buffer enough of a packet to evaluate the target address in the header, so the benefits primarily effect larger packets.
+
+// Ethercat has solved this in a somewhat elegant way by not using device addresses and by limiting each wire to a single writer. 
+
+
+// Depending on the use case this can have positive impacts on latency. However, it still requires enough buffering to evaluate the header address and only works well if both sender and receiver ports negotiate the same speed and the sender port isn't already being used.
+
+// In the common https://en.wikipedia.org/wiki/Store_and_forward[Store-and-Forward] switching architecture all packets get buffered by the Switch and are then forwarded to the appropriate receiver port. This adds a latency cost that scales linearly with the number of switches that a packet has to go through. The alternative https://en.wikipedia.org/wiki/Cut-through_switching[Cut-through] switching approach can forward packets before they are fully received, which can have positive impacts on latency especially with very large packets.
 
 <TODO: combine these concepts somehow>
 
@@ -68,6 +75,10 @@ The theoretical time to send 266 bytes over the wire is 20.3us over 100 Mbit/s E
 Note that the round trip times in practice are slightly faster because the outgoing packets (commands) are usually significantly smaller than response packets (feedback).
 
 == Baseline: Single Switch
+
+First, we can get an idea of the best-case baseline by having two devices communicate with each other through a single switch and without any external traffic. It'd be possible to omitt the switch entirely by creating a point-to-point connection, but that would be a relatively rare use case for us. 
+
+I set the frequency to 100Hz assuming that the round trip time for one measurement would never exceed 10ms. 
 
 test IO board to IO board (100)
 
