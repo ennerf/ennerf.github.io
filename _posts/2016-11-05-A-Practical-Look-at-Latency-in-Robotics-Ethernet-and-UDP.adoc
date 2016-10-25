@@ -76,13 +76,40 @@ Note that the round trip times in practice are slightly faster because the outgo
 
 == Baseline: Single Switch
 
-First, we can get an idea of the best-case baseline by having two devices communicate with each other through a single switch and without any external traffic. It'd be possible to omitt the switch entirely by creating a point-to-point connection, but that would be a relatively rare use case for us. 
+We can establish a baseline of the best-case round trip time (RTT) by having two devices communicate with each other through a single switch that does not see any external traffic. It's possible to create a point-to-point connection without any switches, but the typical use case goes through at least one switch.
 
-I set the frequency to 100Hz assuming that the round trip time for one measurement would never exceed 10ms. 
+I set the frequency to 100Hz and logged data for close to 24 hours. I chose this frequency because it is a common control rate for sending high-level trajectories, and because 10ms is a safe deadline in case there are large outliers. Faster control rates are of course possible.
 
-test IO board to IO board (100)
+First, let's look at the jitter of the underlying embedded real-time operating system. The figure below shows the difference between an idealized signal that ticks every 10ms and the actual measurements of the loop start times. 99% are within the lowest measurement resolution (250ns), and the worst observed case is below 6us. This is quite a bit better than the 150us worst observed case on real-time Linux as setup in  https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html[The Importance of Metrics and Operating Systems].
 
-operating system jitter, network jitter, clock drift (reference IEEE 1588v2)
+[.text-center]
+.OS jitter of ChibiOS 2.6.8 on STM32F407 (24h)
+image::udp/os-jitter-embedded.png[link="/images/udp/os-jitter-embedded.png"]
+
+The figure below shows the round trip time for all packets and the corresponding percentile distribution. There were a total of 8.5 million messages. Note that none of them were lost and that none of them arrived out of order.
+
+[[img-rtt-24h]]
+[.text-center]
+.Round Trip Time for 200 byte payload (24h)
+image::udp/rtt-baseline.png[]
+
+90% of all packets arrive within 194us and a jitter of less than 1 microsecond. Roughly 80us of this time is spent on the wire, so using chips that support Gigabit (rather than 100Mbit) could lower the round trip time to ~120us. Above the common case, there are three different periodically reoccuring modes that cause the round-trip-time to get up to a worst case that is 60us higher. 
+
+* Mode 1 occurs consistently every 5.3 minutes and lasts for 15.01 seconds. During this time it adds up to 4 us latency.
+* Mode 2 occurs exactly once every 5 seconds and is always at 210us.
+* Mode 3 occurs roughly once an hour and adds linearly increasing latency up to 60us to 10 packets.
+
+Below is a zoomed in view of a 10 minute timespan that better shows Mode 1 and 2.
+
+[.text-center]
+.Round Trip Time for 200 byte payload (10min)
+image::udp/rtt-baseline-zoomed.png[]
+
+So far I have not been successful in determining the root cause of these modes. However, after several tests, I strongly suspect that all of them occur on the firmware side rather than being tied to the switch or the protocol itself. With more tuning and a better implementation (e.g. lwip with zero copy and tuned options) it seems likely that the maximum jitter could go down to below 6us and potentially even 1us.
+
+// test IO board to IO board (100)
+
+//operating system jitter, network jitter, clock drift (reference IEEE 1588v2)
 
 // The sporadic outliers at ~210us happen exactly every 5s according to system clock. If it were a cron job in the switch, the clock would eventually drift apart. Note that it may also be every 500 packets because there is almost zero jitter.
 
