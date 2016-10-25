@@ -105,7 +105,7 @@ Below is a zoomed in view of a 10 minute timespan that better shows Mode 1 and 2
 .Round Trip Time for 200 byte payload (10min)
 image::udp/rtt-baseline-zoomed.png[]
 
-So far I have not been successful in determining the root cause of these modes. However, after several tests, I strongly suspect that all of them occur on the firmware side rather than being tied to the switch or the protocol itself. With more tuning and a better implementation (e.g. lwip with zero copy and tuned options) it seems likely that the maximum jitter could go down to below 6us and potentially even 1us.
+So far I have not been successful in determining the root cause of these modes. All 3 modes seem to be related to actual time and independent of rate and packet count. However, after several tests, I strongly suspect that all of them occur on the firmware side rather than being tied to the switch or the protocol itself. With more tuning and a better implementation (e.g. lwip with zero copy and tuned options) it seems likely that the maximum jitter could go down to below 6us and potentially even 1us.
 
 // test IO board to IO board (100)
 
@@ -130,17 +130,27 @@ For this benchmark I tested three switches that were individually added to the b
 | image:udp/io-boards-100mbit-switch.jpg[] | image:udp/io-boards-gbit-switch.jpg[]  
 |====
 
-image::udp/comparison-switch-latency.png[]
-image::udp/comparison-switch-latency-percentiles.png[]
+image::udp/rtt-switch-comparison.png[]
 
+image::udp/comparison-switch-latency.png[]
+
+Since the Netgear GS105 exhibited bad performance in this test, I ran another baseline test using the RB750Gr2 instead of the GS105. While there was a consistent gain of 0.5us, I did not consider this significant enough to rerun all tests.
 
 == Larger networks
-
-http://www.downloads.netgear.com/files/GDC/GS748Tv1/GS748T_ds_03Feb05.pdf[NETGEAR ProSAFE GS748T]
 
 40 IO boards responding within <1 us.
 
 image::udp/multiple-boards.jpg[]
+
+http://www.downloads.netgear.com/files/GDC/GS748Tv1/GS748T_ds_03Feb05.pdf[NETGEAR ProSAFE GS748T]
+
+image::udp/os-jitter-linux-rt.png[]
+
+image::udp/rtt-40x.png[]
+
+More than 37 million packets. No packet drops or re-ordering of a source stream. Also tried 1KHz and result looks the same (but too much data to plot at once).
+
+image::udp/rtt-40x-zoomed.png[]
 
 == Conclusion
 
