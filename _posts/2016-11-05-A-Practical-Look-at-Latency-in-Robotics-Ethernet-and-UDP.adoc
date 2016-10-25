@@ -9,7 +9,7 @@ The User Datagram Protocol (UDP) is unreliable, packets may be lost, reordered, 
 
 Early networks were built using 'Hubs' that share a single channel for all network ports. This results in a large https://en.wikipedia.org/wiki/Collision_domain[Collision Domain] that can cause packet loss whenever more than one sender transmits a packet at the same time. Nowadays Hubs have been replaced with 'Switches' that have dedicated connections for each port in order to isolate collision domains. Connections also tend to be full-duplex, which means that there are dedicated lines for transmitting and receiving data. Since all communications are done over dedicated lines, collisions on the physical (wire) level should be a thing of the past.
 
-Virtually all consumer switches today use the https://en.wikipedia.org/wiki/Store_and_forward[Store-and-Forward] switching architecture. They fully receive the packet, store them in an internal buffer, and then forward them to the appropriate receiver port. This adds a latency cost that scales linearly with the number of switches that a packet has to go through. There is an alternative approach called https://en.wikipedia.org/wiki/Cut-through_switching[Cut-through] switching that can forward packets while they are being received. While this can theoretically lower latency, it is not very popular because it's more difficult to implement and only works well if both ports negotiate the same speed and the receiver port isn't in use. There is also still a requirement to buffer enough of a packet to evaluate the target address in the header, so the benefits primarily effect larger packets.
+Virtually all consumer switches today use the https://en.wikipedia.org/wiki/Store_and_forward[Store-and-Forward] switching architecture. They fully receive the packet, store them in an internal buffer, and then forward them to the appropriate receiver port. This adds a latency cost that scales linearly with the number of switches that a packet has to go through. There is an alternative approach called https://en.wikipedia.org/wiki/Cut-through_switching[Cut-through] switching that can forward packets while they are being received. While this can theoretically lower latency, it is not very popular because it's more difficult to implement and only works well if both ports negotiate the same speed and the receiver port isn't in use. There is also remaining requirement to buffer enough of a packet to evaluate the target address in the header, so the benefits primarily effect larger packets.
 
 // Ethercat has solved this in a somewhat elegant way by not using device addresses and by limiting each wire to a single writer. 
 
@@ -26,7 +26,7 @@ Virtually all consumer switches today use the https://en.wikipedia.org/wiki/Stor
 // http://www.cisco.com/c/en/us/products/collateral/switches/nexus-5020-switch/white_paper_c11-465436.html
 // https://www.lantronix.com/resources/networking-tutorials/network-switching-tutorial/
 
-Similarly, reordering (in the sense that a stream of packets coming from a single source can arrive out of order) may be relevant for internet communications, but generally does not apply to local networks without redundant routes and load balancing. Depending on the driver implementation it can theoretically happen on a local network, but I have yet to observe a single case.
+Similarly, reordering (in the sense that a stream of packets coming from a single source can arrive out of order) may be relevant for internet communications, but generally does not apply to local networks without redundant routes. Depending on the driver implementation it can theoretically happen on a local network, but I have yet to observe a single case.
 
 There are a number of competing networking standards that originated in industrial automation that are built on top of standard Ethernet. They are able to guarantee certain levels of determinism by enforcing tight control over the network layout and by limiting the components that can be connected. However, controlling standard networks in a similar manner can also produce quite good results.
 
@@ -63,7 +63,6 @@ Data packets on the wire include various types of overhead in addition to the ac
 
 | https://en.wikipedia.org/wiki/IPv4[Internet Protocol (IPv4)] | IP Header | 20  (no optional fields)
 
-
 | https://en.wikipedia.org/wiki/User_Datagram_Protocol[User Datagram Protocol (UDP)] | UDP Header | 8
 
 |====================
@@ -86,7 +85,7 @@ First, let's look at the jitter of the underlying embedded real-time operating s
 .OS jitter of ChibiOS 2.6.8 on STM32F407 (24h)
 image::udp/os-jitter-embedded.png[link="/images/udp/os-jitter-embedded.png"]
 
-The figure below shows the round trip time for all packets and the corresponding percentile distribution. There were a total of 8.5 million messages. Note that none of them were lost and that none of them arrived out of order.
+The figure below shows the round trip time for all packets and the corresponding percentile distribution. There were a total of 8.5 million messages. None of them were lost and none of them arrived out of order.
 
 [[img-rtt-24h]]
 [.text-center]
@@ -146,11 +145,21 @@ http://www.downloads.netgear.com/files/GDC/GS748Tv1/GS748T_ds_03Feb05.pdf[NETGEA
 
 image::udp/os-jitter-linux-rt.png[]
 
-image::udp/rtt-40x.png[]
+image::udp/rtt-linux-40x.png[]
 
 More than 37 million packets. No packet drops or re-ordering of a source stream. Also tried 1KHz and result looks the same (but too much data to plot at once).
 
-image::udp/rtt-40x-zoomed.png[]
+image::udp/rtt-linux-40x-zoomed.png[]
+
+// Single unicast on LinuxRT has almost the same performance (minux 50us at the top). The 4 low bars may be polling intervals after the kernel driver switches to polling mode. Will take additional baseline-like data for Linux. From what I've read, sending should be non-blocking as long as the send buffer isn't full and the OS doesn't after the sys call.
+// See:
+// see https://lwn.net/Articles/551284/
+// https://en.wikipedia.org/wiki/New_API
+// http://blog.packagecloud.io/eng/2016/06/22/monitoring-tuning-linux-networking-stack-receiving-data/
+
+Even for a single target, there is a lot of jitter in the Linux network driver.
+
+image::udp/rtt-linux-1x.png[]
 
 == Conclusion
 
