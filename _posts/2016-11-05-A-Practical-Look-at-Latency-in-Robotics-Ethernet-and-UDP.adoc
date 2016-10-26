@@ -42,9 +42,11 @@ In order to mitigate this potential source of jitter, I setup a benchmark that m
 3. Sender measures the round trip time
 4. Measurement gets persisted to disk
 
-As the sender and receiver devices I'm using two HEBI Robotics I/O Boards. It's a product that we haven't advertised yet, but customers usually use it to integrate actuators with external devices or to get various sensor input into MATLAB. It has 48 pins that serve a variety of functions (analog/digitial I/O, PWM, Encoder input, etc.) that can be accessed remotely via network. It sports a 168MHz ARM microcontroller (STM32f407) and a 100 Mbit network port. In order to make sure that the devices are not doing anything else, I programmed custom firmware specifically for testing the network stack. The relevant code pieces can be found https://gist.github.com/ennerf/36a57d432bcff20a58efcdee10f91bd9[here]. The hardware timer (counter) resolution was set to 250ns.
+As the sender and receiver devices I'm using two HEBI Robotics I/O Boards. It's a product that we typically don't advertise, but customers often use it to integrate actuators with external devices or to get various sensor input into MATLAB. It has 48 pins that serve a variety of functions (analog/digitial I/O, PWM, Encoder input, etc.) that can be accessed remotely via network. It contains a 168MHz ARM microcontroller (STM32f407) and a 100 Mbit network port.
 
 image::udp/io-boards.jpg[HEBI Robotics IO Board]
+
+I wrote and programmed custom firmware based on http://www.chibios.org/[ChibiOS 2.6.8] and http://savannah.nongnu.org/projects/lwip/[lwIP 1.4.1] to isolate the network stack. The relevant code pieces can be found https://gist.github.com/ennerf/36a57d432bcff20a58efcdee10f91bd9[here]. The elapsed time is measured using a hardware counter that was set to a 250ns resolution.
 
 Since storing multiple Gigabytes of data on an embedded device is challenging, I setup a https://gist.github.com/ennerf/0ddc4396d15852d28e4eca4a8a923eb7[UDP server (Java)] that receives measurement data and persists the data to disk. The main socket handler writes incoming packets into a double buffered structure that can be persisted by a background thread without halting the packet handler. The synchronization between the threads is done using a http://stuff-gil-says.blogspot.com/2014/11/writerreaderphaser-story-about-new.html[WriterReaderPhaser], which is a synchronization primitive that is very useful for persisting events that are represented by a small amount of data.
 
@@ -72,11 +74,11 @@ UDP datagrams include various types of overhead in addition to the actual payloa
 
 |====================
 
-All of the benchmarks in this post measure the round-trip time for a UDP datagram with a payload of 200 bytes. After including all overhead, the actual frame size on the wire is 266 bytes. For comparison, the feedback packets of HEBI Robotic's X-Series actuators currently require a payload of 185-215 bytes, and requesting the state of all pins of an I/O board currently requires about 300 bytes.
+For these benchmarks I chose to measure the round-trip time for UDP datagrams with a payload of 200 bytes. For comparison, the feedback packets of HEBI Robotic's X-Series actuators currently require 185-215 bytes, and requesting the state of all pins of an I/O board currently requires about 300 bytes.
 
-While the size is representative of a typical feedback packet, the round trip times in practice are slightly faster because the outgoing packets (commands) are usually significantly smaller than response packets (feedback).
+While the size is representative of a typical feedback packet, the round trip times in production will be slightly faster because the outgoing packets (commands) are usually significantly smaller than response packets (feedback).
 
-The theoretical time to send 266 bytes over the wire is 20.3us over 100 Mbit/s Ethernet and 2.03us over 1 Gbit/s Ethernet.
+After including all overhead, the actual Ethernet frame size on the wire is 266 bytes. The theoretical time it takes to transfer 266 bytes over 100 Mbit/s and 1Gbit/s Ethernet is 20.3us and 2.03us respectively.
 
 == Baseline: Single Switch
 
@@ -142,9 +144,9 @@ Both KSZ8863 and the RB750Gr2 add a constant switching latency of 2.9 us and 3.6
 
 [width="100%",options="header",cols="3a,1a,1a,1a"]
 |====
-| Switch | Connection | 90%-ile RTT | Overhead
+| Switch | Connection | 90%-ile RTT | Overhead (not-on-wire)
 
-| Baseline | - | 193.8 us | 112.6 us
+| Baseline | 2x 100 MBit/s | 193.8 us | 112.6 us
 
 | http://ww1.microchip.com/downloads/en/DeviceDoc/KSZ8863MLL_FLL_RLL_DS.pdf[MICREL KSZ8863] (embedded in X5 actuator)
 | 100 Mbit/s | +43.5 us | 2.9 us
