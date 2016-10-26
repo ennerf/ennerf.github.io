@@ -179,7 +179,7 @@ In order to test this hypothesis we put together a test setup consisting of 40 H
 
 image::udp/multiple-boards.jpg[]
 
-In order to keep the sender device from overloading, I changed the sender to a Desktop computer running https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html[Scientific Linux 6.6 with real-time kernel]. First, I looked at the jitter of the underlying operating system. The figure below shows the difference between an idealized signal that ticks every 10ms and the actual measurements of the loop start times. It shows that this setup suffers from more than an order of magnitude more jitter than the embedded OS. (Note that the corresponding jHiccup control chart looks identical as in the OS blog post.)
+In order to keep the sender device from overloading, I changed the sender to a http://www.gigabyte.com/products/product-page.aspx?pid=4888#ov[Gigabyte Brix i7-4770R] computer running https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html[Scientific Linux 6.6 with real-time kernel]. First, I looked at the jitter of the underlying operating system. The figure below shows the difference between an idealized signal that ticks every 10ms and the actual measurements of the loop start times. It shows that this setup suffers from more than an order of magnitude more jitter than the embedded OS. (Note that the corresponding jHiccup control chart looks identical as in the OS blog post.)
 
 image::udp/os-jitter-linux-rt.png[]
 
@@ -191,7 +191,17 @@ It may be surprising, but there was again no packet loss or re-ordering of packe
 
 image::udp/rtt-linux-40x.png[]
 
-What surprised me is that the latency is so much higher than the previous tests. Looking at the previous tests, I would have expected most columns to start at around ~180us and end at ~280us. While this is sometimes the case, the majority of columns start above 300 us. After some initial research I suspect that this is related to the Linux https://en.wikipedia.org/wiki/New_API[NAPI] using polling mode rather than interrupts.
+What surprised me is that the latency is so much higher than the previous tests. Looking at the previous tests, I would have expected most columns to start at around ~180us and end at ~280us. While this is sometimes the case, the majority of columns start above 300 us. After some initial research I suspect that this is related to suboptimal device drivers and the Linux https://en.wikipedia.org/wiki/New_API[NAPI] using polling mode rather than interrupts. The installed network interface and driver are below.
+
+[source,shell]
+$ lspci | grep Ethernet
+
+03:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. RTL8111/8168/8411 PCI Express Gigabit Ethernet Controller (rev 0c)
+
+[source,shell]
+$ sudo dmesg | grep "Ethernet driver"
+
+r8169 Gigabit Ethernet driver 2.3LK-NAPI loaded
 
 // Single unicast on LinuxRT has almost the same performance (minux 50us at the top). The 4 low bars may be polling intervals after the kernel driver switches to polling mode. Will take additional baseline-like data for Linux. From what I've read, sending should be non-blocking as long as the send buffer isn't full and the OS doesn't after the sys call.
 // See:
@@ -201,15 +211,14 @@ What surprised me is that the latency is so much higher than the previous tests.
 
 == Conclusion
 
-Even consumer-grade Ethernet networks are actually very deterministic. Re-ordering is not an issue on local networks and unless ports get saturated, there should be no packet loss. Almost all of the commonly observed jitter seems to be caused by the operating system and it's device drivers. The chart below compares the Linux system communicating (using unicast) with a single device in the same setup as the baseline test.
+It seems that even consumer-grade Ethernet networks actually exhibit very deterministic performance with regards to latency. There were also no lost packets and none were received out-of-order. Large and extremely dangerous industrial robots should still only be controlled using specialized networking equipment, but for most robotic applications standard UDP is going to be more than sufficient.
 
-image::udp/rtt-linux-1x.png[]
+The unexpectedly high latency and jitter that is commonly observed in network benchmarks seem to be caused almost entirely by the underlying operating system and it's device drivers. The two charts below show a comparable baseline setup with one sender running on an embedded device and one running on a RT Linux system over 10 hours and 10 minutes respectively. Note that the RT Linux system is connected using a Gigabit connection and should actually receive datagrams ~40us before the embedded device does.
 
-[NOTE]
-TODO: fix the plot and extend text. Maybe add another plot testing 4.x kernel in Ubuntu?
+image::udp/rtt-linux-1x-comparison-10h.png[]
 
-I still wouldn't recommend using consumer networking equipment for controlling extremely dangerous industrial robots, but for most robotic applications standard UDP is going to be more than sufficient.
+image::udp/rtt-linux-1x-comparison-10m.png[]
 
-I realize that this post still leaves many questions, but it's already a bit too long as it is. I may do another post in the future that looks at additional cases such as differences in operating systems, network cards, and performance degradation when sending uncontrolled traffic (e.g. streaming video) through the same network. There may also be a blog post discussing clock drift and clock synchronization using IEEE 1588v2.
+I realize that this post still leaves many open questions, but it's already a bit too long as it is. I'm considering doing another post in the future that looks at additional cases such as differences in operating systems, network interfaces, device drivers, and the performance impacts of sending uncontrolled traffic (e.g. streaming video) through the same network. There may also be a blog post discussing clock drift and clock synchronization using IEEE 1588v2.
 
 
