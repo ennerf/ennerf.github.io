@@ -3,33 +3,33 @@
 :hp-tags: Latency, Ethernet, UDP
 :imagesdir: ../images
 
-== Intro
+== Introduction
+
+Popular wisdom claims that Ethernet is non-deterministic and that UDP can't be used for real-time control. This post looks at the data to check whether popular wisdom is wrong.
 
 The User Datagram Protocol (UDP) is unreliable, packets may be lost, reordered, and could even be delayed by an arbitrarily long time. These shortcomings make standard UDP seem non-deterministic and a really bad choice for controlling real-time systems. Luckily modern network components have largely solved these issues and performance in practice can be surprisingly good.
 
-Early networks were built using 'Hubs' that share a single channel for all network ports. This results in a large https://en.wikipedia.org/wiki/Collision_domain[Collision Domain] that can cause packet loss whenever more than one sender transmits a packet at the same time. Nowadays Hubs have been replaced with 'Switches' that have dedicated connections for each port in order to isolate collision domains. Connections also tend to be full-duplex, which means that there are dedicated lines for transmitting and receiving data. Since all communications are done over dedicated lines, collisions on the physical (wire) level should be a thing of the past.
+== Background
 
-Virtually all consumer switches today use the https://en.wikipedia.org/wiki/Store_and_forward[Store-and-Forward] switching architecture. They fully receive the packet, store them in an internal buffer, and then forward them to the appropriate receiver port. This adds a latency cost that scales linearly with the number of switches that a packet has to go through. There is an alternative approach called https://en.wikipedia.org/wiki/Cut-through_switching[Cut-through] switching that can forward packets while they are being received. While this can theoretically lower latency, it is not very popular because it's more difficult to implement and only works well if both ports negotiate the same speed and the receiver port isn't in use. There is also remaining requirement to buffer enough of a packet to evaluate the target address in the header, so the benefits primarily effect larger packets.
+Much of this popular wisdom comes from the early days of networking. Devices used to communicate over a single shared media that used https://en.wikipedia.org/wiki/Carrier_sense_multiple_access_with_collision_detection[CSMA/CD]
+(carrier sense multiple access with collision detection) for arbitrating access. After detecting a collision, there were potentially multiple attempts to retransmit the packet after random timeouts, and maybe drop it. By connecting more devices through https://en.wikipedia.org/wiki/Ethernet_hub[Hubs] the https://en.wikipedia.org/wiki/Collision_domain[Collision Domain] was extended further, resulting in more collisions and unpredictable behavior.
+
+In a process that started in https://en.wikipedia.org/wiki/Kalpana_(company)[1990], Hubs have been replaced with https://en.wikipedia.org/wiki/Network_switch[Switches] that have dedicated full-duplex (separate lines for transmitting and receiving data) connections for each port in order to separate segments and isolate collision domains. This gets rid of any collisions that were happening on the physical (wire) level. CSMA/CD is still supported for backwards compatibility and half-duplex connections, but it is largely obsolete.
+
+In the https://en.wikipedia.org/wiki/Store_and_forward[Store-and-Forward] switching architecture that is implemented by virtually all switches, switches fully receive packets, store them in an internal buffer, and then forward them to the appropriate receiver port. This adds a latency cost that scales linearly with the number of switches that a packet has to go through.
+
+In the alternative https://en.wikipedia.org/wiki/Cut-through_switching[Cut-through] approach switches can forward packets immediately once the address has been received, potentially resulting in lower latency. While this is sometimes used in latency sensitive applications, such as financial trading applications, it has never become popular in consumer grade hardware. It's more difficult to implement, only works well if both ports negotiate the same speed, and if the receiver port isn't already in use. There is also still the requirement to buffer enough data to evaluate the target address, so the benefits primarily effect larger packets.
 
 // Ethercat has solved this in a somewhat elegant way by not using device addresses and by limiting each wire to a single writer. 
-
-// Depending on the use case this can have positive impacts on latency. However, it still requires enough buffering to evaluate the header address and only works well if both sender and receiver ports negotiate the same speed and the sender port isn't already being used.
-
-// In the common https://en.wikipedia.org/wiki/Store_and_forward[Store-and-Forward] switching architecture all packets get buffered by the Switch and are then forwarded to the appropriate receiver port. This adds a latency cost that scales linearly with the number of switches that a packet has to go through. The alternative https://en.wikipedia.org/wiki/Cut-through_switching[Cut-through] switching approach can forward packets before they are fully received, which can have positive impacts on latency especially with very large packets.
-
-[NOTE]
-TODO: improve the flow of this section
-
-//When more than one component try to communicate, there may be a collision that causes packets to be dropped. Modern networks use 'Switches' that have dedicated connections for each port to isolate collision domains. Additionally, connections tend to be full-duplex, so there are dedicated lines for transmitting and receiving data. Depending on the architecture, packets get buffered and sent to the appropriate port (Store-and-Forward) or directly passed through without evaluation (Cut-Through). Thus, switched networks should never have any packets that get dropped due to collisions. Note that packets can still be lost due to buffer overflows and/or too much load on a system. There is also a latency cost associated with each 'hop' (or buffer) that a packet has to go through.
 
 // re-read
 // http://www.cisco.com/c/en/us/products/collateral/switches/nexus-5020-switch/white_paper_c11-465436.html
 // https://www.lantronix.com/resources/networking-tutorials/network-switching-tutorial/
 // http://www.embedded.com/design/connectivity/4023291/Real-Time-Ethernet
 
-Similarly, reordering (in the sense that a stream of packets coming from a single source can arrive out of order) may be relevant for internet communications, but generally does not apply to local networks without redundant routes. Depending on the driver implementation it can theoretically happen on a local network, but I have yet to observe a single case.
+Another often cited problem is https://en.wikipedia.org/wiki/Out-of-order_delivery[Out-of-Order Delivery], which says that a sequence of packets coming from a single source may be received in a different order. This is relevant for communicating over the internet, but generally does not apply to local networks without redundant routes and load balancing. Depending on the driver implementation it can theoretically happen on a local network, but I have yet to observe such a case.
 
-There are a number of competing networking standards that originated in industrial automation that are built on top of standard Ethernet. They are able to guarantee certain levels of determinism by enforcing tight control over the network layout and by limiting the components that can be connected. However, controlling standard networks in a similar manner can also produce quite good results.
+There are several competing networking standards that are built on Ethernet and can guarantee enough determinism to be used in industrial automation (https://en.wikipedia.org/wiki/Industrial_Ethernet[Industrial Ethernet]). They achieve this by enforcing tight control over the network layout and by limiting the components that can be connected. However, even cheap consumer grade network equipment can produce very good results if the network is controlled in a similar manner.
 
 == Benchmark Setup
 
@@ -169,11 +169,11 @@ image::udp/comparison-switch-latency.png[]
 
 Since the Netgear GS105 exhibited bad performance in this test, I ran another baseline test using the RB750Gr2 instead of the GS105. While there was a consistent gain of 0.5us, I did not consider this significant enough to rerun all tests.
 
-== Larger Networks
+== Micro-bursting
 
-Whenever I get this far in a conversation, I usually get push back saying that this would of course be the case for single devices, but that UDP will blow up once more than one thing is connected.
+When I get this far in a conversation, I usually get push back claiming that while this may be true for single devices, UDP will surely blow up once more than one thing is connected.
 
-In order to test this hypothesis we put together a test setup consisting of 40 HEBI Robotics I/O boards that are connected to a  http://www.downloads.netgear.com/files/GDC/GS748Tv1/GS748T_ds_03Feb05.pdf[GS748T] 48-port Ethernet switch. Each board runs the 'receiver' firmware. This enables us to send a single broadcast message that gets received by all devices at approximately the same time. This then triggers 40x266 byte (>10KB total) return packets that can arrive at the switch within less than 250 nanoseconds. This puts quite a bit of pressure on the switch and would be representative of a very high degree of freedom system such as a full body humanoid robot.
+In order to test this hypothesis we put together a test setup consisting of 40 HEBI Robotics I/O boards that are connected to a  http://www.downloads.netgear.com/files/GDC/GS748Tv1/GS748T_ds_03Feb05.pdf[GS748T] 48-port Ethernet switch. Each board runs the 'receiver' firmware. This enables us to send a single broadcast message that gets received by all devices at approximately the same time. This then triggers 40x266 byte (>10KB total) return packets that can arrive at the switch within less than 250 nanoseconds, resulting in a https://en.wikipedia.org/wiki/Micro-bursting_(networking)[Microburst]. This would be representative of a very high degree of freedom system such as a full body humanoid robot.
 
 image::udp/multiple-boards.jpg[]
 
