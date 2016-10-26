@@ -179,7 +179,7 @@ In order to test this hypothesis we put together a test setup consisting of 40 H
 
 image::udp/multiple-boards.jpg[]
 
-In order to keep the sender device from overloading, I changed the sender to a http://www.gigabyte.com/products/product-page.aspx?pid=4888#ov[Gigabyte Brix i7-4770R] computer running https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html[Scientific Linux 6.6 with real-time kernel]. First, I looked at the jitter of the underlying operating system. The figure below shows the difference between an idealized signal that ticks every 10ms and the actual measurements of the loop start times. It shows that this setup suffers from more than an order of magnitude more jitter than the embedded OS. (Note that the corresponding jHiccup control chart looks identical as in the OS blog post.)
+In order to keep the sender device from overloading, I changed the sender to a http://www.gigabyte.com/products/product-page.aspx?pid=4888#ov[Gigabyte Brix i7-4770R] computer running https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html[Scientific Linux 6.6 with real-time kernel] with a disabled firewall. First, I looked at the jitter of the underlying operating system. The figure below shows the difference between an idealized signal that ticks every 10ms and the actual measurements of the loop start times. It shows that this setup suffers from more than an order of magnitude more jitter than the embedded OS. (Note that the corresponding jHiccup control chart looks identical as in the OS blog post.)
 
 image::udp/os-jitter-linux-rt.png[]
 
