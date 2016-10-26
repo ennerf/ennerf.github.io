@@ -48,6 +48,8 @@ image::udp/io-boards.jpg[HEBI Robotics IO Board]
 
 Since storing multiple Gigabytes of data on an embedded device is challenging, I setup a https://gist.github.com/ennerf/0ddc4396d15852d28e4eca4a8a923eb7[UDP server (Java)] that receives measurement data and persists the data to disk. The main socket handler writes incoming packets into a double buffered structure that can be persisted by a background thread without halting the packet handler. The synchronization between the threads is done using a http://stuff-gil-says.blogspot.com/2014/11/writerreaderphaser-story-about-new.html[WriterReaderPhaser], which is a synchronization primitive that is very useful for persisting events that are represented by a small amount of data.
 
+// Alternatively: oscilloscope and logic analyzer
+
 The resulting binary data was loaded into MATLAB(C) for analysis and to generate the plots. The code can be found https://gist.github.com/ennerf/19b48406a066f6e946a0567a1a4de1ed[here].
 
 == Ethernet Packet Structure
