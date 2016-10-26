@@ -134,13 +134,17 @@ This benchmark received a combined total of about 1 million packets. None of the
 
 image::udp/rtt-switch-comparison.png[]
 
+Mode 2 (at 210 us) seems to disappear for higher round trip times, indicating an issue at the receiving step of the sender. Modes 1 and 3 do not seem to be affected by additional switches, indicating that they are caused by something happening on on the firmware side. The figure below shows a zoomed view of the time series highlighting the added jitter characteristics.
+
+image::udp/comparison-switch-latency.png[]
+
 Both KSZ8863 and the RB750Gr2 add a constant switching latency of 2.9 us and 3.6 us in addition to the wire time of 40.6 us and 4.06 us respectively to the RTT. The added jitter seems to be negligible at well below 1us.
 
 [width="100%",options="header",cols="3a,1a,1a,1a"]
 |====
 | Switch | Connection | 90%-ile RTT | Overhead
 
-| Baseline | - | 193.8 us | -
+| Baseline | - | 193.8 us | 112.6 us
 
 | http://ww1.microchip.com/downloads/en/DeviceDoc/KSZ8863MLL_FLL_RLL_DS.pdf[MICREL KSZ8863] (embedded in X5 actuator)
 | 100 Mbit/s | +43.5 us | 2.9 us
@@ -163,11 +167,7 @@ The RB750Gr2 is technically a router, but after disabling DHCP and not using the
 
 Surprisingly, the GS105 seems to have problems with this particular use case, resulting in higher latency and more jitter than the KSZ8863 even though it was connected using Gigabit. According to the spec sheet, the added network latency should be below 10us (1 Gbit) and 20us (100 Mbit). I did additional tests and it did seem to perform according to spec when using exclusively 100 Mbit/s or 1 Gbit/s on all ports.
 
-Mode 2 (at 210 us) seems to disappear for higher round trip times, indicating an issue at the receiving step of the sender. Modes 1 and 3 do not seem to be affected by additional switches, indicating that they are caused by something happening on on the firmware side. The figure below shows a zoomed view of the time series highlighting the added jitter characteristics.
-
-image::udp/comparison-switch-latency.png[]
-
-Since the Netgear GS105 exhibited bad performance in this test, I ran another baseline test using the RB750Gr2 instead of the GS105. While there was a consistent gain of 0.5us, I did not consider this significant enough to rerun all tests.
+I also conducted another baseline test using the RB750Gr2 instead of the GS105 to see whether this issue effects the baseline case as well. While there was a consistent improvement of 0.5us, I did not consider this significant enough to rerun all tests.
 
 == Micro-bursting
 
