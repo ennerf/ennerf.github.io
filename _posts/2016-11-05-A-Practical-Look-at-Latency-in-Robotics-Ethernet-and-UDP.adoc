@@ -268,6 +268,6 @@ image::udp/rtt-linux-1x-comparison-10h.png[link="../images/udp/rtt-linux-1x-comp
 .Baseline setup on embedded device vs Linux computer (10min)
 image::udp/rtt-linux-1x-comparison-10m.png[link="../images/udp/rtt-linux-1x-comparison-10m.png"]
 
-I realize that there is a lot that isn't covered by this blog post, but it's already quite long as it is. I'm considering doing another post in the future that looks at different network interfaces and driver configurations that may reduce latency. There may also be blog posts looking at the performance impact of sending uncontrolled traffic (e.g. streaming video) through the same network, and other considerations such as clock drift and clock synchronization using IEEE 1588v2.
+I realize that there is a lot that isn't covered by this blog post, so I'm considering doing another one in the future that looks at different network interfaces and potential ways to reduce latency. There may also be blog posts on clock drift and clock synchronization using IEEE 1588v2, as well the performance impact of sending uncontrolled traffic (e.g. streaming video) through the same network.
 
 
