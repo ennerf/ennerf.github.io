@@ -252,7 +252,13 @@ r8169 Gigabit Ethernet driver 2.3LK-NAPI loaded
 
 It seems that even consumer-grade Ethernet networks actually exhibit very deterministic performance with regards to latency. There were also no lost packets and none were received out-of-order. Large and extremely dangerous industrial robots should still only be controlled using specialized networking equipment, but for most robotic applications standard UDP is going to be more than sufficient.
 
-The unexpectedly high latency and jitter that is commonly observed in network benchmarks seem to be caused almost entirely by the underlying operating system and it's device drivers. The two charts below show a comparable baseline setup with one sender running on an embedded device and one running on a RT Linux system over 10 hours and 10 minutes respectively. Note that the RT Linux system is connected using a Gigabit connection and should actually receive datagrams ~40us before the embedded device does.
+The unexpectedly high latency and jitter that is commonly observed in network benchmarks seem to be caused practically entirely by the underlying operating systems and their device drivers. The two charts below show comparable baseline setups with different senders over time spans of 10 hours and 10 minutes. The configurations were as follows:
+
+* ChibiOS 2.6.8 with lwIP 1.4.1 on 168 MHz STM32F407
+* Windows 10 on Gigabyte Brix-i7-4470R with Realtek NIC
+* Scientific Linux 6.6 with MRG Realtime on Gigabyte Brix-i7-4470R with Realtek NIC
+
+Note that the desktop computer is connected using a Gigabit connection and should actually receive datagrams ~40us before the embedded device does.
 
 [.text-center]
 .Baseline setup on embedded device vs Linux computer (10h)
@@ -262,6 +268,6 @@ image::udp/rtt-linux-1x-comparison-10h.png[link="../images/udp/rtt-linux-1x-comp
 .Baseline setup on embedded device vs Linux computer (10min)
 image::udp/rtt-linux-1x-comparison-10m.png[link="../images/udp/rtt-linux-1x-comparison-10m.png"]
 
-I realize that this post still leaves many open questions, but it's already quite long as it is. I'm considering doing another post in the future that looks at additional cases such as differences in operating systems, network interfaces, device drivers, and the performance impacts of sending uncontrolled traffic (e.g. streaming video) through the same network. There may also be a blog post discussing clock drift and clock synchronization using IEEE 1588v2.
+I realize that there is a lot that isn't covered by this blog post, but it's already quite long as it is. I'm considering doing another post in the future that looks at different network interfaces and driver configurations that may reduce latency. There may also be blog posts looking at the performance impact of sending uncontrolled traffic (e.g. streaming video) through the same network, and other considerations such as clock drift and clock synchronization using IEEE 1588v2.
 
 
