@@ -42,7 +42,7 @@ As the sender and receiver devices I chose two HEBI Robotics I/O Boards. It's a 
 
 [.text-center]
 .HEBI Robotics IO Board
-image::udp/io-boards.jpg[link="../images/udp/io-boards.jpg"]
+image::udp/io-board.jpg[link="../images/udp/io-board.jpg"]
 
 [NOTE]
 TODO: Replace with 'whitewashed' product picture?
