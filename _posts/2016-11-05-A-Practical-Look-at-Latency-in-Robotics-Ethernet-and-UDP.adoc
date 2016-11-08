@@ -9,7 +9,7 @@ Popular wisdom claims that Ethernet is non-deterministic and that UDP should not
 
 In theory, the User Datagram Protocol (UDP) is non-deterministic: packets may be lost, reordered, and could even be delayed by an arbitrarily long time. These shortcomings make standard UDP seem unreliable and a potentially bad choice for controlling real-time systems. However, we have found that modern network components have largely solved these issues and that performance in practice can be surprisingly good.
 
-Below we present results from a number of test and benchmarks, involving over XX million transmitted packets. *Over the course of all of our tests no packets were dropped or received out of order.*
+Below we present results from a number of test and benchmarks, involving over **100 million transmitted packets**. Over the course of all of our tests *no packets were dropped* or received out of order.
 
 == Technical Background
 
