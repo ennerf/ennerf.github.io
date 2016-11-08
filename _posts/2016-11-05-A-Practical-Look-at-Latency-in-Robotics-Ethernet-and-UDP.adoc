@@ -5,14 +5,13 @@
 
 == Introduction
 
-Popular wisdom claims that Ethernet is non-deterministic and that UDP can't be used for real-time control. This post looks at the data to check whether popular wisdom is wrong.
+Popular wisdom claims that Ethernet is non-deterministic and that UDP should not be used for real-time control. This post looks at the data to check whether popular wisdom is wrong.
 
-The User Datagram Protocol (UDP) is unreliable, packets may be lost, reordered, and could even be delayed by an arbitrarily long time. These shortcomings make standard UDP seem non-deterministic and a really bad choice for controlling real-time systems. Luckily modern network components have largely solved these issues and performance in practice can be surprisingly good.
+In theory, the User Datagram Protocol (UDP) is non-deterministic: packets may be lost, reordered, and could even be delayed by an arbitrarily long time. These shortcomings make standard UDP seem unreliable and a potentially bad choice for controlling real-time systems. However, we have found that modern network components have largely solved these issues and that performance in practice can be surprisingly good.
 
-[NOTE]
-TODO: Reword or come up with better Intro
+Below we present results from a number of test and benchmarks, involving over XX million transmitted packets. *Over the course of all of our tests no packets were dropped or received out of order.*
 
-== Background
+== Technical Background
 
 Much of this popular wisdom comes from the early days of networking. Devices used to communicate over a single shared media that used https://en.wikipedia.org/wiki/Carrier_sense_multiple_access_with_collision_detection[CSMA/CD]
 (carrier sense multiple access with collision detection) for arbitrating access. When two Frames collided during a transmission, the senders backed off for random timeouts and attempted to retransmit. After a number of failed attempts, frames could be dropped entirely.  By connecting more devices through https://en.wikipedia.org/wiki/Ethernet_hub[Hubs] the https://en.wikipedia.org/wiki/Collision_domain[Collision Domain] was extended further, resulting in more collisions and unpredictable behavior.
@@ -30,7 +29,7 @@ In the alternative https://en.wikipedia.org/wiki/Cut-through_switching[Cut-throu
 // https://www.lantronix.com/resources/networking-tutorials/network-switching-tutorial/
 // http://www.embedded.com/design/connectivity/4023291/Real-Time-Ethernet
 
-Another problem that many roboticists seem to be concerned about is  https://en.wikipedia.org/wiki/Out-of-order_delivery[Out-of-Order Delivery], which says that a sequence of packets coming from a single source may be received in a different order. This is relevant for communicating over the internet, but generally does not apply to local networks without redundant routes and load balancing. Depending on the driver implementation it can theoretically happen on a local network, but I have yet to observe such a case.
+Another problem that many roboticists are often concerned about is  https://en.wikipedia.org/wiki/Out-of-order_delivery[Out-of-Order Delivery], which says that a sequence of packets coming from a single source may be received in a different order. This is relevant for communicating over the internet, but generally does not apply to local networks without redundant routes and load balancing. Depending on the driver implementation it can theoretically happen on a local network, but I have yet to observe such a case.
 
 There are several competing networking standards that are built on Ethernet and can guarantee enough determinism to be used in industrial automation (https://en.wikipedia.org/wiki/Industrial_Ethernet[Industrial Ethernet]). They achieve this by enforcing tight control over the network layout and by limiting the components that can be connected. However, even cheap consumer grade network equipment can produce very good results if the network is controlled in a similar manner.
 
@@ -38,14 +37,12 @@ There are several competing networking standards that are built on Ethernet and 
 
 A common way to benchmark networks is to setup two computers and have a sender transmit a message to a receiver that echoes it back. That way the sender can measure the round trip time and gather statistics of the network. This generally works well, but large operating system stacks and device drivers can potentially add a lot of variation. In an attempt to reduce unwanted jitter, I decided to setup a benchmark using two embedded devices instead.
 
-As the sender and receiver devices I chose two HEBI Robotics I/O Boards. It's a product that we typically don't advertise, but customers often use it to integrate actuators with external devices or to get various sensor input into MATLAB. It has 48 pins that serve a variety of functions (analog/digitial I/O, PWM, Encoder input, etc.) that can be accessed remotely via network. It contains a 168MHz ARM microcontroller (STM32f407) and a 100 Mbit network port.
+As the sender and receiver devices I chose two HEBI Robotics I/O Boards.  We use it in conjunction with our actuators to interface with external devices, such as a gripper or pneumatic valve, or to get various sensor input into MATLAB. It has 48 pins that serve a variety of functions (analog/digitial I/O, PWM, Encoder input, etc.) that can be accessed remotely via network. It contains a 168MHz ARM microcontroller (STM32f407) and a 100 Mbit network port.
 
 [.text-center]
 .HEBI Robotics IO Board
 image::udp/io-board.jpg[link="../images/udp/io-board.jpg"]
 
-[NOTE]
-TODO: Replace with 'whitewashed' product picture?
 
 In order to isolate the network stack I wrote and programmed custom firmware based on http://www.chibios.org/[ChibiOS 2.6.8] and http://savannah.nongnu.org/projects/lwip/[lwIP 1.4.1]. The relevant code pieces can be found https://gist.github.com/ennerf/36a57d432bcff20a58efcdee10f91bd9[here]. The elapsed time was measured using a hardware counter with a resolution of 250ns. Since there was no way to store multiple Gigabytes of data on the devices, I needed a different solution for data logging.
 
@@ -124,7 +121,7 @@ image::udp/rtt-baseline.png[link="../images/udp/rtt-baseline.png"]
 So far I have not been successful in determining the root cause of these modes. All three modes seem to be related to actual time and independent of rate and packet count. However, after several tests, I strongly suspect that all of them occur on the firmware side rather than being tied to the switch or the protocol itself. Below is a zoomed in view of a 10 minute time span that better shows Modes 1 and 2.
 
 [.text-center]
-.Round Trip Time for 200 byte payload (10min)
+.Round Trip Time for 200 byte payload (10min) (MOVE UP NEXT TO FIG 4)
 image::udp/rtt-baseline-zoomed.png[link="../images/udp/rtt-baseline-zoomed.png"]
 
 Overall this initial data looks very promising for being able to use UDP for many real-time control tasks. With more tuning and a better implementation (e.g. lwip with zero copy and tuned options) it seems likely that the maximum jitter could go down to below 6us and potentially even 1us.
@@ -141,7 +138,7 @@ Overall this initial data looks very promising for being able to use UDP for man
 
 As mentioned in the intro, most modern switches use the 'store-and-forward' approach that requires the switch to fully receive a packet before forwarding it appropriately. Therefore, the latency cost per switch is the time it takes a packet on the wire plus any switching overhead. The wire time is constant (2.03us or 20.3us for 266 bytes), but the overhead depends on the switch implementation. There is not much 3rd party data out there, so depending on your requirements you may need to conduct your own benchmarks if you need to evaluate hardware.
 
-For this benchmark I tested three switches that were individually added to the baseline setup.
+For this benchmark I tested three switches that were individually added to the baseline setup. In total there were about 1 million packets.  Over the course of all of our tests no packets were dropped or received out of order.
 
 [.text-center]
 .Switches added to the baseline setup
@@ -150,7 +147,7 @@ For this benchmark I tested three switches that were individually added to the b
 | image:udp/io-boards-100mbit-switch.jpg[link="../images/udp/io-boards-100mbit-switch.jpg"] | image:udp/io-boards-gbit-switch.jpg[link="../images/udp/io-boards-gbit-switch.jpg"]
 |====
 
-This benchmark received a combined total of about 1 million packets. None of them were dropped or received out of order.
+
 
 [.text-center]
 .Comparison of round trip time through different switches (35min)
@@ -195,9 +192,9 @@ I also conducted another baseline test using the RB750Gr2 instead of the GS105 t
 
 == Micro-bursting
 
-When I get this far in a conversation, I often get push back claiming that while this may be true for single devices, UDP will surely blow up once more than one thing is connected.
+Another major concern about UDP is how performs with multiple devices on the network, rather than single point-to-point connections.
 
-In order to test the actual behavior we put together a test setup consisting of 40 HEBI Robotics I/O boards that are connected to a  http://www.downloads.netgear.com/files/GDC/GS748Tv1/GS748T_ds_03Feb05.pdf[GS748T] 48-port Ethernet switch. Each board runs the 'receiver' firmware. Sending a single broadcast message to all receiver devices triggers 40x266 byte (>10KB total) return packets that can arrive at the switch within less than 250 nanoseconds. This https://en.wikipedia.org/wiki/Micro-bursting_(networking)[Microburst] traffic pattern is representative of a very high degree of freedom system such as a full body humanoid robot.
+In order to test the actual behavior we put together a test setup consisting of 40 HEBI Robotics I/O boards that are connected to a  http://www.downloads.netgear.com/files/GDC/GS748Tv1/GS748T_ds_03Feb05.pdf[GS748T] 48-port Ethernet switch. Each board runs the 'receiver' firmware. Sending a single broadcast message to all receiver devices triggers 40x266 byte (>10KB total) return packets that can arrive at the switch within less than 250 nanoseconds. This https://en.wikipedia.org/wiki/Micro-bursting_(networking)[Microburst] traffic pattern is representative of a high degree of freedom system such as a full body humanoid robot without doing any daisy-chaining.
 
 [.text-center]
 .Network test setup with 40 HEBI Robotics IO Boards
@@ -206,7 +203,7 @@ image::udp/multiple-boards.jpg[link="../images/udp/multiple-boards.jpg"]
 [NOTE]
 TODO: Replace with a new picture that doesn't have a heater in the back?
 
-This setup also benefits from two convenient side effects of using standard networking:
+This setup also benefits from two convenient side effects of using a standard networking stack to communicate with robotic hardware:
 
 1. There is no need for any manual addressing because of https://en.wikipedia.org/wiki/Dynamic_Host_Configuration_Protocol[DHCP] and device specific globally unique mac addresses.
 
@@ -250,9 +247,9 @@ r8169 Gigabit Ethernet driver 2.3LK-NAPI loaded
 
 == Conclusion
 
-It seems that even consumer-grade Ethernet networks actually exhibit very deterministic performance with regards to latency. There were also no lost packets and none were received out-of-order. Large and extremely dangerous industrial robots should still only be controlled using specialized networking equipment, but for most robotic applications standard UDP is going to be more than sufficient.
+It seems that even consumer-grade Ethernet networks actually exhibit very deterministic performance with regards to latency. There were also no lost packets and none were received out-of-order. Large and dangerous industrial robots should still only be controlled using specialized networking equipment, but for most robotic applications I feel that standard UDP is more than sufficient.
 
-The unexpectedly high latency and jitter that is commonly observed in network benchmarks seem to be caused practically entirely by the underlying operating systems and their device drivers. The two charts below show comparable baseline setups with different senders over time spans of 10 hours and 10 minutes. The configurations were as follows:
+The high latency and jitter that is commonly observed in network benchmarks seem to be caused almost entirely by the underlying operating systems and their device drivers. The two charts below show comparable baseline setups with different senders over time spans of 10 hours and 10 minutes. The configurations were as follows:
 
 * ChibiOS 2.6.8 with lwIP 1.4.1 on 168 MHz STM32F407
 * Windows 10 on Gigabyte Brix-i7-4470R with Realtek NIC
