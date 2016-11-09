@@ -43,7 +43,6 @@ As the sender and receiver devices I chose two HEBI Robotics I/O Boards.  We use
 .HEBI Robotics IO Board
 image::udp/io-board.jpg[link="../images/udp/io-board.jpg"]
 
-
 In order to isolate the network stack I wrote and programmed custom firmware based on http://www.chibios.org/[ChibiOS 2.6.8] and http://savannah.nongnu.org/projects/lwip/[lwIP 1.4.1]. The relevant code pieces can be found https://gist.github.com/ennerf/36a57d432bcff20a58efcdee10f91bd9[here]. The elapsed time was measured using a hardware counter with a resolution of 250ns. Since there was no way to store multiple Gigabytes of data on the devices, I needed a different solution for data logging.
 
 I decided store data remotely using a UDP service (see  https://gist.github.com/ennerf/0ddc4396d15852d28e4eca4a8a923eb7[code]) that can receive measurement data and persist to disk. To avoid stalling the main socket handler in disk I/O, I had it write into a double buffered structure that got persisted by a background thread. The synchronization between the threads was done using a http://stuff-gil-says.blogspot.com/2014/11/writerreaderphaser-story-about-new.html[WriterReaderPhaser], which is a synchronization primitive that is very useful for persisting events that are represented by small amounts of data. It allows readers to flip buffers while keeping writers wait-free.
@@ -63,7 +62,7 @@ The step by step flow is as follows:
 
 The resulting binary data was loaded into MATLAB(C) for analysis and visualization. The code for reading a file can be found https://gist.github.com/ennerf/19b48406a066f6e946a0567a1a4de1ed[here].
 
-== UDP Datagram Structure
+== UDP Datagram Size
 
 UDP datagrams include a variety of headers that result in a minimum of 66 bytes of overhead. Additionally, Ethernet Frames have a minimum size of 84 bytes, which makes the minimum payload for a UDP Datagram 18 bytes. The rough structure is shown below. More detailed information can be found at https://en.wikipedia.org/wiki/Ethernet_frame[Ethernet II],  https://en.wikipedia.org/wiki/IPv4[Internet Protocol (IPv4)], and https://en.wikipedia.org/wiki/User_Datagram_Protocol[User Datagram Protocol (UDP)].
 
@@ -82,8 +81,8 @@ After including all overhead, the actual Ethernet frame size on the wire is 266 
 We can establish a baseline of the best-case round trip time (RTT) by having both devices communicate with each other through a single switch that does not see any external traffic. It's possible to create a point-to-point connection without any switches, but the typical use case goes through at least one switch.
 
 [.text-center]
-.Baseline setup using a single switch
-image::udp/io-boards2.jpg[link="../images/udp/io-boards2.jpg"]
+.Baseline setup using single Switch
+image::udp/setup-baseline.png[link="../images/udp/setup-baseline.png"]
 
 I set the frequency to 100Hz and logged data for close to 24 hours. I chose this frequency because it is a common control rate for sending high-level trajectories, and because 10ms is a safe deadline in case there are large outliers. Faster control rates are of course possible.
 
@@ -126,16 +125,11 @@ Overall this initial data looks very promising for being able to use UDP for man
 
 As mentioned in the intro, most modern switches use the 'store-and-forward' approach that requires the switch to fully receive a packet before forwarding it appropriately. Therefore, the latency cost per switch is the time it takes a packet on the wire plus any switching overhead. The wire time is constant (2.03us or 20.3us for 266 bytes), but the overhead depends on the switch implementation. There is not much 3rd party data out there, so depending on your requirements you may need to conduct your own benchmarks if you need to evaluate hardware.
 
-For this benchmark I tested three switches that were individually added to the baseline setup. In total there were about 1 million packets.  Over the course of all of our tests no packets were dropped or received out of order.
-
 [.text-center]
-.Switches added to the baseline setup
-[frame="none"]
-|====
-| image:udp/io-boards-100mbit-switch.jpg[link="../images/udp/io-boards-100mbit-switch.jpg"] | image:udp/io-boards-gbit-switch.jpg[link="../images/udp/io-boards-gbit-switch.jpg"]
-|====
+.Benchmark setup using additional Switch
+image::udp/setup-switching-cost.png[link="../images/udp/setup-switching-cost.png"]
 
-
+For this benchmark I tested three switches that were individually added to the baseline setup. In total there were about 1 million packets.  Over the course of all of our tests no packets were dropped or received out of order.
 
 [.text-center]
 .Comparison of round trip time through different switches (35min)
@@ -181,6 +175,10 @@ I also conducted another baseline test using the RB750Gr2 instead of the GS105 t
 == Micro-bursting
 
 Another major concern about UDP is how performs with multiple devices on the network, rather than single point-to-point connections.
+
+[.text-center]
+.Multiple devices connected to a single Switch
+image::udp/setup-bursting.png[link="../images/udp/setup-bursting.png"]
 
 In order to test the actual behavior we put together a test setup consisting of 40 HEBI Robotics I/O boards that are connected to a  http://www.downloads.netgear.com/files/GDC/GS748Tv1/GS748T_ds_03Feb05.pdf[GS748T] 48-port Ethernet switch. Each board runs the 'receiver' firmware. Sending a single broadcast message to all receiver devices triggers 40x266 byte (>10KB total) return packets that can arrive at the switch within less than 250 nanoseconds. This https://en.wikipedia.org/wiki/Micro-bursting_(networking)[Microburst] traffic pattern is representative of a high degree of freedom system such as a full body humanoid robot without doing any daisy-chaining.
 
