@@ -65,27 +65,15 @@ The resulting binary data was loaded into MATLAB(C) for analysis and visualizati
 
 == UDP Datagram Structure
 
-UDP datagrams include various types of overhead in addition to the actual payload. The minimum overhead is 66 bytes. Additionally, Ethernet Frames have a minimum size of 84 bytes, which makes the minimum payload for a UDP Datagram 18 bytes.
+UDP datagrams include a variety of headers that result in a minimum of 66 bytes of overhead. Additionally, Ethernet Frames have a minimum size of 84 bytes, which makes the minimum payload for a UDP Datagram 18 bytes. The rough structure is shown below. More detailed information can be found at https://en.wikipedia.org/wiki/Ethernet_frame[Ethernet II],  https://en.wikipedia.org/wiki/IPv4[Internet Protocol (IPv4)], and https://en.wikipedia.org/wiki/User_Datagram_Protocol[User Datagram Protocol (UDP)].
 
-.UDP Datagram Size
-[width="100%",options="header,footer",cols="a,a,a"]
-|====================
-| Protocol | Item | Size (byte) 
+[.text-center]
+.UDP / IPv4 / Ethernet II Frame Structure
+image::udp/ethernet-ip-udp-header.png[link="../images/udp/ethernet-ip-udp-header.png"]
 
-| https://en.wikipedia.org/wiki/Ethernet_frame[Ethernet II] | Preamble | 7
-|  | Start of Frame Delimiter | 1
-|  | MAC Header + CRC checksum | 18 (no optional fields)
-|  | Interpacket gap | 12
+Although this overhead may seem high for traditional automation applications with small payloads (<10 bytes), it quickly amortizes when communicating with smarter devices. For example, each HEBI Robotic's X-Series actuator contains more than 40 sensors (position, velocity, torque, 3-axis gyroscope, 3-axis accelerometer, several temperature sensors, etc.) that get combined into a single packet that uses between 185 and 215 bytes of payload. Typical feedback packets from an I/O board are even larger and require about 300 bytes. Another important consideration is the available bandwidth, i.e., sending 100 bytes over Gigabit Ethernet (or 100 Mbit/s) tends to be faster than sending a single byte using non-Ethernet based alternatives such as RS485 or CAN Bus.
 
-| https://en.wikipedia.org/wiki/IPv4[Internet Protocol (IPv4)] | IP Header | 20  (no optional fields)
-
-| https://en.wikipedia.org/wiki/User_Datagram_Protocol[User Datagram Protocol (UDP)] | UDP Header | 8
-
-|====================
-
-For these benchmarks I chose to measure the round-trip time for a payload of 200 bytes. For comparison, the feedback packets of HEBI Robotic's X-Series actuators currently require 185-215 bytes. Returning the state of all pins of an I/O board currently requires about 300 bytes.
-
-While the size is representative of a typical feedback packet, the round trip times in production will be slightly faster because the outgoing packets (commands) tend to be significantly smaller than response packets (feedback).
+For these benchmarks I chose to measure the round-trip time for a payload of 200 bytes. While the size is representative of a typical actuator feedback packet, the round trip times in production will be slightly faster because the outgoing packets (commands) tend to be significantly smaller than response packets (feedback).
 
 After including all overhead, the actual Ethernet frame size on the wire is 266 bytes. The theoretical time it takes to transfer 266 bytes over 100 Mbit/s and 1Gbit/s Ethernet is 20.3us and 2.03us respectively.
 
