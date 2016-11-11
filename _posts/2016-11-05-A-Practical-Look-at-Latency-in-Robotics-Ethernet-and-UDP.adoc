@@ -190,9 +190,6 @@ In order to test the actual behavior we put together a test setup consisting of 
 .Network test setup with 40 HEBI Robotics I/O Boards
 image::udp/multiple-boards.jpg[link="../images/udp/multiple-boards.jpg"]
 
-[NOTE]
-TODO: Replace with a new picture that doesn't have a heater in the back?
-
 This setup also benefits from two convenient side effects of using a standard networking stack to communicate with robotic hardware:
 
 1. There is no need for any manual addressing because of https://en.wikipedia.org/wiki/Dynamic_Host_Configuration_Protocol[DHCP] and device specific globally unique mac addresses.
