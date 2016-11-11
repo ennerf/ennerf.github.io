@@ -18,9 +18,9 @@ Much of this popular wisdom comes from the early days of networking. Devices use
 
 In a process that started in https://en.wikipedia.org/wiki/Kalpana_(company)[1990], Hubs have been fully replaced with https://en.wikipedia.org/wiki/Network_switch[Switches]. They have dedicated full-duplex (separate lines for transmitting and receiving data) connections for each port in order to separate segments and isolate collision domains, which gets rid of any collisions that were happening on the physical (wire) level. CSMA/CD is still supported for backwards compatibility and half-duplex connections, but it is largely obsolete.
 
-The trade-off for avoiding collisions is the added switching overhead. As of 2016, virtually all Switches implement the https://en.wikipedia.org/wiki/Store_and_forward[Store-and-Forward] switching architecture in which Switches fully receive packets, store them in an internal buffer, and then forward them to the appropriate receiver port. This adds a latency cost that scales linearly with the number of Switches that a packet has to go through.
+Using dedicated lines introduces additional 'switching' overhead for forwarding Frames to intended receivers. As of 2016, virtually all Switches implement the https://en.wikipedia.org/wiki/Store_and_forward[Store-and-Forward] switching architecture in which Switches fully receive packets, store them in an internal buffer, and then forward them to the appropriate receiver port. This adds a latency cost that scales linearly with the number of Switches that a packet has to go through.
 
-In the alternative https://en.wikipedia.org/wiki/Cut-through_switching[Cut-through] approach Switches can forward packets immediately once the address has been received, potentially resulting in lower latency. While this is sometimes used in latency sensitive applications, such as financial trading applications, it generally can't be found in consumer grade hardware. It's more difficult to implement, only works well if both ports negotiate the same speed, and if the receiving port isn't already in use. There is also still the requirement to buffer enough data to evaluate the target address, so the benefits primarily effect larger packets.
+In the alternative https://en.wikipedia.org/wiki/Cut-through_switching[Cut-through] approach Switches can forward packets immediately after receiving the target address, potentially resulting in lower latency. While this is sometimes used in latency sensitive applications, such as financial trading applications, it generally can't be found in consumer grade hardware. It is more difficult to implement, only works well if both ports negotiate the same speed, and requires the receiving port to be idle. There is also the requirement to buffer enough data to evaluate the target address, so the benefits primarily effect larger packets.
 
 // Ethercat has solved this in a somewhat elegant way by not using device addresses and by limiting each wire to a single writer. 
 
@@ -29,25 +29,25 @@ In the alternative https://en.wikipedia.org/wiki/Cut-through_switching[Cut-throu
 // https://www.lantronix.com/resources/networking-tutorials/network-switching-tutorial/
 // http://www.embedded.com/design/connectivity/4023291/Real-Time-Ethernet
 
-Another problem that many roboticists are often concerned about is  https://en.wikipedia.org/wiki/Out-of-order_delivery[Out-of-Order Delivery], which says that a sequence of packets coming from a single source may be received in a different order. This is relevant for communicating over the internet, but generally does not apply to local networks without redundant routes and load balancing. Depending on the driver implementation it can theoretically happen on a local network, but I have yet to observe such a case.
+Another problem that many roboticists are often concerned about is  https://en.wikipedia.org/wiki/Out-of-order_delivery[Out-of-Order Delivery], which means that a sequence of packets coming from a single source may be received in a different order. This is relevant for communicating over the internet, but generally does not apply to local networks without redundant routes and load balancing. Depending on the driver implementation it can theoretically happen on a local network, but we have yet to observe such a case.
 
 There are several competing networking standards that are built on Ethernet and can guarantee enough determinism to be used in industrial automation (https://en.wikipedia.org/wiki/Industrial_Ethernet[Industrial Ethernet]). They achieve this by enforcing tight control over the network layout and by limiting the components that can be connected. However, even cheap consumer grade network equipment can produce very good results if the network is controlled in a similar manner.
 
 == Benchmark Setup
 
-A common way to benchmark networks is to setup two computers and have a sender transmit a message to a receiver that echoes it back. That way the sender can measure the round trip time and gather statistics of the network. This generally works well, but large operating system stacks and device drivers can potentially add a lot of variation. In an attempt to reduce unwanted jitter, I decided to setup a benchmark using two embedded devices instead.
-
-As the sender and receiver devices I chose two HEBI Robotics I/O Boards.  We use it in conjunction with our actuators to interface with external devices, such as a gripper or pneumatic valve, or to get various sensor input into MATLAB. It has 48 pins that serve a variety of functions (analog/digitial I/O, PWM, Encoder input, etc.) that can be accessed remotely via network. It contains a 168MHz ARM microcontroller (STM32f407) and a 100 Mbit network port.
+A common way to benchmark networks is to setup two computers and have a sender transmit a message to a receiver that echoes it back. That way the sender can measure the round trip time and gather statistics of the network. This generally works well, but large operating system stacks and device drivers can potentially add a lot of variation. In an attempt to reduce unwanted jitter, we decided to setup a benchmark using two embedded devices instead.
 
 [.text-center]
-.HEBI Robotics IO Board
+.HEBI Robotics I/O Board
 image::udp/io-board.jpg[link="../images/udp/io-board.jpg"]
 
-In order to isolate the network stack I wrote and programmed custom firmware based on http://www.chibios.org/[ChibiOS 2.6.8] and http://savannah.nongnu.org/projects/lwip/[lwIP 1.4.1]. The relevant code pieces can be found https://gist.github.com/ennerf/36a57d432bcff20a58efcdee10f91bd9[here]. The elapsed time was measured using a hardware counter with a resolution of 250ns. Since there was no way to store multiple Gigabytes of data on the devices, I needed a different solution for data logging.
+As the sender and receiver devices we chose to use two HEBI Robotics I/O Boards.  We use them in conjunction with our actuators to interface with external devices, such as a gripper or pneumatic valve, or to get various sensor input into MATLAB. It has 48 pins that serve a variety of functions (analog/digitial I/O, PWM, Encoder input, etc.) that can be accessed remotely via network. It contains a 168MHz ARM microcontroller (STM32f407) and a 100 Mbit/s network port.
 
-I decided store data remotely using a UDP service (see  https://gist.github.com/ennerf/0ddc4396d15852d28e4eca4a8a923eb7[code]) that can receive measurement data and persist to disk. To avoid stalling the main socket handler in disk I/O, I had it write into a double buffered structure that got persisted by a background thread. The synchronization between the threads was done using a http://stuff-gil-says.blogspot.com/2014/11/writerreaderphaser-story-about-new.html[WriterReaderPhaser], which is a synchronization primitive that is very useful for persisting events that are represented by small amounts of data. It allows readers to flip buffers while keeping writers wait-free.
+In order to isolate the network stack we wrote and programmed custom firmware based on http://www.chibios.org/[ChibiOS 2.6.8] and http://savannah.nongnu.org/projects/lwip/[lwIP 1.4.1]. The relevant code pieces can be found https://gist.github.com/ennerf/36a57d432bcff20a58efcdee10f91bd9[here]. The elapsed time was measured using a hardware counter with a resolution of 250ns. 
 
-// Since storing multiple Gigabytes of data on an embedded device is challenging, I also setup a https://gist.github.com/ennerf/0ddc4396d15852d28e4eca4a8a923eb7[(Java) UDP server] that can receive measurement data and persist to disk. The main socket handler writes incoming packets into a double buffered structure that can be persisted by a background thread without halting the packet handler. The synchronization between the threads is done using a http://stuff-gil-says.blogspot.com/2014/11/writerreaderphaser-story-about-new.html[WriterReaderPhaser], which is a synchronization primitive that is very useful for persisting events that are represented by a small amount of data.
+Since there was no way to store multiple Gigabytes on these devices, we decided to log data remotely using a UDP service (see  https://gist.github.com/ennerf/0ddc4396d15852d28e4eca4a8a923eb7[code]) that can receive measurement data and persist to disk. In order to avoid stalls caused by disk I/O, the main socket handler wrote into a double buffered structure that got persisted by a background thread. The synchronization between the threads was done using a http://stuff-gil-says.blogspot.com/2014/11/writerreaderphaser-story-about-new.html[WriterReaderPhaser], which is a synchronization primitive that allows readers to flip buffers while keeping writers wait-free. We found it to be very useful for persisting events that are represented by small amounts of data.
+
+// Since storing multiple Gigabytes of data on an embedded device is challenging, we also setup a https://gist.github.com/ennerf/0ddc4396d15852d28e4eca4a8a923eb7[(Java) UDP server] that can receive measurement data and persist to disk. The main socket handler writes incoming packets into a double buffered structure that can be persisted by a background thread without halting the packet handler. The synchronization between the threads is done using a http://stuff-gil-says.blogspot.com/2014/11/writerreaderphaser-story-about-new.html[WriterReaderPhaser], which is a synchronization primitive that is very useful for persisting events that are represented by a small amount of data.
 
 // Alternatively: oscilloscope and logic analyzer
 
@@ -70,48 +70,48 @@ UDP datagrams include a variety of headers that result in a minimum of 66 bytes 
 .UDP / IPv4 / Ethernet II Frame Structure
 image::udp/ethernet-ip-udp-header.png[link="../images/udp/ethernet-ip-udp-header.png"]
 
-Although this overhead may seem high for traditional automation applications with small payloads (<10 bytes), it quickly amortizes when communicating with smarter devices. For example, each HEBI Robotic's X-Series actuator contains more than 40 sensors (position, velocity, torque, 3-axis gyroscope, 3-axis accelerometer, several temperature sensors, etc.) that get combined into a single packet that uses between 185 and 215 bytes of payload. Typical feedback packets from an I/O board are even larger and require about 300 bytes. Another important consideration is the available bandwidth, i.e., sending 100 bytes over Gigabit Ethernet (or 100 Mbit/s) tends to be faster than sending a single byte using non-Ethernet based alternatives such as RS485 or CAN Bus.
+Although this overhead may seem high for traditional automation applications with small payloads (<10 bytes), it quickly amortizes when communicating with smarter devices. For example, each HEBI Robotic's X-Series actuator contains more than 40 sensors (position, velocity, torque, 3-axis gyroscope, 3-axis accelerometer, several temperature sensors, etc.) that get combined into a single packet that uses between 185 and 215 bytes payload. Typical feedback packets from an I/O Board are even larger and require about 300 bytes. When comparing overhead it is also important to consider the available bandwidth, i.e., sending 100 bytes over Gigabit Ethernet (even over 100 Mbit/s) tends to be faster than sending a single byte using traditional non-Ethernet based alternatives such as RS485 or CAN Bus.
 
-For these benchmarks I chose to measure the round-trip time for a payload of 200 bytes. While the size is representative of a typical actuator feedback packet, the round trip times in production will be slightly faster because the outgoing packets (commands) tend to be significantly smaller than response packets (feedback).
+For these benchmarks we chose to measure the round-trip time for a payload of 200 bytes. After including all overhead, the actual size on the wire is 266 bytes. The theoretical time it takes to transfer 266 bytes over 100 Mbit/s and 1Gbit/s Ethernet is 20.3us and 2.03us respectively.
 
-After including all overhead, the actual Ethernet frame size on the wire is 266 bytes. The theoretical time it takes to transfer 266 bytes over 100 Mbit/s and 1Gbit/s Ethernet is 20.3us and 2.03us respectively.
+Note that while the size is representative of a typical actuator feedback packet, the round trip times in production may be faster because outgoing packets (commands) tend to be significantly smaller than response packets (feedback).
 
-== Baseline: Single Switch
+== Baseline - Single Switch
 
-We can establish a baseline of the best-case round trip time (RTT) by having both devices communicate with each other through a single switch that does not see any external traffic. It's possible to create a point-to-point connection without any switches, but the typical use case goes through at least one switch.
+We can establish a baseline of the best-case round trip time (RTT) by having both devices communicate with each other through a single switch that does not see any external traffic. It would be possible to create a point-to-point connection without any Switches, but the typical use case goes through at least one Switch.
 
 [.text-center]
 .Baseline setup using single Switch
 image::udp/setup-baseline.png[link="../images/udp/setup-baseline.png"]
 
-I set the frequency to 100Hz and logged data for close to 24 hours. I chose this frequency because it is a common control rate for sending high-level trajectories, and because 10ms is a safe deadline in case there are large outliers. Faster control rates are of course possible.
+We set the frequency to 100Hz and logged data for close to 24 hours. This frequency was chosen because it is a common control rate for sending high-level trajectories, and because 10ms is a safe deadline in case there are large outliers. Faster control rates are of course possible.
 
-First, let's look at the jitter of the underlying embedded real-time operating system. The figure below shows the difference between an idealized signal that ticks every 10ms and the actual measurements of the loop start times. 99% are within the lowest measurement resolution (250ns), and the worst observed case is below 6us. This is quite a bit better than the 150us worst observed case on real-time Linux as setup in  https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html[The Importance of Metrics and Operating Systems].
+First, let's look at the jitter of the underlying embedded real-time operating system (RTOS). The figure below shows the difference between an idealized signal that ticks every 10ms and the actual measurements of the loop start times. 99% are within the lowest measurement resolution (250ns), and the worst observed case is below 6us. Note that this is significantly better than the 150us worst case we observed in a similar test running on real-time Linux (see https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html[The Importance of Metrics and Operating Systems]).
 
 [.text-center]
 .OS jitter of ChibiOS 2.6.8 on STM32F407 (24h)
 image::udp/os-jitter-embedded.png[link="../images/udp/os-jitter-embedded.png"]
 
-The figure below shows the round trip time for all packets and the corresponding percentile distribution. There were a total of 8.5 million messages. None of them were lost and none of them arrived out of order.
+The two figures below show the round trip time for all packets and the corresponding percentile distribution. There were a total of 8.5 million messages. None of them were lost and none of them arrived out of order.
 
 [[img-rtt-24h]]
 [.text-center]
 .Round Trip Time for 200 byte payload (24h)
 image::udp/rtt-baseline.png[link="../images/udp/rtt-baseline.png"]
 
+[.text-center]
+.Zoomed in view of Round Trip Time for 200 byte payload (10min)
+image::udp/rtt-baseline-zoomed.png[link="../images/udp/rtt-baseline-zoomed.png"]
+
 90% of all packets arrive within 194us and a jitter of less than 1 microsecond. Roughly 80us of this time is spent on the wire, so using chips that support Gigabit (rather than 100Mbit) could lower the round trip time to ~120us. Above the common case, there are three different periodically reoccuring modes that cause the round-trip-time to get up to a worst case that is 60us higher. 
 
 * Mode 1 occurs consistently every ~5.3 minutes and lasts for ~15.01 seconds. During this time it adds up to 4 us latency.
 * Mode 2 occurs exactly once every 5 seconds and is always at 210us.
-* Mode 3 occurs roughly once an hour and adds linearly increasing latency up to 60us to 10 packets.
+* Mode 3 occurs roughly once an hour and adds linearly increasing latency of up to 60us to 10 packets.
 
-So far I have not been successful in determining the root cause of these modes. All three modes seem to be related to actual time and independent of rate and packet count. However, after several tests, I strongly suspect that all of them occur on the firmware side rather than being tied to the switch or the protocol itself. Below is a zoomed in view of a 10 minute time span that better shows Modes 1 and 2.
+So far we have not been successful in determining the root cause of these modes. All three modes seem to be related to actual time and independent of rate and packet count. However, after several tests, we strongly suspect that all of them occur on the firmware side rather than being tied to the switch or the protocol itself. The zoomed in view of a 10 minute time span highlights Modes 1 and 2.
 
-[.text-center]
-.Round Trip Time for 200 byte payload (10min) (MOVE UP NEXT TO FIG 4)
-image::udp/rtt-baseline-zoomed.png[link="../images/udp/rtt-baseline-zoomed.png"]
-
-Overall this initial data looks very promising for being able to use UDP for many real-time control tasks. With more tuning and a better implementation (e.g. lwip with zero copy and tuned options) it seems likely that the maximum jitter could go down to below 6us and potentially even 1us.
+Overall this initial data looks very promising for being able to use UDP for many real-time control tasks. With more tuning and a better implementation (e.g. lwip with zero copy and tuned options) it seems likely that the maximum jitter could be reduced to below 6us and maybe even below 1us.
 
 // test IO board to IO board (100)
 
@@ -123,25 +123,32 @@ Overall this initial data looks very promising for being able to use UDP for man
 
 == Switching Cost
 
-As mentioned in the intro, most modern switches use the 'store-and-forward' approach that requires the switch to fully receive a packet before forwarding it appropriately. Therefore, the latency cost per switch is the time it takes a packet on the wire plus any switching overhead. The wire time is constant (2.03us or 20.3us for 266 bytes), but the overhead depends on the switch implementation. There is not much 3rd party data out there, so depending on your requirements you may need to conduct your own benchmarks if you need to evaluate hardware.
+As mentioned in the background section, most modern Switches use the 'store-and-forward' approach that requires the Switch to fully receive a packet before forwarding it appropriately. Therefore, the latency cost per switch is the time it takes a packet on the wire plus any switching overhead. The wire time is constant (2.03us or 20.3us for 266 bytes), but the overhead depends on the switch implementation. It can be difficult to find good performance data for specific devices, so depending on your requirements you may need to conduct your own benchmarks if you need to evaluate hardware.
 
 [.text-center]
 .Benchmark setup using additional Switch
 image::udp/setup-switching-cost.png[link="../images/udp/setup-switching-cost.png"]
 
-For this benchmark I tested three switches that were individually added to the baseline setup. In total there were about 1 million packets.  Over the course of all of our tests no packets were dropped or received out of order.
+For this benchmark we tested the three following Switches and added them individually to the baseline setup as shown above,
+
+* http://ww1.microchip.com/downloads/en/DeviceDoc/KSZ8863MLL_FLL_RLL_DS.pdf[MICREL KSZ8863] (embedded in X5 actuators)
+* http://www.downloads.netgear.com/files/GDC/GS105/GS105_datasheet_04Sept03.pdf[NETGEAR ProSAFE GS105]
+* https://routerboard.com/RB750Gr2[MikroTik RB750Gr2 (RouterBOARD hEX)] (technically a Router, but disabling DHCP makes it act similar to a Switch)
+
+
+In total there were about 1 million packets. Again, we did not observe any packet loss or out-of-order delivery.
 
 [.text-center]
 .Comparison of round trip time through different switches (35min)
 image::udp/rtt-switch-comparison.png[link="../images/udp/rtt-switch-comparison.png"]
 
-Mode 2 (at 210 us) seems to disappear for higher round trip times, indicating an issue at the receiving step of the sender. Modes 1 and 3 do not seem to be affected by additional switches, indicating that they are caused by something happening on on the firmware side. The figure below shows a zoomed view of the time series highlighting the added jitter characteristics.
+The figure below shows a zoomed view of the time series highlighting the added jitter characteristics. Modes 1 and 3 do not seem to be affected by additional switches. Mode 2 remains constant at 210 us and disappears for higher round trip times, indicating an issue at the receiving step of the sender.
 
 [.text-center]
 .Zoomed in view of switch comparison (10min)
 image::udp/comparison-switch-latency.png[link="../images/udp/comparison-switch-latency.png"]
 
-Both KSZ8863 and the RB750Gr2 add a constant switching latency of 2.9 us and 3.6 us in addition to the wire time of 40.6 us and 4.06 us respectively to the RTT. The added jitter seems to be negligible at well below 1us.
+Both KSZ8863 and the RB750Gr2 add a constant switching latency of 2.9 us and 3.6 us in addition to the wire time of 40.6 us and 4.06 us respectively to the RTT. The added jitter seems to be negligible at well below 1us. Surprisingly, the GS105 seems to have problems with this use case, resulting in higher latency and more jitter than the KSZ8863 even though it was connected using Gigabit. More details are in the table below.
 
 [width="100%",options="header",cols="3a,1a,1a,1a"]
 |====
@@ -149,13 +156,13 @@ Both KSZ8863 and the RB750Gr2 add a constant switching latency of 2.9 us and 3.6
 
 | Baseline | 2x 100 MBit/s | 193.8 us | 112.6 us
 
-| http://ww1.microchip.com/downloads/en/DeviceDoc/KSZ8863MLL_FLL_RLL_DS.pdf[MICREL KSZ8863] (embedded in X5 actuator)
+| MICREL KSZ8863
 | 100 Mbit/s | +43.5 us | 2.9 us
 
-| http://www.downloads.netgear.com/files/GDC/GS105/GS105_datasheet_04Sept03.pdf[NETGEAR ProSAFE GS105]
+| NETGEAR ProSAFE GS105
 | 1 Gbit/s | +51.0 us | 47 us
 
-| https://routerboard.com/RB750Gr2[MikroTik RB750Gr2 (RouterBOARD hEX)]
+| MikroTik RB750Gr2 (RouterBOARD hEX)
 | 1 Gbit/s | +7.7 us | 3.6 us
 
 |====
@@ -165,14 +172,11 @@ Both KSZ8863 and the RB750Gr2 add a constant switching latency of 2.9 us and 3.6
 // GS105: 244.8 us
 // RB750Gr2: 201.5 us
 
-[NOTE]
-The RB750Gr2 is technically a router, but after disabling DHCP and not using the WAN port, it effectively acts like a switch.
+According to the http://www.downloads.netgear.com/files/GDC/GS105/GS105_datasheet_04Sept03.pdf[GS105 spec sheet], the added network latency should be below 10us (1 Gbit) and 20us (100 Mbit). We did additional tests and it did seem to perform according to spec when using exclusively 100 Mbit/s or 1 Gbit/s on all ports. 
 
-Surprisingly, the GS105 seems to have problems with this particular use case, resulting in higher latency and more jitter than the KSZ8863 even though it was connected using Gigabit. According to the spec sheet, the added network latency should be below 10us (1 Gbit) and 20us (100 Mbit). I did additional tests and it did seem to perform according to spec when using exclusively 100 Mbit/s or 1 Gbit/s on all ports.
+We also conducted another baseline test that replaced the GS105 with a RB750Gr2. While we found a consistent improvement of 0.5us, we did not consider this significant enough to rerun all tests.
 
-I also conducted another baseline test using the RB750Gr2 instead of the GS105 to see whether this issue effects the baseline case as well. While there was a consistent improvement of 0.5us, I did not consider this significant enough to rerun all tests.
-
-== Micro-bursting
+== Scaling to Many Devices
 
 Another major concern about UDP is how performs with multiple devices on the network, rather than single point-to-point connections.
 
@@ -183,7 +187,7 @@ image::udp/setup-bursting.png[link="../images/udp/setup-bursting.png"]
 In order to test the actual behavior we put together a test setup consisting of 40 HEBI Robotics I/O boards that are connected to a  http://www.downloads.netgear.com/files/GDC/GS748Tv1/GS748T_ds_03Feb05.pdf[GS748T] 48-port Ethernet switch. Each board runs the 'receiver' firmware. Sending a single broadcast message to all receiver devices triggers 40x266 byte (>10KB total) return packets that can arrive at the switch within less than 250 nanoseconds. This https://en.wikipedia.org/wiki/Micro-bursting_(networking)[Microburst] traffic pattern is representative of a high degree of freedom system such as a full body humanoid robot without doing any daisy-chaining.
 
 [.text-center]
-.Network test setup with 40 HEBI Robotics IO Boards
+.Network test setup with 40 HEBI Robotics I/O Boards
 image::udp/multiple-boards.jpg[link="../images/udp/multiple-boards.jpg"]
 
 [NOTE]
@@ -195,13 +199,13 @@ This setup also benefits from two convenient side effects of using a standard ne
 
 2. It takes only 3-6 seconds to re-program the firmware of all 40 devices at once using a bootloader and TCP/IP.
 
-In order to keep the sender device from overloading, I changed the sender to a http://www.gigabyte.com/products/product-page.aspx?pid=4888#ov[Gigabyte Brix i7-4770R] computer running https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html[Scientific Linux 6.6 with real-time kernel] with a disabled firewall. First, I looked at the jitter of the underlying operating system. The figure below shows the difference between an idealized signal that ticks every 10ms and the actual measurements of the loop start times. It shows that this setup suffers from more than an order of magnitude more jitter than the embedded OS. (Note that the corresponding jHiccup control chart looks identical as in the OS blog post.)
+In order to keep the sender device from overloading, we changed the sender to a http://www.gigabyte.com/products/product-page.aspx?pid=4888#ov[Gigabyte Brix i7-4770R] computer running https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html[Scientific Linux 6.6 with real-time kernel] with a disabled firewall. First, we looked at the jitter of the underlying operating system. The figure below shows the difference between an idealized signal that ticks every 10ms and the actual measurements of the loop start times. It shows that this setup suffers from more than an order of magnitude more jitter than the embedded OS. (Note that the corresponding jHiccup control chart looks identical as in the OS blog post.)
 
 [.text-center]
 .Operating system jitter of Scientific Linux 6.6 with MRG Realtime
 image::udp/os-jitter-linux-rt.png[link="../images/udp/os-jitter-linux-rt.png"]
 
-Gathering data at 100Hz close to 90 minutes resulted in more than 20 million returned packets. I also ran some tests at 1KHz and the result looks the same.
+Gathering data at 100Hz close to 90 minutes resulted in more than 20 million returned packets. We also ran some tests at 1KHz and the result looks the same.
 
 [.text-center]
 .Receive pattern for incoming datagrams from 40 devices
@@ -213,7 +217,7 @@ It may be surprising, but there was again no packet loss or re-ordering of packe
 .Round-trip latency for datagrams from 40 devices (90 min)
 image::udp/rtt-linux-40x.png[link="../images/udp/rtt-linux-40x.png"]
 
-However, what did actually surprise me was how much worse the latency turned out to be compared to the embedded system. I expected most columns to start at around ~180us and end at ~280us. While this is sometimes the case, the majority of columns start above 300 us. After some initial research I suspect that this is related to suboptimal device drivers, and the Linux https://en.wikipedia.org/wiki/New_API[NAPI] using polling mode rather than interrupts. I remember reading about some of this in the past, but I didn't expect this order of magnitude. The installed network interface and driver are below.
+However, what did actually surprise us was how much worse the latency turned out to be compared to the embedded system. We expected most columns to start at around ~180us and end at ~280us. While this is sometimes the case, the majority of columns start above 300 us. After some initial research we suspect that this is related to suboptimal device drivers, and the Linux https://en.wikipedia.org/wiki/New_API[NAPI] using polling mode rather than interrupts. We remember reading about some of this in the past, but we didn't expect this order of magnitude. The installed network interface and driver are below.
 
 [source,shell]
 $ lspci | grep Ethernet
@@ -233,7 +237,7 @@ r8169 Gigabit Ethernet driver 2.3LK-NAPI loaded
 
 == Conclusion
 
-It seems that even consumer-grade Ethernet networks actually exhibit very deterministic performance with regards to latency. There were also no lost packets and none were received out-of-order. Large and dangerous industrial robots should still only be controlled using specialized networking equipment, but for most robotic applications I feel that standard UDP is more than sufficient.
+It seems that even consumer-grade Ethernet networks actually exhibit very deterministic performance with regards to latency. There were also no lost packets and none were received out-of-order. Large and dangerous industrial robots should still only be controlled using specialized networking equipment, but for most robotic applications we feel that standard UDP is more than sufficient.
 
 The high latency and jitter that is commonly observed in network benchmarks seem to be caused almost entirely by the underlying operating systems and their device drivers. The two charts below show comparable baseline setups with different senders over time spans of 10 hours and 10 minutes. The configurations were as follows:
 
@@ -251,6 +255,6 @@ image::udp/rtt-linux-1x-comparison-10h.png[link="../images/udp/rtt-linux-1x-comp
 .Baseline setup on embedded device vs Linux computer (10min)
 image::udp/rtt-linux-1x-comparison-10m.png[link="../images/udp/rtt-linux-1x-comparison-10m.png"]
 
-I realize that there is a lot that isn't covered by this blog post, so I'm considering doing another one in the future that looks at different network interfaces and potential ways to reduce latency. There may also be blog posts on clock drift and clock synchronization using IEEE 1588v2, as well the performance impact of sending uncontrolled traffic (e.g. streaming video) through the same network.
+We realize that there is a lot that isn't covered by this blog post, so we're considering doing another one in the future that looks at different network interfaces and potential ways to reduce latency. There may also be blog posts on clock drift and clock synchronization using IEEE 1588v2, as well the performance impact of sending uncontrolled traffic (e.g. streaming video) through the same network.
 
 
