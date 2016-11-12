@@ -124,7 +124,7 @@ Overall this initial data looked very promising for being able to use UDP for ma
 As mentioned in the background section, most modern Switches use the 'store-and-forward' approach that requires the Switch to fully receive a packet before forwarding it appropriately. Therefore, the latency cost per switch is the time it takes a packet on the wire plus any switching overhead. The wire time is constant (2.03us or 20.3us for 266 bytes), but the overhead depends on the switch implementation. It can be difficult to find good performance data for specific devices, so depending on your requirements you may need to conduct your own benchmarks if you need to evaluate hardware.
 
 [.text-center]
-.Benchmark setup using additional Switch
+.Benchmark setup with additional Switch
 image::udp/setup-switching-cost.png[link="../images/udp/setup-switching-cost.png"]
 
 For this benchmark we tested the three following Switches and added them individually to the baseline setup as shown above,
