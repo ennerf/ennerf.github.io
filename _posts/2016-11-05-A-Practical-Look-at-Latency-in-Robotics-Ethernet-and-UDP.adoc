@@ -5,11 +5,9 @@
 
 == Introduction
 
-Popular wisdom claims that Ethernet is non-deterministic and that UDP should not be used for real-time control. This post looks at the data to check whether popular wisdom is wrong.
+Ethernet is the most pervasive communication standard in the world. However, it often dismissed for robotics applications because of its presumed non-deterministic behavior.  In this post, we show that in practice Ethernet can be made to be extremely deterministic and provide a flexible and reliable solution for robot communication.
 
-In theory, the User Datagram Protocol (UDP) is non-deterministic: packets may be lost, reordered, and could even be delayed by an arbitrarily long time. These shortcomings make standard UDP seem unreliable and a bad choice for controlling real-time systems. However, we have found that modern network components have largely solved these issues and that performance in practice can be surprisingly good.
-
-Below we present results from a number of tests and benchmarks, involving over **100 million transmitted packets**. Over the course of all of our tests *no packets were dropped* or received out of order.
+Below we present results from a number of tests and benchmarks, involving over **100 million transmitted packets**. Over the course of all of our tests *no packets were dropped* or received out of order. 
 
 == Technical Background
 
@@ -20,8 +18,6 @@ In a process that started in https://en.wikipedia.org/wiki/Kalpana_(company)[199
 Using dedicated lines introduces additional buffering and overhead for forwarding Frames to intended receivers. As of 2016, virtually all Switches implement the https://en.wikipedia.org/wiki/Store_and_forward[Store-and-Forward] switching architecture in which Switches fully receive packets, store them in an internal buffer, and then forward them to the appropriate receiver port. This adds a latency cost that scales linearly with the number of Switches that a packet has to go through. 
 In the alternative https://en.wikipedia.org/wiki/Cut-through_switching[Cut-through] approach Switches can forward packets immediately after receiving the target address, potentially resulting in lower latency. While this is sometimes used in latency sensitive applications, such as financial trading applications, it generally can't be found in consumer grade hardware. It is more difficult to implement, only works well if both ports negotiate the same speed, and requires the receiving port to be idle. The benefits are also less significant on smaller packets due to the requirement to buffer enough data to evaluate the target address.
 
-// Ethercat has solved this in a somewhat elegant way by not using device addresses and by limiting each wire to a single writer. 
-
 // re-read
 // http://www.cisco.com/c/en/us/products/collateral/switches/nexus-5020-switch/white_paper_c11-465436.html
 // https://www.lantronix.com/resources/networking-tutorials/network-switching-tutorial/
@@ -31,17 +27,15 @@ Another problem that many roboticists are often concerned about is  https://en.w
 
 There are several competing networking standards that are built on Ethernet and can guarantee enough determinism to be used in industrial automation (https://en.wikipedia.org/wiki/Industrial_Ethernet[Industrial Ethernet]). They achieve this by enforcing tight control over the network layout and by limiting the components that can be connected. However, even cheap consumer grade network equipment can produce very good results if the network is controlled in a similar manner.
 
- TODO: Add that this insight is not new and that people have been doing this for decades. Find good posts and papers to cite.
+[TODO]
+===========
+ TODO: Add that this insight is not new and that people have been doing this for decades. Find good posts and papers to cite. Would any of these make sense?
 
-//  TODO: add that this insight is not new and that people have been doing this in 2001. Link various old posts and papers? Are there good ones?
-
-// http://www.embedded.com/design/connectivity/4023291/Real-Time-Ethernet[Joe Kerkes] tried this in 2001 using 10 Mbit Ethernet.
-
-// https://www.researchgate.net/publication/4232548_Real-time_performance_measurements_using_UDP_on_Windows_and_Linux[Prytz et al.] did a latency study in 2005. Other potentially useful resources include a list of
-
-// http://literature.rockwellautomation.com/idc/groups/literature/documents/wp/enet-wp002_-en-p.pdf[differences between Standard Ethernet and proprietary adaptations].    
-
-// http://www.embedded.com/electronics-blogs/cole-bin/4406659/1/Deterministic-networking--from-niches-to-the-mainstream-[Deterministic Networking: from niches to the mainstream? (2013)] 
+* http://www.embedded.com/design/connectivity/4023291/Real-Time-Ethernet[Real-Time-Ethernet]
+* https://www.researchgate.net/publication/4232548_Real-time_performance_measurements_using_UDP_on_Windows_and_Linux[Real-time performance measurements using UDP on Windows and Linux]
+* http://literature.rockwellautomation.com/idc/groups/literature/documents/wp/enet-wp002_-en-p.pdf[Evaluating Industrial Ethernet]
+* http://www.embedded.com/electronics-blogs/cole-bin/4406659/1/Deterministic-networking--from-niches-to-the-mainstream-[Deterministic Networking: from niches to the mainstream]
+===========
 
 == Benchmark Setup
 
@@ -51,15 +45,11 @@ A common way to benchmark networks is to setup two computers and have a sender t
 .HEBI Robotics I/O Board
 image::udp/io-board.jpg[link="../images/udp/io-board.jpg"]
 
-Our startup http://hebirobotics.com/[HEBI Robotics] builds a variety of building blocks that enable quick development of custom robotic systems. We mainly focus on actuators, but we also developed the I/O Board shown in the picture above. Each board has 48 pins that serve a variety of functions (analog and digitial I/O, PWM, Encoder input, etc.) that can be accessed remotely via network. We normally use them in conjunction with our actuators to interface with external devices, such as a gripper or pneumatic valve, or to get various sensor input into MATLAB.
+Our startup http://hebirobotics.com/[HEBI Robotics] builds a variety of building blocks that enable quick development of custom robotic systems. We mainly focus on actuators, but we've also developed other devices such as the I/O Board shown in the picture above. Each board has 48 pins that serve a variety of functions (analog and digitial I/O, PWM, Encoder input, etc.) that can be accessed remotely via network. We normally use them in conjunction with our actuators to interface with external devices, such as a gripper or pneumatic valve, or to get various sensor input into MATLAB.
 
 Each device contains a 168MHz ARM microcontroller (STM32f407) and a 100 Mbit/s network port, so we found them to be very convenient for doing network tests. We selected two I/O Boards to act as the sender and receiver nodes and developed custom firmware in order to isolate the network stack. The resulting firmware was based on http://www.chibios.org/[ChibiOS 2.6.8] and http://savannah.nongnu.org/projects/lwip/[lwIP 1.4.1]. The relevant code pieces can be found https://gist.github.com/ennerf/36a57d432bcff20a58efcdee10f91bd9[here]. The elapsed time was measured using a hardware counter with a resolution of 250ns. 
 
 Since there was no way to store multiple Gigabytes on these devices, we decided to log data remotely using a UDP service that can receive measurement data and persist to disk (see  https://gist.github.com/ennerf/0ddc4396d15852d28e4eca4a8a923eb7[code]). In order to avoid stalls caused by disk I/O, the main socket handler wrote into a double buffered structure that got persisted by a background thread. The synchronization between the threads was done using a http://stuff-gil-says.blogspot.com/2014/11/writerreaderphaser-story-about-new.html[WriterReaderPhaser], which is a synchronization primitive that allows readers to flip buffers while keeping writers wait-free. We found this primitive to be very useful for persisting events that are represented by small amounts of data.
-
-// Since storing multiple Gigabytes of data on an embedded device is challenging, we also setup a https://gist.github.com/ennerf/0ddc4396d15852d28e4eca4a8a923eb7[(Java) UDP server] that can receive measurement data and persist to disk. The main socket handler writes incoming packets into a double buffered structure that can be persisted by a background thread without halting the packet handler. The synchronization between the threads is done using a http://stuff-gil-says.blogspot.com/2014/11/writerreaderphaser-story-about-new.html[WriterReaderPhaser], which is a synchronization primitive that is very useful for persisting events that are represented by a small amount of data.
-
-// Alternatively: oscilloscope and logic analyzer
 
 The step by step flow is as follows:
 
@@ -122,14 +112,6 @@ image::udp/rtt-baseline-zoomed.png[link="../images/udp/rtt-baseline-zoomed.png"]
 The zoomed in view of a 10 minute time span highlights Modes 1 and 2. All three modes seemed to be related to actual time and independent of rate and packet count. We were unable to find the root cause of these modes, but after several tests we strongly suspected that all of them were caused by the programmed firmware rather than being tied to the Switch or the actual protocol.
 
 Overall this initial data looked very promising for being able to use UDP for many real-time control tasks. With more tuning and a better implementation (e.g. lwip with zero copy and tuned options) it seems likely that the maximum jitter could be reduced to below 6us and maybe even below 1us.
-
-// test IO board to IO board (100)
-
-//operating system jitter, network jitter, clock drift (reference IEEE 1588v2)
-
-// The sporadic outliers at ~210us happen exactly every 5s according to system clock. If it were a cron job in the switch, the clock would eventually drift apart. Note that it may also be every 500 packets because there is almost zero jitter.
-
-// The small outlier bursts happen on average every 322.5s and last for on average 15.0105s
 
 == Switching Cost
 
@@ -238,9 +220,8 @@ $ sudo dmesg | grep "Ethernet driver"
 
 r8169 Gigabit Ethernet driver 2.3LK-NAPI loaded
 
-// Single unicast on LinuxRT has almost the same performance (minux 50us at the top). The 4 low bars may be polling intervals after the kernel driver switches to polling mode. Will take additional baseline-like data for Linux. From what I've read, sending should be non-blocking as long as the send buffer isn't full and the OS doesn't after the sys call.
 // See:
-// see https://lwn.net/Articles/551284/
+// https://lwn.net/Articles/551284/
 // https://en.wikipedia.org/wiki/New_API
 // http://blog.packagecloud.io/eng/2016/06/22/monitoring-tuning-linux-networking-stack-receiving-data/
 
