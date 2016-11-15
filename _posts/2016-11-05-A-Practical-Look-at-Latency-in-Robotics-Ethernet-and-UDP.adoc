@@ -13,9 +13,9 @@ Below we present results from a number of tests and benchmarks, involving over *
 
 == Technical Background
 
-Much of the popular wisdom comes from the early days of networking. Nodes used to communicate over a single shared media that used a control method with random elements for arbitrating access (https://en.wikipedia.org/wiki/Carrier_sense_multiple_access_with_collision_detection[CSMA/CD]). When two Frames collided during a transmission, the senders backed off for random timeouts and attempted to retransmit. After a number of failed attempts, frames could be dropped entirely.  By connecting more nodes through https://en.wikipedia.org/wiki/Ethernet_hub[Hubs] the https://en.wikipedia.org/wiki/Collision_domain[Collision Domain] was extended further, resulting in more collisions and even less predictable behavior.
+Much of the prevalent knowledge comes from the early days of networking. Nodes used to communicate over a single shared media that employed a control method with random elements for arbitrating access (https://en.wikipedia.org/wiki/Carrier_sense_multiple_access_with_collision_detection[CSMA/CD]). When two Frames collided during a transmission, the senders backed off for random timeouts and attempted to retransmit. After a number of failed attempts, frames could be dropped entirely.  By connecting more nodes through https://en.wikipedia.org/wiki/Ethernet_hub[Hubs] the https://en.wikipedia.org/wiki/Collision_domain[Collision Domain] was extended further, resulting in more collisions and less predictable behavior.
 
-In a process that started in https://en.wikipedia.org/wiki/Kalpana_(company)[1990], Hubs have been fully replaced with https://en.wikipedia.org/wiki/Network_switch[Switches]. They have dedicated full-duplex (separate lines for transmitting and receiving data) connections for each port in order to separate segments and isolate collision domains, which gets rid of any collisions that were happening on the physical (wire) level. CSMA/CD is still supported for backwards compatibility and half-duplex connections, but it is largely obsolete.
+In a process that started in https://en.wikipedia.org/wiki/Kalpana_(company)[1990], Hubs have been fully replaced with https://en.wikipedia.org/wiki/Network_switch[Switches] that have dedicated full-duplex (separate lines for transmitting and receiving) connections for each port. This separates segments and isolates collision domains, which eliminates any collisions that were happening on the physical (wire) level. CSMA/CD is still supported for backwards compatibility and half-duplex connections, but it is largely obsolete.
 
 Using dedicated lines introduces additional buffering and overhead for forwarding Frames to intended receivers. As of 2016, virtually all Switches implement the https://en.wikipedia.org/wiki/Store_and_forward[Store-and-Forward] switching architecture in which Switches fully receive packets, store them in an internal buffer, and then forward them to the appropriate receiver port. This adds a latency cost that scales linearly with the number of Switches that a packet has to go through. 
 In the alternative https://en.wikipedia.org/wiki/Cut-through_switching[Cut-through] approach Switches can forward packets immediately after receiving the target address, potentially resulting in lower latency. While this is sometimes used in latency sensitive applications, such as financial trading applications, it generally can't be found in consumer grade hardware. It is more difficult to implement, only works well if both ports negotiate the same speed, and requires the receiving port to be idle. The benefits are also less significant on smaller packets due to the requirement to buffer enough data to evaluate the target address.
@@ -31,6 +31,18 @@ Another problem that many roboticists are often concerned about is  https://en.w
 
 There are several competing networking standards that are built on Ethernet and can guarantee enough determinism to be used in industrial automation (https://en.wikipedia.org/wiki/Industrial_Ethernet[Industrial Ethernet]). They achieve this by enforcing tight control over the network layout and by limiting the components that can be connected. However, even cheap consumer grade network equipment can produce very good results if the network is controlled in a similar manner.
 
+ TODO: Add that this insight is not new and that people have been doing this for decades. Find good posts and papers to cite.
+
+//  TODO: add that this insight is not new and that people have been doing this in 2001. Link various old posts and papers? Are there good ones?
+
+// http://www.embedded.com/design/connectivity/4023291/Real-Time-Ethernet[Joe Kerkes] tried this in 2001 using 10 Mbit Ethernet.
+
+// https://www.researchgate.net/publication/4232548_Real-time_performance_measurements_using_UDP_on_Windows_and_Linux[Prytz et al.] did a latency study in 2005. Other potentially useful resources include a list of
+
+// http://literature.rockwellautomation.com/idc/groups/literature/documents/wp/enet-wp002_-en-p.pdf[differences between Standard Ethernet and proprietary adaptations].    
+
+// http://www.embedded.com/electronics-blogs/cole-bin/4406659/1/Deterministic-networking--from-niches-to-the-mainstream-[Deterministic Networking: from niches to the mainstream? (2013)] 
+
 == Benchmark Setup
 
 A common way to benchmark networks is to setup two computers and have a sender transmit a message to a receiver that echoes it back. That way the sender can measure the https://en.wikipedia.org/wiki/Round-trip_delay_time[round-trip time (RTT)] and gather statistics of the network. This generally works well, but large operating system stacks and device drivers can potentially add a lot of variation. In an attempt to reduce unwanted jitter, we decided to setup a benchmark using two embedded devices instead.
@@ -39,9 +51,9 @@ A common way to benchmark networks is to setup two computers and have a sender t
 .HEBI Robotics I/O Board
 image::udp/io-board.jpg[link="../images/udp/io-board.jpg"]
 
-As the sender and receiver nodes we chose to use two HEBI Robotics I/O Boards.  We normally use them in conjunction with our actuators to interface with external devices, such as a gripper or pneumatic valve, or to get various sensor input into MATLAB. They have 48 pins that serve a variety of functions (analog/digitial I/O, PWM, Encoder input, etc.) that can be accessed remotely via network. Each device contains a 168MHz ARM microcontroller (STM32f407) and a 100 Mbit/s network port.
+Our startup http://hebirobotics.com/[HEBI Robotics] builds a variety of building blocks that enable quick development of custom robotic systems. We mainly focus on actuators, but we also developed the I/O Board shown in the picture above. Each board has 48 pins that serve a variety of functions (analog and digitial I/O, PWM, Encoder input, etc.) that can be accessed remotely via network. We normally use them in conjunction with our actuators to interface with external devices, such as a gripper or pneumatic valve, or to get various sensor input into MATLAB.
 
-In order to isolate the network stack we wrote and programmed custom firmware based on http://www.chibios.org/[ChibiOS 2.6.8] and http://savannah.nongnu.org/projects/lwip/[lwIP 1.4.1]. The relevant code pieces can be found https://gist.github.com/ennerf/36a57d432bcff20a58efcdee10f91bd9[here]. The elapsed time was measured using a hardware counter with a resolution of 250ns. 
+Each device contains a 168MHz ARM microcontroller (STM32f407) and a 100 Mbit/s network port, so we found them to be very convenient for doing network tests. We selected two I/O Boards to act as the sender and receiver nodes and developed custom firmware in order to isolate the network stack. The resulting firmware was based on http://www.chibios.org/[ChibiOS 2.6.8] and http://savannah.nongnu.org/projects/lwip/[lwIP 1.4.1]. The relevant code pieces can be found https://gist.github.com/ennerf/36a57d432bcff20a58efcdee10f91bd9[here]. The elapsed time was measured using a hardware counter with a resolution of 250ns. 
 
 Since there was no way to store multiple Gigabytes on these devices, we decided to log data remotely using a UDP service that can receive measurement data and persist to disk (see  https://gist.github.com/ennerf/0ddc4396d15852d28e4eca4a8a923eb7[code]). In order to avoid stalls caused by disk I/O, the main socket handler wrote into a double buffered structure that got persisted by a background thread. The synchronization between the threads was done using a http://stuff-gil-says.blogspot.com/2014/11/writerreaderphaser-story-about-new.html[WriterReaderPhaser], which is a synchronization primitive that allows readers to flip buffers while keeping writers wait-free. We found this primitive to be very useful for persisting events that are represented by small amounts of data.
 
@@ -51,7 +63,7 @@ Since there was no way to store multiple Gigabytes on these devices, we decided 
 
 The step by step flow is as follows:
 
-1. Sender wakes up in fixed intervals
+1. Sender wakes up at a fixed rate, e.g., 100Hz
 2. Sender measures time ("transmit timestamp") and sends packet to receiver 
 3. Receiver echoes packet back to sender
 4. Sender receives packet and measures time ("receive timestamp")
@@ -68,7 +80,7 @@ UDP datagrams include a variety of headers that result in a minimum of 66 bytes 
 .UDP / IPv4 / Ethernet II Frame Structure
 image::udp/ethernet-ip-udp-header.png[link="../images/udp/ethernet-ip-udp-header.png"]
 
-Although this overhead may seem high for traditional automation applications with small payloads (<10 bytes), it quickly amortizes when communicating with smarter devices. For example, each HEBI Robotics' http://hebirobotics.com/products/[X-Series] actuator contains more than 40 sensors (position, velocity, torque, 3-axis gyroscope, 3-axis accelerometer, several temperature sensors, etc.) that get combined into a single packet that uses between 185 and 215 bytes payload. Typical feedback packets from an I/O Board are even larger and require about 300 bytes. When comparing overhead it is also important to consider the available bandwidth, i.e., sending 100 bytes over Gigabit Ethernet (even over 100 Mbit/s) tends to be faster than sending a single byte using traditional non-Ethernet based alternatives such as RS485 or CAN Bus.
+Although this overhead may seem high for traditional automation applications with small payloads (<10 bytes), it quickly amortizes when communicating with smarter devices. For example, each one of our http://hebirobotics.com/products/[X-Series] actuators contains more than 40 sensors (position, velocity, torque, 3-axis gyroscope, 3-axis accelerometer, several temperature sensors, etc.) that get combined into a single packet that uses between 185 and 215 bytes payload. Typical feedback packets from an I/O Board are even larger and require about 300 bytes. When comparing overhead it is also important to consider the available bandwidth, i.e., sending 100 bytes over Gigabit Ethernet (even over 100 Mbit/s) tends to be faster than sending a single byte using traditional non-Ethernet based alternatives such as RS485 or CAN Bus.
 
 For these benchmarks we chose to measure the round-trip time for a payload of 200 bytes. After including all overhead, the actual size on the wire is 266 bytes. The theoretical time it takes to transfer 266 bytes over 100 Mbit/s and 1Gbit/s Ethernet is 20.3us and 2.03us respectively.
 
@@ -176,7 +188,7 @@ We also conducted another baseline test that replaced the GS105 with a RB750Gr2.
 
 == Scaling to Many Devices
 
-So far all tests were measuring the round-trip time between a sender node and a single target node. Since real robotic systems can contain many devices, e.g., one per axis or degree of freedom, we also looked at how UDP performs with multiple devices on the same network. In conversations with other researchers we often found an expectation that there would be significant packet loss if multiple packets were to arrive at a Switch at the same time. The worst case would occur if all devices were connected to a single Switch as shown below.
+So far all tests were measuring the round-trip time between a sender node and a single target node. Since real robotic systems can contain many devices, e.g., one per axis or degree of freedom, we also looked at how UDP performs with multiple devices on the same network. In conversations with other roboticists we often found an expectation that there would be significant packet loss if multiple packets were to arrive at a Switch at the same time. The worst case would occur if all devices were connected to a single Switch as shown below.
 
 [.text-center]
 .Multiple devices connected to a single Switch
@@ -234,7 +246,7 @@ r8169 Gigabit Ethernet driver 2.3LK-NAPI loaded
 
 == Conclusion
 
-Even consumer-grade Ethernet networks can exhibit very deterministic performance with regards to latency. In the more than 100 million packets that were sent for this blog post, we did not observe any packet loss or out-of order delivery. Even when communicating with 40 smart devices at a rate of 1KHz we found the network to be very reliable. While we still believe that large and dangerous industrial robots should be controlled using specialized industrial networking equipment, we feel that standard UDP is more than sufficient for most robotic applications.
+Even consumer-grade Ethernet networks can exhibit very deterministic performance with regards to latency. In the more than 100 million packets that were sent for this blog post, we did not observe any packet loss or out-of order delivery. Even when communicating with 40 smart devices that represent a total of 1.600 sensors at a rate of 1KHz we found the network to be very reliable. While we still believe that large and dangerous industrial robots should be controlled using specialized industrial networking equipment, we feel that standard UDP is more than sufficient for most robotic applications.
 
 We also found that most of the observed latency and jitter were caused by the underlying operating systems and their device drivers. To further illustrate this point we did additional comparisons of the baseline setup with the sender node running on different operating systems. The configurations were as follows:
 
