@@ -43,7 +43,7 @@ A common way to benchmark networks is to setup two computers and have a sender t
 
 [.text-center]
 .HEBI Robotics I/O Board
-image::udp/io-board.jpg[link="../images/udp/io-board.jpg", width="100%"]
+image::udp/io-board.jpg[link="{imagesdir}/udp/io-board.jpg", width="100%"]
 
 Our startup http://hebirobotics.com/[HEBI Robotics] builds a variety of building blocks that enable quick development of custom robotic systems. We mainly focus on actuators, but we've also developed other devices such as the I/O Board shown in the picture above. Each board has 48 pins that serve a variety of functions (analog and digitial I/O, PWM, Encoder input, etc.) that can be accessed remotely via network. We normally use them in conjunction with our actuators to interface with external devices, such as a gripper or pneumatic valve, or to get various sensor input into MATLAB.
 
@@ -68,7 +68,7 @@ UDP datagrams include a variety of headers that result in a minimum of 66 bytes 
 
 [.text-center]
 .UDP / IPv4 / Ethernet II Frame Structure
-image::udp/ethernet-ip-udp-header.png[link="../images/udp/ethernet-ip-udp-header.png", width="100%"]
+image::udp/ethernet-ip-udp-header.png[link="{imagesdir}/udp/ethernet-ip-udp-header.png", width="100%"]
 
 Although this overhead may seem high for traditional automation applications with small payloads (<10 bytes), it quickly amortizes when communicating with smarter devices. For example, each one of our http://hebirobotics.com/products/[X-Series] actuators contains more than 40 sensors (position, velocity, torque, 3-axis gyroscope, 3-axis accelerometer, several temperature sensors, etc.) that get combined into a single packet that uses between 185 and 215 bytes payload. Typical feedback packets from an I/O Board are even larger and require about 300 bytes. When comparing overhead it is also important to consider the available bandwidth, i.e., sending 100 bytes over Gigabit Ethernet (even over 100 Mbit/s) tends to be faster than sending a single byte using traditional non-Ethernet based alternatives such as RS485 or CAN Bus.
 
@@ -82,7 +82,7 @@ We can establish a baseline of the best-case round-trip time by having the sende
 
 [.text-center]
 .Baseline setup using single Switch
-image::udp/setup-baseline.png[link="../images/udp/setup-baseline.png", width="100%"]
+image::udp/setup-baseline.png[link="{imagesdir}/udp/setup-baseline.png", width="100%"]
 
 We set the frequency to 100Hz and logged data for ~24 hours. We chose this frequency because it is a common control rate for sending high-level trajectories, and because 10ms is a safe deadline in case there are large outliers. During normal operations we typically used rates between 100-200Hz for updating set targets of controllers that get executed on-board each device (e.g. position/velocity/torque), and rates of up to 1KHz when bypassing local controllers and remotely controlling the output (e.g. PWM). The network would technically support even higher rates, but there are usually other limitations that come in at around 1KHz (e.g. OS scheduler and limited sensor polling rates).
 
@@ -90,18 +90,18 @@ First, we looked at the jitter of the underlying embedded real-time operating sy
 
 [.text-center]
 .OS jitter of ChibiOS 2.6.8 on STM32F407 (24h)
-image::udp/os-jitter-embedded.png[link="../images/udp/os-jitter-embedded.png", width="100%"]
+image::udp/os-jitter-embedded.png[link="{imagesdir}/udp/os-jitter-embedded.png", width="100%"]
 
 The two figures below show the round-trip time for all packets and the corresponding percentile distribution. There were a total of 8.5 million messages. None of them were lost and none of them arrived out of order.
 
 [[img-rtt-24h]]
 [.text-center]
 .RTT for 200 byte payload (24h)
-image::udp/rtt-baseline.png[link="../images/udp/rtt-baseline.png", width="100%"]
+image::udp/rtt-baseline.png[link="{imagesdir}/udp/rtt-baseline.png", width="100%"]
 
 [.text-center]
 .Zoomed in view of RTT for 200 byte payload (10min)
-image::udp/rtt-baseline-zoomed.png[link="../images/udp/rtt-baseline-zoomed.png", width="100%"]
+image::udp/rtt-baseline-zoomed.png[link="{imagesdir}/udp/rtt-baseline-zoomed.png", width="100%"]
 
 90% of all packets arrived within 194us and a jitter of less than 1 microsecond. Roughly 80us of this time was spent on the wire, so using chips that support Gigabit (rather than 100Mbit) could lower the round-trip time to ~120us. Above the common case, there were three different periodically reoccuring modes that resulted in additional latency.
 
@@ -119,7 +119,7 @@ As mentioned in the background section, most modern Switches use the 'store-and-
 
 [.text-center]
 .Benchmark setup with additional Switch
-image::udp/setup-switching-cost.png[link="../images/udp/setup-switching-cost.png", width="100%"]
+image::udp/setup-switching-cost.png[link="{imagesdir}/udp/setup-switching-cost.png", width="100%"]
 
 For this benchmark we tested the three following Switches and added them individually to the baseline setup as shown above,
 
@@ -132,13 +132,13 @@ In total there were about 1 million packets. Again, we did not observe any packe
 
 [.text-center]
 .Comparison of RTT through different Switches (35min)
-image::udp/rtt-switch-comparison.png[link="../images/udp/rtt-switch-comparison.png", width="100%"]
+image::udp/rtt-switch-comparison.png[link="{imagesdir}/udp/rtt-switch-comparison.png", width="100%"]
 
 The figure below shows a zoomed view of the time series highlighting the added jitter characteristics. Modes 1 and 3 do not seem to be affected by additional switches. Mode 2 remains constant at 210 us and disappears for higher round-trip times, indicating an issue at the receiving step of the sender.
 
 [.text-center]
 .Zoomed in view of Switch comparison (10min)
-image::udp/comparison-switch-latency.png[link="../images/udp/comparison-switch-latency.png", width="100%"]
+image::udp/comparison-switch-latency.png[link="{imagesdir}/udp/comparison-switch-latency.png", width="100%"]
 
 Both KSZ8863 and the RB750Gr2 add a constant switching latency of 2.9 us and 3.6 us in addition to the wire time of 40.6 us and 4.06 us respectively to the RTT. The added jitter seems to be negligible at well below 1us. Surprisingly, the GS105 seems to have problems with this use case, resulting in higher latency and more jitter than the KSZ8863 even though it was connected using Gigabit. More details are in the table below.
 
@@ -174,13 +174,13 @@ So far all tests were measuring the round-trip time between a sender node and a 
 
 [.text-center]
 .Multiple devices connected to a single Switch
-image::udp/setup-bursting.png[link="../images/udp/setup-bursting.png", width="100%"]
+image::udp/setup-bursting.png[link="{imagesdir}/udp/setup-bursting.png", width="100%"]
 
 In order to test the actual behavior we setup a test consisting of 40 HEBI Robotics I/O boards that were connected to a single 48-port Ethernet Switch (http://www.downloads.netgear.com/files/GDC/GS748Tv1/GS748T_ds_03Feb05.pdf[GS748T]). All devices were running the same (receiver) firmware as before, so sending a single broadcast message triggered 40 response packets that caused more than 10 KB of total traffic to arrive at the Switch within occasionally less than 250 nanoseconds. These https://en.wikipedia.org/wiki/Micro-bursting_(networking)[Microbursts] were well beyond the sustainable bandwidth of Gigabit Ethernet. The setup shown below was representative of a high degree of freedom system such as a full body humanoid robot without daisy-chaining.
 
 [.text-center]
 .Network test setup with 40 HEBI Robotics I/O Boards
-image::udp/multiple-boards.jpg[link="../images/udp/multiple-boards.jpg", width="100%"]
+image::udp/multiple-boards.jpg[link="{imagesdir}/udp/multiple-boards.jpg", width="100%"]
 
 We would also like to mention that this setup heavily benefited from two side effects of using a standard Ethernet stack. First, there was no need for any manual addressing because of https://en.wikipedia.org/wiki/Dynamic_Host_Configuration_Protocol[DHCP] and device specific globally unique mac addresses. Second, we were able to re-program the firmware on all 40 devices simultaneously within 3-6 seconds due to the fact that we had a bootloader with TCP/IP support. It would have been very tedious to setup such a system if any step had required manual intervention.
 
@@ -192,7 +192,7 @@ Again, we first looked at the jitter of the underlying operating system. The fig
 
 [.text-center]
 .Operating system jitter of Scientific Linux 6.6 with MRG Realtime
-image::udp/os-jitter-linux-rt.png[link="../images/udp/os-jitter-linux-rt.png", width="100%"]
+image::udp/os-jitter-linux-rt.png[link="{imagesdir}/udp/os-jitter-linux-rt.png", width="100%"]
 
 The two figures below show the round-trip time for each measurement. It may be surprising, but there was again no packet loss or re-ordering of packets from any single source. 
 
@@ -200,11 +200,11 @@ Rather than packets being dropped, what actually happened was that all packets g
 
 [.text-center]
 .Zoomed in RTT for 40 devices
-image::udp/rtt-linux-40x-zoomed.png[link="../images/udp/rtt-linux-40x-zoomed.png", width="100%"]
+image::udp/rtt-linux-40x-zoomed.png[link="{imagesdir}/udp/rtt-linux-40x-zoomed.png", width="100%"]
 
 [.text-center]
 .RTT for 40 devices (90 min)
-image::udp/rtt-linux-40x.png[link="../images/udp/rtt-linux-40x.png", width="100%"]
+image::udp/rtt-linux-40x.png[link="{imagesdir}/udp/rtt-linux-40x.png", width="100%"]
 
 However, the amount of latency and jitter turned out to be worse than we anticipated. We expected most columns to start at around ~180us and end at ~280us. While this was sometimes the case, the majority of columns started above 300 us. After some initial research we suspected that this delay was mostly caused by the Linux https://en.wikipedia.org/wiki/New_API[NAPI] using polling mode rather than interrupts, and by using a low-cost network interface paired with suboptimal device drivers. While we expected the OS and driver stack to introduce additional latency and jitter, we were surprised by the order of magnitude.
 
@@ -239,11 +239,11 @@ The two charts below show the round trip time for each system communicating with
 
 [.text-center]
 .Baseline RTT comparing RTOS vs RT-Linux vs Windows (10h)
-image::udp/rtt-linux-1x-comparison-10h.png[link="../images/udp/rtt-linux-1x-comparison-10h.png", width="100%"]
+image::udp/rtt-linux-1x-comparison-10h.png[link="{imagesdir}/udp/rtt-linux-1x-comparison-10h.png", width="100%"]
 
 [.text-center]
 .Zoomed in baseline RTT comparing RTOS vs RT-Linux vs Windows (10min)
-image::udp/rtt-linux-1x-comparison-10m.png[link="../images/udp/rtt-linux-1x-comparison-10m.png", width="100%"]
+image::udp/rtt-linux-1x-comparison-10m.png[link="{imagesdir}/udp/rtt-linux-1x-comparison-10m.png", width="100%"]
 
 We realize that there are many more interesting questions that were beyond the scope of this work. We are currently considering the following networking-related topics for future blog posts:
 
