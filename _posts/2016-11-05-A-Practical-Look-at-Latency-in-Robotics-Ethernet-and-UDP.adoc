@@ -51,16 +51,19 @@ Each device contains a 168MHz ARM microcontroller (STM32f407) and a 100 Mbit/s n
 
 Since there was no way to store multiple Gigabytes on these devices, we decided to log data remotely using a UDP service that can receive measurement data and persist to disk (see  https://gist.github.com/ennerf/0ddc4396d15852d28e4eca4a8a923eb7[code]). In order to avoid stalls caused by disk I/O, the main socket handler wrote into a double buffered structure that got persisted by a background thread. The synchronization between the threads was done using a http://stuff-gil-says.blogspot.com/2014/11/writerreaderphaser-story-about-new.html[WriterReaderPhaser], which is a synchronization primitive that allows readers to flip buffers while keeping writers wait-free. We found this primitive to be very useful for persisting events that are represented by small amounts of data.
 
-The step by step flow is as follows:
+The step by step flow was as follows:
 
-1. Sender wakes up at a fixed rate, e.g., 100Hz
-2. Sender measures time ("transmit timestamp") and sends packet to receiver 
-3. Receiver echoes packet back to sender
-4. Sender receives packet and measures time ("receive timestamp")
-5. Sender sends measurement to logging server
-6. Logging server receives measurement and persists to disk
+. Sender wakes up at a fixed rate, e.g., 100Hz
+. Sender increments sequence number
+. Sender measures time ("transmit timestamp") and sends packet to receiver 
+. Receiver echoes packet back to sender
+. Sender receives packet and measures time ("receive timestamp")
+. Sender sends measurement to logging server
+. Logging server receives measurement and persists to disk
 
-The resulting binary data was loaded into MATLAB(C) for analysis and visualization. The code for reading a file can be found https://gist.github.com/ennerf/19b48406a066f6e946a0567a1a4de1ed[here]. The round-trip time is the difference between the receive and transmit timestamps.
+The resulting binary data was loaded into MATLAB(C) for analysis and visualization. The code for reading the binary file can be found https://gist.github.com/ennerf/19b48406a066f6e946a0567a1a4de1ed[here].
+
+The round-trip time is the difference between the receive and transmit timestamps. We also recorded the sequence number of each packet and the ip address of the receiver node in order to detect packet loss and track ordering.
 
 == UDP Datagram Size
 
