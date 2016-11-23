@@ -1,4 +1,4 @@
-= Feasibility of Ethernet and UDP for Real-Time Control
+= Viability of Ethernet and UDP for Real-Time Control
 // A Practical Look at Latency in Robotics : Ethernet and UDP
 :published_at: 2016-11-23
 :hp-tags: Latency, Ethernet, UDP, real-time control
