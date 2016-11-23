@@ -7,19 +7,14 @@
 
 Ethernet is the most pervasive communication standard in the world. However, it is often dismissed for robotics applications because of its presumed non-deterministic behavior. In this post, we show that in practice Ethernet can be made to be extremely deterministic and provide a flexible and reliable solution for robot communication.
 
-//Traditional networking work focuses on large, ad-hoc networks that typically exhibit very different topologies and traffic patterns than networks used to control robotic systems. Thus, the issues that are found in these networks are different.
-
-//Traditional networking work focuses on large, ad-hoc networks that may have multiple routes between source and destination. The network toplogies and traffic patterns used to control robotic systems are much more controlled, so several issues commonly found in large scale networks don't apply to this use case.
-
-//The network topologies and traffic patterns used to control robotic systems are much more controlled than for example streaming a video through the Internet. Thus, several issues commonly found in large scale networks are not applicable to this use case. 
-
-//The network topologies and traffic patterns used to control robotic systems exhibit different characteristics than found in traditional networking work that focuses on large, ad-hoc networks. 
-
+The network topologies and traffic patterns used to control robotic systems exhibit different characteristics than those studied by traditional networking work that focuses on large, ad-hoc networks.
 Below we present results from a number of tests and benchmarks, involving over **100 million transmitted packets**. Over the course of all of our tests *no packets were dropped* or received out of order.
 
 == Technical Background
 
-Much of the prevalent knowledge comes from the early days of networking. Nodes used to communicate over a single shared media that employed a control method with random elements for arbitrating access (https://en.wikipedia.org/wiki/Carrier_sense_multiple_access_with_collision_detection[CSMA/CD]). When two Frames collided during a transmission, the senders backed off for random timeouts and attempted to retransmit. After a number of failed attempts, frames could be dropped entirely.  By connecting more nodes through https://en.wikipedia.org/wiki/Ethernet_hub[Hubs] the https://en.wikipedia.org/wiki/Collision_domain[Collision Domain] was extended further, resulting in more collisions and less predictable behavior.
+One of the primary concerns that roboticists have when considering technologies for real-time control is the predictability of latency. The worst case latency tends to be more important than the overall throughput, so the possibility of latency spikes and packet loss in a communication standard represent significant red flags.
+
+Much of the prevalent hesitance towards using Ethernet for real-time control originated in the early days of networking. Nodes used to communicate over a single shared media that employed a control method with random elements for arbitrating access (https://en.wikipedia.org/wiki/Carrier_sense_multiple_access_with_collision_detection[CSMA/CD]). When two Frames collided during a transmission, the senders backed off for random timeouts and attempted to retransmit. After a number of failed attempts, frames could be dropped entirely. By connecting more nodes through https://en.wikipedia.org/wiki/Ethernet_hub[Hubs] the https://en.wikipedia.org/wiki/Collision_domain[Collision Domain] was extended further, resulting in more collisions and less predictable behavior.
 
 In a process that started in https://en.wikipedia.org/wiki/Kalpana_(company)[1990], Hubs have been fully replaced with https://en.wikipedia.org/wiki/Network_switch[Switches] that have dedicated full-duplex (separate lines for transmitting and receiving) connections for each port. This separates segments and isolates collision domains, which eliminates any collisions that were happening on the physical (wire) level. CSMA/CD is still supported for backwards compatibility and half-duplex connections, but it is largely obsolete.
 
@@ -31,19 +26,11 @@ In the alternative https://en.wikipedia.org/wiki/Cut-through_switching[Cut-throu
 // https://www.lantronix.com/resources/networking-tutorials/network-switching-tutorial/
 // http://www.embedded.com/design/connectivity/4023291/Real-Time-Ethernet
 
-Another problem that many roboticists are often concerned about is  https://en.wikipedia.org/wiki/Out-of-order_delivery[Out-of-Order Delivery], which means that a sequence of packets coming from a single source may be received in a different order. This is relevant for communicating over the internet, but generally does not apply to local networks without redundant routes and load balancing. Depending on the driver implementation it can theoretically happen on a local network, but we have yet to observe such a case.
+Another problem that many roboticists are often concerned about is  https://en.wikipedia.org/wiki/Out-of-order_delivery[Out-of-Order Delivery], which means that a sequence of packets coming from a single source may be received in a different order. This is relevant for communicating over the Internet, but generally does not apply to local networks without redundant routes and load balancing. Depending on the driver implementation it can theoretically happen on a local network, but we have yet to observe such a case.
 
 There are several competing networking standards that are built on Ethernet and can guarantee enough determinism to be used in industrial automation (https://en.wikipedia.org/wiki/Industrial_Ethernet[Industrial Ethernet]). They achieve this by enforcing tight control over the network layout and by limiting the components that can be connected. However, even cheap consumer grade network equipment can produce very good results if the network is controlled in a similar manner.
 
-[TODO]
-===========
- TODO: Add that this insight is not new and that people have been doing this for decades. Find good posts and papers to cite. Would any of these make sense?
-
-* http://www.embedded.com/design/connectivity/4023291/Real-Time-Ethernet[Real-Time-Ethernet]
-* https://www.researchgate.net/publication/4232548_Real-time_performance_measurements_using_UDP_on_Windows_and_Linux[Real-time performance measurements using UDP on Windows and Linux]
-* http://literature.rockwellautomation.com/idc/groups/literature/documents/wp/enet-wp002_-en-p.pdf[Evaluating Industrial Ethernet]
-* http://www.embedded.com/electronics-blogs/cole-bin/4406659/1/Deterministic-networking--from-niches-to-the-mainstream-[Deterministic Networking: from niches to the mainstream]
-===========
+Note that this is not a new concept. We found several resources that discussed similar findings more than a decade ago, e.g., http://www.embedded.com/design/connectivity/4023291/Real-Time-Ethernet[Real-Time-Ethernet] (2001), https://www.researchgate.net/publication/4232548_Real-time_performance_measurements_using_UDP_on_Windows_and_Linux[Real-time performance measurements using UDP on Windows and Linux] (2005), http://literature.rockwellautomation.com/idc/groups/literature/documents/wp/enet-wp002_-en-p.pdf[Evaluating Industrial Ethernet] (2007), and  http://www.embedded.com/electronics-blogs/cole-bin/4406659/1/Deterministic-networking--from-niches-to-the-mainstream-[Deterministic Networking: from niches to the mainstream] (2013).
 
 == Benchmark Setup
 
@@ -260,6 +247,7 @@ We realize that there are many more interesting questions that were beyond the s
 
 * Comparison of device drivers and network interfaces from various vendors
 * Performance impact of uncontrolled traffic (e.g. streaming video)
+* Redundant routes and sudden disconnects
 * Controlling through wireless networks
 * Clock drift and time synchronization using IEEE 1588v2
 
