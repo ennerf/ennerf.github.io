@@ -1,10 +1,11 @@
 = Viability of Ethernet and UDP for Robot Control
 // A Practical Look at Latency in Robotics : Ethernet and UDP
+// Analyzing the viability of Ethernet and UDP for robot control
 :published_at: 2016-11-23
 :hp-tags: Latency, Ethernet, UDP, real-time control
 :imagesdir: ../images
 
-Ethernet is the most pervasive communication standard in the world. However, it is often dismissed for robotics applications because of its presumed non-deterministic behavior. In this post, we show that in practice Ethernet can be made to be extremely deterministic and provide a flexible and reliable solution for robot communication.
+Ethernet is the most pervasive communication standard in the world. However, it is often dismissed for robotics applications because of its presumed non-deterministic behavior. In this article, we show that in practice Ethernet can be made to be extremely deterministic and provide a flexible and reliable solution for robot communication.
 
 The network topologies and traffic patterns used to control robotic systems exhibit different characteristics than those studied by traditional networking work that focuses on large, ad-hoc networks.
 Below we present results from a number of tests and benchmarks, involving over **100 million transmitted packets**. Over the course of all of our tests *no packets were dropped* or received out of order.
@@ -59,7 +60,7 @@ The resulting binary data was loaded into MATLAB(C) for analysis and visualizati
 
 The round-trip time is the difference between the receive and transmit timestamps. We also recorded the sequence number of each packet and the ip address of the receiver node in order to detect packet loss and track ordering.
 
-== UDP Datagram Size
+== UDP datagram size
 
 UDP datagrams include a variety of headers that result in a minimum of 66 bytes of overhead. Additionally, Ethernet Frames have a minimum size of 84 bytes, which makes the minimum payload for a UDP Datagram 18 bytes. The rough structure is shown below. More detailed information can be found at https://en.wikipedia.org/wiki/Ethernet_frame[Ethernet II],  https://en.wikipedia.org/wiki/IPv4[Internet Protocol (IPv4)], and https://en.wikipedia.org/wiki/User_Datagram_Protocol[User Datagram Protocol (UDP)].
 
@@ -67,7 +68,7 @@ UDP datagrams include a variety of headers that result in a minimum of 66 bytes 
 .UDP / IPv4 / Ethernet II Frame Structure
 image::udp/ethernet-ip-udp-header.png[link="{imagesdir}/udp/ethernet-ip-udp-header.png", width="100%"]
 
-Although this overhead may seem high for traditional automation applications with small payloads (<10 bytes), it quickly amortizes when communicating with smarter devices. For example, each one of our http://hebirobotics.com/products/[X-Series] actuators contains more than 40 sensors (position, velocity, torque, 3-axis gyroscope, 3-axis accelerometer, several temperature sensors, etc.) that get combined into a single packet that uses between 185 and 215 bytes payload. Typical feedback packets from an I/O Board are even larger and require about 300 bytes. When comparing overhead it is also important to consider the available bandwidth, i.e., sending 100 bytes over Gigabit Ethernet (even over 100 Mbit/s) tends to be faster than sending a single byte using traditional non-Ethernet based alternatives such as RS485 or CAN Bus.
+Although this overhead may seem high for traditional automation applications with small payloads (<10 bytes), it quickly amortizes when communicating with smarter devices. For example, each one of our http://hebirobotics.com/products/[X-Series] actuators contains more than 40 sensors (position, velocity, torque, 3-axis gyroscope, 3-axis accelerometer, several temperature sensors, etc.) that get combined into a single packet that uses between 185 and 215 bytes payload. Typical feedback packets from an I/O Board are even larger and require about 300 bytes. When comparing overhead it is also important to consider the available bandwidth, i.e., as sending 100 bytes over Gigabit Ethernet (even over 100 Mbit/s) tends to be faster than sending a single byte using traditional non-Ethernet based alternatives such as RS485 or CAN Bus.
 
 For these benchmarks we chose to measure the round-trip time for a payload of 200 bytes. After including all overhead, the actual size on the wire is 266 bytes. The theoretical time it takes to transfer 266 bytes over 100 Mbit/s and 1Gbit/s Ethernet is 20.3us and 2.03us respectively.
 
@@ -81,7 +82,7 @@ We can establish a baseline of the best-case round-trip time by having the sende
 .Baseline setup using single Switch
 image::udp/setup-baseline.png[link="{imagesdir}/udp/setup-baseline.png", width="100%"]
 
-We set the frequency to 100Hz and logged data for ~24 hours. We chose this frequency because it is a common control rate for sending high-level trajectories, and because 10ms is a safe deadline in case there are large outliers. During normal operations we typically used rates between 100-200Hz for updating set targets of controllers that get executed on-board each device (e.g. position/velocity/torque), and rates of up to 1KHz when bypassing local controllers and remotely controlling the output (e.g. PWM). The network would technically support even higher rates, but there are usually other limitations that come in at around 1KHz (e.g. OS scheduler and limited sensor polling rates).
+We set the frequency to 100Hz and logged data for ~24 hours. We chose this frequency because it is a common control rate for sending high-level trajectories, and because 10ms is a safe deadline in case there are large outliers. During normal operations we typically used rates between 100-200Hz for updating set targets of controllers that get executed on-board each device (e.g. position/velocity/torque), and rates of up to 1KHz when bypassing local controllers and remotely controlling the output (e.g. PWM). The network would technically support even higher rates, but there are usually other limitations that come into play at around 1KHz (e.g. OS scheduler and limited sensor polling rates).
 
 First, we looked at the jitter of the underlying embedded real-time operating system (RTOS). The figure below shows the difference between an idealized signal that ticks every 10ms and the measured transmit timestamps. 99% are within the lowest measurement resolution (250ns), and the total observed range is slightly below 6us. Note that this is significantly better than the 150us base jitter range we observed on real-time Linux (see https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html[The Importance of Metrics and Operating Systems]).
 
@@ -112,7 +113,7 @@ Overall this initial data looked very promising for being able to use UDP for ma
 
 == Switching Cost
 
-As mentioned in the background section, most modern Switches use the 'store-and-forward' approach that requires the Switch to fully receive a packet before forwarding it appropriately. Therefore, the latency cost per switch is the time it takes a packet on the wire plus any switching overhead. The wire time is constant (2.03us or 20.3us for 266 bytes), but the overhead depends on the switch implementation. It can be difficult to find good performance data for specific devices, so depending on your requirements you may need to conduct your own benchmarks if you need to evaluate hardware.
+As mentioned in the background section, most modern Switches use the 'store-and-forward' approach that requires the Switch to fully receive a packet before forwarding it appropriately. Therefore, the latency cost per Switch is the time a packet spends on the wire plus any switching overhead. The wire time is constant (2.03us or 20.3us for 266 bytes), but the overhead depends on the Switch implementation. It can be difficult to find good performance data for specific devices, so depending on your requirements you may need to conduct your own benchmarks if you need to evaluate hardware.
 
 [.text-center]
 .Benchmark setup with additional Switch
@@ -123,7 +124,6 @@ For this benchmark we tested the three following Switches and added them individ
 * http://ww1.microchip.com/downloads/en/DeviceDoc/KSZ8863MLL_FLL_RLL_DS.pdf[MICREL KSZ8863] (embedded in X-Series actuators)
 * http://www.downloads.netgear.com/files/GDC/GS105/GS105_datasheet_04Sept03.pdf[NETGEAR ProSAFE GS105]
 * https://routerboard.com/RB750Gr2[MikroTik RB750Gr2 (RouterBOARD hEX)] (technically a Router, but disabling DHCP makes it act similar to a Switch)
-
 
 In total there were about 1 million packets. Again, we did not observe any packet loss or out-of-order delivery.
 
@@ -193,7 +193,7 @@ image::udp/os-jitter-linux-rt.png[link="{imagesdir}/udp/os-jitter-linux-rt.png",
 
 The two figures below show the round-trip time for each measurement. It may be surprising, but there was again no packet loss or re-ordering of packets from any single source. 
 
-Rather than packets being dropped, what actually happened was that all packets got stored in the internal 1.6 MB buffer of the switch, queued, and forwarded to the target port as fast as possible. Since the sender was connected via Gigabit, the packets arrived roughly every ~2us. The time axis in the chart is based on the transmit timestamp, so each cycle shows up as vertical column in the graphs. We also conducted the same test at 1KHz and found identical results.
+Rather than packets being dropped, what actually happened was that all packets were stored in the internal 1.6 MB buffer of the switch, queued, and forwarded to the target port as fast as possible. Since the sender was connected via Gigabit, the packets arrived roughly every ~2us. The time axis in the chart is based on the transmit timestamp, so each cycle shows up as vertical column in the graphs. We also conducted the same test at 1KHz and found identical results.
 
 [.text-center]
 .Zoomed in RTT for 40 devices
