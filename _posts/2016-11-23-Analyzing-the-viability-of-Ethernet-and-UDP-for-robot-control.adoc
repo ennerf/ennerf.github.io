@@ -1,6 +1,4 @@
-= Viability of Ethernet and UDP for Robot Control
-// A Practical Look at Latency in Robotics : Ethernet and UDP
-// Analyzing the viability of Ethernet and UDP for robot control
+= Analyzing the viability of Ethernet and UDP for robot control
 :published_at: 2016-11-23
 :hp-tags: Latency, Ethernet, UDP, real-time control
 :imagesdir: ../images
