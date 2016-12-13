@@ -6,7 +6,7 @@
 Ethernet is the most pervasive communication standard in the world. However, it is often dismissed for robotics applications because of its presumed non-deterministic behavior. In this article, we show that in practice Ethernet can be made to be extremely deterministic and provide a flexible and reliable solution for robot communication.
 
 The network topologies and traffic patterns used to control robotic systems exhibit different characteristics than those studied by traditional networking work that focuses on large, ad-hoc networks.
-Below we present results from a number of tests and benchmarks, involving over **100 million transmitted packets**. Over the course of all of our tests *no packets were dropped* or received out of order.
+Below we present results from a number of tests and benchmarks, involving over 100 million transmitted packets. Over the course of all of our tests no packets were dropped or received out of order.
 
 == Technical Background
 
