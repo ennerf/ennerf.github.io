@@ -1,0 +1,8 @@
+= Designing user-friendly method arguments for high-performance MATLAB APIs
+:published_at: 2017-01-15
+:hp-tags: MATLAB, Java
+:imagesdir: ../images
+
+intro
+
+== Background
