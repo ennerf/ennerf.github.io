@@ -1,8 +1,377 @@
 = Designing user-friendly method arguments for high-performance MATLAB APIs
+// Creating user-friendly MATLAB bindings for robotic systems ?
 :published_at: 2017-01-15
 :hp-tags: MATLAB, Java
 :imagesdir: ../images
 
-intro
+// What should this post be about? Why we made the decisions we did or general recommendations? General recommendations is difficult since we don't know as much about MEX. Should the title be something like "Towards better APIs for robotics research"? "A mission to develop the perfect MATLAB API"? I want to cover some basics (wrapper class integration, basic Java method with multiple Object arguments, highlight the typing mismatch between static and dynamically typed language). Does the Java specific part fit or should that be all in a separate post? I feel like stopping after discussing what an interface should look like is too open ended.
 
-== Background
+MATLAB is a programming language and environment designed for scientific computing. It is one of the best languages for prototyping control algorithms for robotic systems, and extremely widespread especially in the academic community.
+
+Typically researchers use it to prototype algorithms and ideas that later get implemened in C/C++ and tested on real hardware. Unfortunately, this common practice causes a substantial delay in the feedback loop between considering ideas and testing them in practice. This gets exacerbated if the researchers do not have a strong programming background and experienec with other languages. Thus, research could be significantly sped up if hardware could be controlled directly from MATLAB.
+
+The biggest limitation to doing this is the lack of support for multi-threading. While the math gets executed very efficiently, the main thread ends up spending most or all of its available time budget waiting for hardware communication.
+
+Luckily, MATLAB offers great interfaces to various other languages that can be used to overcome practically all limitations. In this post we will cover how to create high performance interfaces for hardware-in-the-loop control that feel like native MATLAB code.
+
+== Goal
+
+* Simple interface to control complex systems from MATLAB code
+* Reason: Lots of time spent porting to C++ without seeing benefits
+
+* Great user experience that 
+** does not surprise users
+** integrates seamlessly and looks like MATLAB code (vectorization)
+** provides a consistent experience
+** simplifies the common use case
+** enables advanced use cases
+** as little overhead and cruft as possible
+** results in little overhead on the main MATLAB thread
+** requires no installation of drivers, libraries, or start of external processes
+
+== Asynchronous Communication
+
+MATLAB thread shouldn't be blocked. Async has to come from a different language interface.
+
+== Related Work
+
+When we started working on APIs for MATLAB in ~2011 LCM was the only interface we were aware of. However, it seems that in the past years such APIs have become more popular. Now there are several projects with MATLAB bindings, which can generally be grouped into two categories. Below is a list of the existing APIs that we are aware of.
+
+* Interfaces to message passing frameworks. Usually includes background threading. (Async) Requires external applications to communicate with robot.
+** http://gazebosim.org/tutorials?cat=haptix&tut=haptix_matlab[OSRF Haptix], MEX/C interface to http://ignitionrobotics.org/[ignition-transport] (MEX)
+** https://lcm-proj.github.io/tut_matlab.html[LCM] (Java)
+** https://www.mathworks.com/hardware-support/robot-operating-system.html[ROS Support from Robotics System Toolbox] (Java)
+** https://github.com/smcgill3/zeromq-matlab[ZeroMQ] (MEX)
+** https://github.com/ragavsathish/RabbitMQ-Matlab-Client[RabbitMQ] (Java)
+
+* Interfaces to the raw communication protocol. Usually relies on main thread for the communication aspect. (Sync)
+** http://www.robodk.com/Matlab-API.html[RoboDK] (sort of) very high level commands to their main application
+** http://support.robotis.com/en/software/dynamixel_sdk/usb2dynamixel/windows/matlab.htm[Dynamixel API]. Extremely low level down to endian conversions
+** https://www.mathworks.com/hardware-support/arduino-matlab.html[Arduino] Support from MATLAB
+** https://www.mathworks.com/hardware-support/android-sensor.html[TMW Android Sensor support] not real-time? only logging?
+** https://henschel-robotics.ch/hdrive/software/[Henschel Servos] writes xml messages using MATLAB's tcp libraries to a web server embedded on the device
+
+Table with features? Name, Async, Language, Performance (?), Protocol (binary/text), Object Oriented?, Comment
+
+Example1:
+
+Message passing systems don't work very well for prototyping with modular systems. For example, consider a case of kinesthetic control where the feedback of a master robot is used to control a second slave robot. This would require changes to the messages, which always results in significant overhead. Definition need to be changed, messages need to be generated, the receiving process needs to be modified, everything has to be recompiled for the target platform and so on. This overhead is justifiable for static systems that live for a long time, but it is a dealbreaker for modular systems that were constructed and programmed in an hour for a quick YouTube video.
+
+== Language choice
+
+Out of the box MATLAB comes with support for calling code written in C/C++ (MEX) and Java (MATLAB-Java Interface). MATLAB could also call other languages like Python, but those require additional installation steps. Ultimately, the choice comes down to personal preference. While there are clear differences between the interfaces and capabilities, both can achieve just about anything. Below are some of the core differences:
+
+**C/C++ via MEX functions**
+
+* Strengths
+** Full featured interface that supports classes and structs as inputs
+** Support for multiple return arguments
+* Weaknesses
+** Difficult to support cross-platform libraries, especially with regards to threading, networking, and file access
+** Difficult to provide binaries for all platforms and target architectures
+** State or reference to state needs to be passed in
+** Object oriented APIs are somewhat like programming in C
+** Class definitions don't support the new syntax (old @class/myFunction)
+** Poor reflective abilities (checking types at runtime)
+
+**Java via MATLAB-Java interface**
+
+* Strengths
+** Cross-platform support out of the box
+** Simple packaging
+** Good reflective abilitites
+** Great tool support (monitoring, remote debugging, etc.)
+** Easier to create object oriented APIs and for keeping state
+* Weaknesses
+** Difficult to work around the missing support for classes and structs
+** Difficult to deal with some type conversions
+
+Note that performance is not on the list. Both languages can be made multiple orders of magnitude faster than necessary, so performance is simply not an issue.
+
+Due to our first MATLAB APIs (in ~2011) being built on top of LCM, we were already familiar with the Java interface and kept developing all subsequent iterations in Java as well. While the rest of the post will discuss the Java interface, we believe that everything should be possible to do in MEX as well.
+
+However, if you are planning on developing such an API for MATLAB, be prepared to spend a lot of time on it. Both languages require multiple levels of translation and lots of workarounds for making it work well.
+
+== API Design
+
+One thing that all of the other work referenced above have in common is that they call into other languages with a set number of arguments. We did this for a long time as well and had great experiences with it, but the APIs didn't quite feel like native MATLAB code. It worked well for simple use cases, but we kept running into advanced use cases where the resulting syntax is somewhat ugly.
+
+Consider a case where most users only send commands, but some experts may want to send commands, gains, and set led colors (for e.g. synchronization of a high-speed camera with logged feedback) in the same message. Using fixed argument calls we could approach this in a few ways:
+
+* Send each in a separate message. Easy, but users can't be sure that all of them arrive at the same time (or at all depending on the protocol).
+
+[source,matlab]
+----
+sendCommand(cmd);
+sendLed(led);
+sendGains(gains);
+----
+
+
+* Have multiple calls and combine them into a transaction. More complicated API for 90% use case.
+
+[source,matlab]
+----
+startMessage();
+addCommand(cmd);
+addLed(led);
+addGains(led);
+sendMessage();
+----
+
+* Implement both ways and let the user choose. Works, but he API becomes inconsistent between novices and advanced users.
+
+* Keep fixed positions and add dummy arguments that get ignored internally. Confusing which argument is at what position. 
+
+[source,matlab]
+----
+sendMessage([], [], gains);
+----
+
+* Use a single struct with all available commands. Looks overwhelming (>60 fields) and messes with autocomplete (cases like 'position' vs 'positionGainKp'). May interfere with serialization.
+
+At the end of the day, none of these options is particularly great and interfaces well with MATLAB. After several tests and looking throguh many of the built-in methods, we found that the least confusing and most MATLAB-style way to do this is to use parameters, e.g., 
+
+[source,matlab]
+----
+% simple
+sendMessage(cmd);
+
+% advanced
+sendMessage(cmd, 'led', led, 'gains', gains);
+----
+
+This way the syntax matches built-in functions such as _plot_ and remains consistent for all user levels. The string parameters also helps in understanding code without having to consult the documentation at every step.
+
+[source,]
+----
+plot(x,y);
+plot(x,y,'--rs');
+plot(x,y,'--rs', ...
+    'LineWidth',2,...
+    'MarkerEdgeColor','k',...
+    'MarkerFaceColor','g',...
+    'MarkerSize',10)
+----
+
+Unfortunately, this does not work with a fixed argument approach and requires dynamic argument parsing and input validation. However, after we switched our APIs to this format we had far fewer requests from confused users and we had people come in and be able to control robots within minutes. Note that implementing dynamic parsing was quite a bit of work and not particularly straight forward.
+
+// We also learned that users often try random inputs and work their way through an API by discovering error messages.
+
+== Wrapper Classes
+
+Our earlier API versions were actually implemented purely in Java without any MATLAB code at all. While the performance was very good and the resulting code looked identical to native MATLAB code, we ran into fundamental limitations with help documentation, setup steps, and access to destructors. We provided help documentation through a call to a _.help()_ method, but this confused users more than we anticipated. Additionally, having to call a setup script to import the right namespaces, as well as doing manual resource management for some cases were confusing and inconvenient. In general, all elements that did not perfectly fit the standard MATLAB paradigm 
+
+In subsequent versions we created MATLAB wrapper classes that provide help documentation and automatically handle any necessary setup and dependency management. This has greatly simplified initialization and removed the most confusing parts. We now believe that users should not even be aware of the fact that there is another language underneath.
+
+[source,matlab]
+----
+classdef (Sealed) WrapperClass
+    %WrapperClass general documentation
+
+    methods(Access = public)
+    
+        function this = WrapperClass()
+            %WrapperClass short documentation
+            import namespace.JavaClass;
+            this.javaObj = JavaClass(); % corresponding Java object
+        end
+        
+        function [out] = myMethod(this, varargin)
+            %myMethod documentation
+            out = myMethod(this.obj, varargin{:}); % forwards calls
+        end
+
+    end
+    
+    properties(Access = private, Hidden = true)
+        javaObj % backing implementation
+    end
+    
+end
+----
+
+Our wrapping methods typically don't contain any logic and purely forward all calls. Note that the performance hit of this additional method call is completely negligible. This is especially true after the advancements in MATLAB's JIT compiler in 2015b.
+
+== InputParser
+
+MATLAB's https://www.mathworks.com/help/matlab/ref/inputparser-class.html[inputParser] helps to parse function inputs of the standard format. It supports the different argument types (required, optional, parameter) as well as default values and input validation.
+
+[source,matlab]
+----
+% set defaults
+defaultHeight = 1;
+defaultUnits = 'inches';
+defaultShape = 'rectangle';
+expectedShapes = {'square','rectangle','parallelogram'};
+
+% parse inputs
+p = inputParser;
+p.addRequired('width',@isnumeric);
+p.addOptional('height',defaultHeight,@isnumeric);
+p.addParameter('units',defaultUnits);
+p.addParameter('shape',defaultShape, @(x) any(validatestring(x,expectedShapes)));
+
+p.parse(varargin{:});
+a = p.Results.width .* p.Results.height;
+----
+
+We could use this built-in parser for parsing user inputs and then forward the output to a fixed argument call.
+
+[source,matlab]
+----
+function [out] = myMethod(this, varargin)
+    % parse inputs
+    p = inputParser;
+    % ... setup ...
+    p.parse(varargin{:});
+    r = p.Results;
+    out = myMethod(this.javaObj, r.width, r. height, r.units, r.shape);
+end
+----
+
+This works well for some cases, but we also ran into some limitations with this approach. Some of them were
+
+* Automated end-to-end tests now have a dependency on MATLAB
+* No good way to distinguish between default value and not-set (e.g. empty could be a valid user-set value)
+* Validation can become very complicated
+* Error messages are not useful for cases with non-trivial validation
+* There are methods with >20 parameters, at which point this approach becomes unmaintainable and actually degrades performance.
+
+Thus, we ended up implementing our own input parser equivalent entirely behind the Java barrier.
+
+== Handling Varargs in Java
+
+In our attempt to replicate this functionality in Java, we immediately faced the first issue. The Java language has an equivalent of MATLAB's _varargin_ called _varargs_, which can accept zero or more arguments of the given type.
+
+[source,Java]
+----
+public void varargsMethod(Object... args){}
+----
+
+Unfortunately MATLAB does not support this correctly and interprets _Object..._ the same as the non-varargs _Object_ and expects exactly one argument. However, the same functionality can still be supported by creating method overloads that gather input arguments.
+
+[source,Java]
+----
+public final class JavaClass {
+
+    public Object myMethod() {
+        return myMethod0();
+    }
+
+    public Object myMethod(Object o0) {
+        return myMethod0(o0);
+    }
+
+    public Object myMethod(Object o0, Object o1) {
+        return myMethod0(o0, o1);
+    }
+
+    public Object myMethod(Object o0, Object o1, Object o2) {
+        return myMethod0(o0, o1, o2);
+    }
+
+    public Object myMethod(Object o0, Object o1, Object o2, Object o3) {
+        return myMethod0(o0, o1, o2, o3);
+    }
+
+    public Object myMethod(Object o0, Object o1, Object o2, Object o3, Object o4) {
+        return myMethod0(o0, o1, o2, o3, o4);
+    }
+
+    private Object myMethod0(Object... args) {
+        // parse arguments and implement functionality
+        MyMethodParser p = MyMethodParser.parse(args);
+        return args;
+    }
+    
+}
+----
+
+Unfortunately, this quickly becomes unmaintainable for large APIs that have many methods where each can have many arguments. As a result we developed annotation processors that can automatically generate most of the boiler plate code necessary for interfacing with MATLAB.
+
+[source,Java]
+----
+@MatlabMethod(maxArgs = 20)
+public Object myMethod0(Object... args){
+    // ...
+}
+----
+
+As of this point we have not open sourced these annotation processors, but we may do so in the future.
+
+////
+* We need to support arbitrary number of arguments, but Java's varargs _Object..._ does not work
+
+In Java _Object..._ means zero or more argument of the given type. MATLAB unfortunately interprets this equivalent to _Object_ and expects exactly one argument. We ended up working around this limitation by creating many overloads for every method.
+////
+
+
+== Type Conversions
+
+////
+
+The second issue we encountered was that 
+
+* Parameters are all _Object_, so we loose any type conversion and need to support all possible combinations
+
+The MATLAB-Java interface usually handles type conversion automatically to match the target method. This means that a Java method that expects a double will always see a double, no matter whether the actual input type used to be single or int16. However, if the method accepts _Object_, MATLAB converts to the closest matching data type, e.g., _single_ and _int8_ convert to _float_ and _byte_ respectively. 
+
+////
+
+The most extreme example we've so far encountered was a method to set the led color of our components. The goal was to support all representations of colors that MATLAB users are familiar with, and to allow convenient syntax for setting multiple colors at once.
+
+Thus, for a single module it needs to support the following representations:
+
+* Strings: 'red', 'blue', 'green', ...
+* Shorthand: 'r', 'b', 'g', ...
+* Array: [1 0 0], [0 1 0], [0 0 1], ...
+
+Additionally, more than one module may be targeted in a single call, so it also needs to support the corresponding vector/matrix versions. MATLAB numbers can be practically any data type, so the parser needs to support all of the following Java types, as well as provide input validation with proper error checks.
+
+[source,]
+----
+String, String[], 
+byte[], short[], int[], long[], float[], double[], 
+byte[][], short[][], int[][], long[][], float[][], double[][]
+----
+
+== Notes
+
+////
+Problem:
+	- MATLAB is single threaded. Even sophisticated APIs (Arduino support) are severely limited and not nearly enough for controlling robots at high rates (e.g. Hexapod) ==> requires multi-threading ==> Java or MEX with pre-compiled binaries (other languages would requires extra installation)
+		○ Primarily tackled using Simulink and code generation
+	- All APIs I'm aware of use fixed arguments (LCM, ROS, and OSRF as examples), which is not all that user friendly
+		○ Practical example: we want to make sure that commands, gains and led color arrive in the same packet. We could do 3 function calls plus a commit call (if each function sends a message, it would not be guaranteed to arrive at the same time), or a single call with 3 parameters.
+	- InputParser could parse arguments and then pass on to other language, but has a few problems
+		○ Hard to unit test all different calls. Requires integration test with MATLAB using MATLAB's test features (true?)
+		○ Many arguments result in hard to maintain code and performance degradation
+		○ Limited error messages
+		○ No good way to distinguish between default value and not-set (e.g. 'led' empty would be a valid value)
+
+Alternatives:
+	- MEX
+		○ Relatively full-featured API with support for classes and Structs
+		○ Relatively fast calls
+		○ Hard to distinguish between types
+		○ Difficult to distribute binaries for all operating systems and dealing with cross-platform differences for networking etc.
+		○ MEX functions represent functions, not objects. Multiple instances of a class require state keeping overhead, e.g., adding pointer to underlying class on every call.
+	- Java
+		○ No support for classes and Structs
+		○ Conversions rules are sometimes not intuitive
+		○ Easy to distribute
+		○ Objects map 1:1 which is nice for keeping state
+		○ Great runtime reflection utilities
+		○ Simpler development (personal opinion)
+	- Performance is completely irrelevant for both languages. Java can handle ~100 million sensor inputs per second with irrelevant GC overhead.
+	- It'll require a lot of work. The OSRF project is more or less a wrapper about their Ignite library, but there are thousands of lines required for dealing with argument conversions. In our case, we've spent >5 years on our libraries.
+	- All example projects are wrappers around sending/receiving messages to some middleware. Usually limited to a single robot.
+		○ Doesn't work that well for modular systems. Multiple connections could simplify adding e.g. an arm. Can still be combined with e.g. ROS package
+		○ Requires external processes that need to be started.
+	- Java(Object) removes MATLAB's automatic conversion, so e.g. a vector of positions needs to deal with
+		○ Scalar: double, float, int, short, long, byte
+		○ Vector: double[], float[], int[], short[], long[], byte[]
+		○ More in a separate post.
+////
+
