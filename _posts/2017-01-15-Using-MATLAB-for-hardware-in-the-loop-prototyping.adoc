@@ -1,0 +1,5 @@
+= Using MATLAB for hardware-in-the-loop prototyping
+:published_at: 2017-01-15
+:hp-tags: MATLAB, Java
+:imagesdir: ../images
+
