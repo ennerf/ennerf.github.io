@@ -3,3 +3,75 @@
 :hp-tags: MATLAB, Java
 :imagesdir: ../images
 
+MATLAB(C) is a programming language and environment designed for scientific computing. It is one of the best languages for developing control algorithms and is extremely widespread in the robotics research community. Typically researchers use it to prototype algorithms and ideas that subsequently get implemened in another language like C/C++ in order to be tested on real hardware. 
+
+Unfortunately, this porting step causes substantial delays in the feedback loop between considering ideas and testing them in practice. For example, it may take weeks to realize that a given approach may not be able to deal with real world sensor noise. Additionally, many controls engineers do not have a computer science background, and requiring knowledge of C/C++ can pose a significant barrier.
+
+Having experienced this workflow ourselves for many years, we believe that many labs could significantly speed up their research efforts if the hardware could be controlled directly from MATLAB.
+
+Note that this blog post is focused purely on the MATLAB programming language and does not discuss Simulink. http://www.mathworks.com[Mathworks] has spent significant efforts on developing automated code generation from Simulink models that may get rid of  tedious manual translation steps.
+
+== Background
+
+The main limitation when trying to use MATLAB to interface with hardware is that the language is fundamentally single threaded. It has been designed to allow non-programmers to do complex math operations without needing to worry complex concepts like multi-threading and synchronization.
+
+This poses a problem because all communications are forced to happen synchronously in the main thread. For example, if we wanted to run a loop at 100Hz and it took a message ~8ms for a round-trip, the main thread would spend 80% of the available time budget waiting for the response and doing no actual work.
+
+The second hurdle is that while math operations are extremely efficient, it can be slow and tedious to create and parse the binary message formats that the target hardware can understand.
+
+Thus, a lot of time gets spent on the communications side, resulting in almost no time budget for performing the interesting math operations. Pure MATLAB implementations still work for simple applications, e.g., interfacing with an Arduino to blink an LED at ~50Hz, but it is not feasible to control complex robotic systems at reasonable rates.
+
+Fortunately, MATLAB does have the ability to interface with other programming languages such as Java and C++ that allow users to create background threads that can offload the communications aspect from the main thread.
+
+== Related Work
+
+We noticed that there has been quite a bit of development in this area. There were almost no available resources when we started with our first attempts several years ago, but recently it seems that several groups have identified the same problem and started to develop bindings for MATLAB.
+
+
+== Related Work
+
+When we started working on APIs for MATLAB in ~2011 LCM was the only interface we were aware of. However, it seems that in the past years such APIs have become more popular. Now there are several projects with MATLAB bindings, which can generally be grouped into two categories. Below is a list of the existing APIs that we are aware of.
+
+// Split into fixed robots and modular systems?
+
+* Interfaces to message passing frameworks. Usually includes background threading. (Async) Requires external applications to communicate with robot.
+
+** http://gazebosim.org/tutorials?cat=haptix&tut=haptix_matlab[OSRF Haptix], MEX/C interface to http://ignitionrobotics.org/[ignition-transport] (MEX)
+
+** https://lcm-proj.github.io/tut_matlab.html[LCM] (Java)
+
+** https://www.mathworks.com/hardware-support/robot-operating-system.html[ROS Support from Robotics System Toolbox] (Java)
+
+** https://github.com/smcgill3/zeromq-matlab[ZeroMQ] (MEX)
+
+** https://github.com/ragavsathish/RabbitMQ-Matlab-Client[RabbitMQ] (Java)
+
+
+
+* Interfaces to the raw communication protocol. Usually relies on main thread for the communication aspect. (Sync)
+
+** http://www.robodk.com/Matlab-API.html[RoboDK] (sort of) very high level commands to their main application
+
+** http://support.robotis.com/en/software/dynamixel_sdk/usb2dynamixel/windows/matlab.htm[Dynamixel API]. Extremely low level down to endian conversions
+
+** https://www.mathworks.com/hardware-support/arduino-matlab.html[Arduino] Support from MATLAB
+
+** https://www.mathworks.com/hardware-support/android-sensor.html[TMW Android Sensor support] not real-time? only logging?
+
+** https://henschel-robotics.ch/hdrive/software/[Henschel Servos] writes xml messages using MATLAB's tcp libraries to a web server embedded on the device
+
+
+
+* Other
+
+** http://fileadmin.cs.lth.se/cs/education/MMKN30/Nao/download/Documentation/dev/matlab/index.html[Nao]
+
+** https://sourceforge.net/projects/urbi/?source=typ_redirect[URBI] http://agents.csse.uwa.edu.au/aibosig/resources/downloads/tutorial_liburbiMatlab_0.1.pdf[tutorial] not maintained anymore? (2004 last update?)
+
+
+Table with features? Name, Async, Language, Performance (?), Protocol (binary/text), Object Oriented?, Comment
+
+
+// Example1:
+
+Message passing systems don't work very well for prototyping with modular systems. For example, consider a case of kinesthetic control where the feedback of a master robot is used to control a second slave robot. This would require changes to the messages, which always results in significant overhead. Definition need to be changed, messages need to be generated, the receiving process needs to be modified, everything has to be recompiled for the target platform and so on. This overhead is justifiable for static systems that live for a long time, but it is a dealbreaker for modular systems that were constructed and programmed in an hour for a quick YouTube video.
