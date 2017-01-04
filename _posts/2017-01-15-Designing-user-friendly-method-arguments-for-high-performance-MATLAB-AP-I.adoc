@@ -6,9 +6,9 @@
 
 // What should this post be about? Why we made the decisions we did or general recommendations? General recommendations is difficult since we don't know as much about MEX. Should the title be something like "Towards better APIs for robotics research"? "A mission to develop the perfect MATLAB API"? I want to cover some basics (wrapper class integration, basic Java method with multiple Object arguments, highlight the typing mismatch between static and dynamically typed language). Does the Java specific part fit or should that be all in a separate post? I feel like stopping after discussing what an interface should look like is too open ended.
 
-MATLAB is a programming language and environment designed for scientific computing. It is one of the best languages for prototyping control algorithms for robotic systems, and extremely widespread especially in the academic community.
+MATLAB is a programming language and environment designed for scientific computing. It is one of the best languages for prototyping control algorithms for robotic systems, and extremely widespread in the academic community.
 
-Typically researchers use it to prototype algorithms and ideas that later get implemened in C/C++ and tested on real hardware. Unfortunately, this common practice causes a substantial delay in the feedback loop between considering ideas and testing them in practice. This gets exacerbated if the researchers do not have a strong programming background and experienec with other languages. Thus, research could be significantly sped up if hardware could be controlled directly from MATLAB.
+Typically researchers use it to prototype algorithms and ideas that later get implemened in C/C++ and tested on real hardware. Unfortunately, this common practice causes a substantial delay in the feedback loop between considering ideas and testing them in practice. This gets exacerbated if the researchers do not have a strong programming background and experience with other languages. Thus, research could be significantly sped up if hardware could be controlled directly from MATLAB.
 
 The biggest limitation to doing this is the lack of support for multi-threading. While the math gets executed very efficiently, the main thread ends up spending most or all of its available time budget waiting for hardware communication.
 
@@ -50,6 +50,11 @@ When we started working on APIs for MATLAB in ~2011 LCM was the only interface w
 ** https://www.mathworks.com/hardware-support/arduino-matlab.html[Arduino] Support from MATLAB
 ** https://www.mathworks.com/hardware-support/android-sensor.html[TMW Android Sensor support] not real-time? only logging?
 ** https://henschel-robotics.ch/hdrive/software/[Henschel Servos] writes xml messages using MATLAB's tcp libraries to a web server embedded on the device
+
+* Other
+
+** http://fileadmin.cs.lth.se/cs/education/MMKN30/Nao/download/Documentation/dev/matlab/index.html[Nao]
+** https://sourceforge.net/projects/urbi/?source=typ_redirect[URBI] http://agents.csse.uwa.edu.au/aibosig/resources/downloads/tutorial_liburbiMatlab_0.1.pdf[tutorial] not maintained anymore? (2004 last update?)
 
 Table with features? Name, Async, Language, Performance (?), Protocol (binary/text), Object Oriented?, Comment
 
