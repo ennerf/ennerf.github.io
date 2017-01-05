@@ -9,6 +9,8 @@ Unfortunately, this porting step causes substantial delays in the feedback loop 
 
 Having experienced this workflow ourselves for many years, we believe that many labs could significantly speed up their research efforts if the hardware could be controlled directly from MATLAB.
 
+We noticed that over the past few years several groups seem to have identified this as a problem and started to develop hardware interfaces for MATLAB. This post will look at some of the available projects and discuss the approaches that were taken to solve this problem.
+
 Note that this blog post is focused purely on the MATLAB programming language and does not discuss Simulink. http://www.mathworks.com[Mathworks] has spent significant efforts on developing automated code generation from Simulink models that may get rid of  tedious manual translation steps.
 
 == Background
@@ -21,9 +23,109 @@ The second hurdle is that while math operations are extremely efficient, it can 
 
 Thus, a lot of time gets spent on the communications side, resulting in almost no time budget for performing the interesting math operations. Pure MATLAB implementations still work for simple applications, e.g., interfacing with an Arduino to blink an LED at ~50Hz, but it is not feasible to control complex robotic systems at reasonable rates.
 
-Fortunately, MATLAB does have the ability to interface with other programming languages such as Java and C++ that allow users to create background threads that can offload the communications aspect from the main thread.
+Fortunately, MATLAB does have the ability to interface with other programming languages such as Java and C++ that allow users to create background threads in order to offload the communications aspect from the main thread.
+
+== Message Passing Systems
+
+In https://en.wikipedia.org/wiki/Message_passing[Message passing] systems components communicate by exchanging messages rather than by calling functions directly. At the core they consist of two parts, a way to exchange messages (e.g. UDP or TCP), and a consistent messaging format. They allow system to be built with components (e.g. processes) that run on different computers, different operating systems, and different programming languages. 
+
+These systems are great for larger research projects as they are very extensible and provide a simple way for prototyping. For example, a new component (e.g. a new walking controller) could be implemented in MATLAB and be integrated seamlessly with the rest of the system. Another common example is that an interface to real hardware can easily be exchanged for an interface to simulated hardware.
+
+The ability to interchange components as well as the robotics community's widespread adoption of message passing systems (ROS, LCM, DDS, etc.) make them a great and relatively easy target for MATLAB bindings.
+
+=== Robot Operating System (ROS)
+
+ROS-messaging is arguably the most widespread framework in the robotics community and is as far as we know the only one that is currently officially supported by Mathworks (since 2014). Unfortunately, we currently don't have access to the Robotics System Toolbox, so we can't explore too far into the details.
+
+As far as we know the bindings for MATLAB code are implemented using ROS-Java, and Simulink code generation is done using ROS-C++. 
+
+=== Lightweight Communication and Marshalling (LCM)
+
+https://lcm-proj.github.io/tut_matlab.html[LCM] was developed at http://www.mit.edu/[MIT] in 2006 for their entry to DARPA's Urban Challenge. It was the first framework that we know of that came with official bindings for MATLAB. 
+
+Its MATLAB interface is implemented entirely in Java and does not contain any actual MATLAB code. Messages are Java types that expose public fields that MATLAB can write to. The publishing is done in another Java object that handles the binary encoding and network calls. Publishing a joint command could look as follows.
+
+[source,matlab]
+----
+% Setup
+lc = lcm.lcm.LCM.getSingleton();
+
+% Fill message
+msg = types.command();
+msg.position = [1 2 3];
+msg.velocity = [1 2 3];
+
+% Publish
+lc.publish('COMMAND_CHANNEL', cmd);
+----
+
+Incoming messages are received in a background thread that passes messages from selected channels to a Java aggregator object that queues them and provides access to MATLAB. Listening to sensor feedback could look as follows.
+
+[source,matlab]
+----
+% Setup 
+lc = lcm.lcm.LCM.getSingleton();
+aggregator = lcm.lcm.MessageAggregator();
+lc.subscribe('FEEDBACK_CHANNEL', aggregator);
+
+% Listen for messages
+timeoutMs = 1000;
+while true
+    
+    % Receive byte representation
+    msg = aggregator.getNextMessage(timeoutMs);
+    
+    % Check it wasn't a timeout
+    if length(msg) > 0
+    
+        % Parse message
+        fbk = types.feedback(msg.data);
+        
+        % Use data
+        position = fbk.position;
+        velocity = fbk.velocity;
+    
+    end
+end
+----
+
+All network calls as well as the mesage encoding and decoding happen outside of MATLAB, so the main MATLAB thread spends most of the time on actually working with the data. Overall, this is a great example of a minimum viable interface that works relatively well in practice.
+
+As a side note, the http://biorobotics.ri.cmu.edu/robots/index.php[snake robot project] that we used to work on at http://www.cmu.edu[CMU] was entirely based on LCM. We used the MATLAB bindings extensively, but we eventually hit a point where we needed to deal with many messages coming from many channels. This  significantly increased the parsing overhead and made the resulting code very difficult to maintain. We later built a specialized Java API that hid subscriptions and message conversion internally and exposed more convenient methods to users. The resulting API looked similar to the following.
+
+[source,matlab]
+----
+% Setup
+lcmBridge = org.biorobotics.matlab.LcmBridge();
+
+% Control
+while true
+
+    if lcmBridge.hasNewFeedback()
+        
+        % access feedback
+        fbk = lcmBridge.getFeedback();
+        headPose = lcmBridge.getHeadPose();
+        mocap = lcmBridge.getMocapMarkers();
+        joy = lcmBridge.getJoystickState();
+        
+        % ... do stuff ...
+        
+        % command robot
+        lcmBridge.setAngles(zeros(1,16));
+    
+    end
+
+end
+----
+
+This custom API worked very well for our lab until we started building a much more sophisticated generation of hardware that had many tuning options that users needed to access. Due to the nature of message passing systems, each new sensor or settable option required changes to every level of the stack, including the firmware, the network protocol, the receiving process, the message type, as well as the API layer. It quickly became a maintenance nightmare to go through this many layers and we started writing more sophisticated APIs that communicated with the hardware directly, which eliminated several layers.
 
 == Related Work
+
+We noticed that over the past few years several groups seem to have come across the same problem and started developing bindings for MATLAB. When we started 
+
+over the past few years there has been quite a bit of development in this area. When we started to look into interfaces, there were almost no resources available. 
 
 We noticed that there has been quite a bit of development in this area. There were almost no available resources when we started with our first attempts several years ago, but recently it seems that several groups have identified the same problem and started to develop bindings for MATLAB.
 
@@ -32,7 +134,9 @@ We noticed that there has been quite a bit of development in this area. There we
 
 When we started working on APIs for MATLAB in ~2011 LCM was the only interface we were aware of. However, it seems that in the past years such APIs have become more popular. Now there are several projects with MATLAB bindings, which can generally be grouped into two categories. Below is a list of the existing APIs that we are aware of.
 
-// Split into fixed robots and modular systems?
+// Split into fixed robots and modular systems? Maye split Generic Message passing systems, fixed systems (Nao etc.), reconfigurable modular systems
+
+* https://www.mathworks.com/hardware-support/rti-dds.html[DDS]
 
 * Interfaces to message passing frameworks. Usually includes background threading. (Async) Requires external applications to communicate with robot.
 
@@ -75,3 +179,12 @@ Table with features? Name, Async, Language, Performance (?), Protocol (binary/te
 // Example1:
 
 Message passing systems don't work very well for prototyping with modular systems. For example, consider a case of kinesthetic control where the feedback of a master robot is used to control a second slave robot. This would require changes to the messages, which always results in significant overhead. Definition need to be changed, messages need to be generated, the receiving process needs to be modified, everything has to be recompiled for the target platform and so on. This overhead is justifiable for static systems that live for a long time, but it is a dealbreaker for modular systems that were constructed and programmed in an hour for a quick YouTube video.
+
+////
+When showing syntax for other APIs that show setting of a position command, we can show the MSI demo of 1 limp robot controlling position/velocity on another. Maybe include logging as well.
+
+Performance is actually better than original C++ due to no message passing overhead.
+
+Original implementation required additional process that connects to robot and handles other message type.
+////
+

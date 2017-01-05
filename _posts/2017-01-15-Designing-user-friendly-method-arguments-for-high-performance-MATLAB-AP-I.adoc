@@ -6,6 +6,17 @@
 
 // What should this post be about? Why we made the decisions we did or general recommendations? General recommendations is difficult since we don't know as much about MEX. Should the title be something like "Towards better APIs for robotics research"? "A mission to develop the perfect MATLAB API"? I want to cover some basics (wrapper class integration, basic Java method with multiple Object arguments, highlight the typing mismatch between static and dynamically typed language). Does the Java specific part fit or should that be all in a separate post? I feel like stopping after discussing what an interface should look like is too open ended.
 
+// ---------
+
+After many attempts to improve the APIs we always found that users were still often confused. We eventually found most of the confusion stemming from the fact that the translation layer didn't look exactly like MATLAB and sometimes leaked some of the implementation details.
+
+We then switched to an approach where we tried to come up with a 'perfect' API without thinking about implementation details and all the effort it would take to implement.
+
+Luckily, we were part of a very large lab (>40 people) and it was reasonable to allocate a significant amount of staff engineering time for developing better APIs to speed up research.
+
+
+// ---------
+
 
 The biggest limitation to doing this is the lack of support for multi-threading. While the math gets executed very efficiently, the main thread ends up spending most or all of its available time budget waiting for hardware communication.
 
