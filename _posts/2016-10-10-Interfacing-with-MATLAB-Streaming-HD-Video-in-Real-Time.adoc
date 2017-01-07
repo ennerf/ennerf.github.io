@@ -43,6 +43,8 @@ MATLAB provides a variety of toolboxes and hardware support packages for image a
 
 Assuming a frame rate of 30 fps, the total time budget in the MATLAB thread is 33 ms per image. In order to be able to actually do useful operations on the images, the acquisition part shouldn't take more than 5-10 ms.
 
+// ROS toolbox -> ros/msg/sensor_msgs/internal/ImageReader.decompressImg() uses javax.imageIO to read jpeg, then converts to uint8 array and does reshape.
+
 == Dedicated System
 
 // implemented as much as possible in background thread, direct acquisition

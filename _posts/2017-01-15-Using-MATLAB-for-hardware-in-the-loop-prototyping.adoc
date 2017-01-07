@@ -33,17 +33,15 @@ These systems are great for larger research projects as they are very extensible
 
 The ability to interchange components as well as the robotics community's widespread adoption of message passing systems (ROS, LCM, DDS, etc.) make them a great and relatively easy target for MATLAB bindings.
 
-=== Robot Operating System (ROS)
-
-ROS-messaging is arguably the most widespread framework in the robotics community and is as far as we know the only one that is currently officially supported by Mathworks (since 2014). Unfortunately, we currently don't have access to the Robotics System Toolbox, so we can't explore too far into the details.
-
-As far as we know the bindings for MATLAB code are implemented using ROS-Java, and Simulink code generation is done using ROS-C++. 
-
 === Lightweight Communication and Marshalling (LCM)
 
-https://lcm-proj.github.io/tut_matlab.html[LCM] was developed at http://www.mit.edu/[MIT] in 2006 for their entry to DARPA's Urban Challenge. It was the first framework that we know of that came with official bindings for MATLAB. 
+https://lcm-proj.github.io/tut_matlab.html[LCM] was developed at http://www.mit.edu/[MIT] in 2006 for their entry to DARPA's Urban Challenge. It was the first framework that we know of that came with official bindings for MATLAB. Its MATLAB interface does not contain any actual MATLAB code and is entirely implemented in Java. The interface consists of 3 parts.
 
-Its MATLAB interface is implemented entirely in Java and does not contain any actual MATLAB code. Messages are Java types that expose public fields that MATLAB can write to. The publishing is done in another Java object that handles the binary encoding and network calls. Publishing a joint command could look as follows.
+* https://github.com/lcm-proj/lcm/blob/master/lcm-java/lcm/lcm/LCM.java[LCM] provides a way to publish messages and subscribe to channels
+* https://github.com/lcm-proj/lcm/blob/master/lcm-java/lcm/lcm/MessageAggregator.java[MessageAggregator] receives messages from a background thread and queues them for MATLAB
+* Generated Java messages expose public fields that MATLAB can access, and deal with the binary encoding
+
+All network calls as well as the mesage encoding and decoding happen outside of MATLAB, so the main MATLAB thread can spend most of its time on working with the data. Publishing a message could look as follows.
 
 [source,matlab]
 ----
@@ -59,7 +57,36 @@ msg.velocity = [1 2 3];
 lc.publish('COMMAND_CHANNEL', cmd);
 ----
 
-Incoming messages are received in a background thread that passes messages from selected channels to a Java aggregator object that queues them and provides access to MATLAB. Listening to sensor feedback could look as follows.
+Incoming messages are received by subscribing to a channel and picking up messages from the aggregator's queue. Since Java is limited to a single return argument, the _getNextMessage_ call returns a Java type that contains the received byes as well as the source channel name.
+
+[source,java]
+----
+public class MessageAggregator implements LCMSubscriber {
+
+    public class Message {
+    
+        // raw data bytes
+        final public byte[] data; 
+        
+        // channel on which it was received
+        final public String channel; 
+        
+        public Message(String channel_, byte[] data_) {
+            data = data_;
+            channel = channel_;
+        }
+    }
+
+    public synchronized Message getNextMessage(long timeout_ms) {
+        // ...
+    }
+    
+}
+----
+
+It is also important for _getNextMessage_ to have a timeout. Calls that get stuck in Java can cause the UI to become unresponsive and may require users to force close MATLAB without being able to save the workspace. A timeout of zero  immediately returns empty if no messages are available.
+
+Receiving messages could look as shown below.
 
 [source,matlab]
 ----
@@ -75,51 +102,118 @@ while true
     % Receive byte representation
     msg = aggregator.getNextMessage(timeoutMs);
     
-    % Check it wasn't a timeout
+    % Ignore timeouts
     if length(msg) > 0
     
-        % Parse message
-        fbk = types.feedback(msg.data);
+        % Select message type based on channel name
+        if strcmp('FEEDBACK_CHANNEL', char(msg.channel))
+    
+            % Parse message
+            fbk = types.feedback(msg.data);
+            
+            % Use data
+            position = fbk.position;
+            velocity = fbk.velocity;
         
-        % Use data
-        position = fbk.position;
-        velocity = fbk.velocity;
+        end
     
     end
 end
 ----
 
-All network calls as well as the mesage encoding and decoding happen outside of MATLAB, so the main MATLAB thread spends most of the time on actually working with the data. Overall, this is a great example of a minimum viable interface that works relatively well in practice.
+Overall, we think that this is a great example of a minimum viable interface that works pretty well in practice.
 
-As a side note, the http://biorobotics.ri.cmu.edu/robots/index.php[snake robot project] that we used to work on at http://www.cmu.edu[CMU] was entirely based on LCM. We used the MATLAB bindings extensively, but we eventually hit a point where we needed to deal with many messages coming from many channels. This  significantly increased the parsing overhead and made the resulting code very difficult to maintain. We later built a specialized Java API that hid subscriptions and message conversion internally and exposed more convenient methods to users. The resulting API looked similar to the following.
+=== Robot Operating System (ROS)
+
+ROS is by far the most widespread messaging framework in the robotics research community and has been officially supported by Mathworks' https://www.mathworks.com/products/robotics.html[Robotics System Toolbox] since 2014. The MATLAB interface is implemented on top of RosJava. The Simulink code generation aspect leverages ROS C++.
+
+It seems that most of their wrapping logic is implemented in MATLAB code, but they make extensive use of various Java libraries for problems that would be difficult to implement in pure MATLAB, e.g., listing network interfaces or in-memory decompression of images.
+
+Users never see any of the underlying implementation because all of the Java calls are hidden behind MATLAB classes. For example, all of the accessors (get/set) in generated messages modify the state of an underlying Java object. Similarly, all Java exceptions get intercepted and wrapped in a MATLAB exception before being exposed to the user.
 
 [source,matlab]
 ----
-% Setup
-lcmBridge = org.biorobotics.matlab.LcmBridge();
+% Wrapping property accessors
+classdef WrappedMessage
 
-% Control
-while true
-
-    if lcmBridge.hasNewFeedback()
-        
-        % access feedback
-        fbk = lcmBridge.getFeedback();
-        headPose = lcmBridge.getHeadPose();
-        mocap = lcmBridge.getMocapMarkers();
-        joy = lcmBridge.getJoystickState();
-        
-        % ... do stuff ...
-        
-        % command robot
-        lcmBridge.setAngles(zeros(1,16));
-    
+    properties (Access = protected)
+        JavaMessage % The Java message object
     end
-
+    
+    methods
+    
+        function name = get.Name(obj)
+            %get.Name Get the value for property Name
+            name = char(obj.JavaMessage.getName);
+        end
+        
+        function set.Name(obj, name)
+            %set.Name Set the value for property Name
+            validateattributes(name, {'char'}, {}, 'WrappedMessage', 'Name');
+            
+            obj.JavaMessage.setName(name);
+        end
+        
+        function out = doSomething(obj)
+            try
+                out = obj.JavaMessage.doSomething();
+            catch javaException
+                throw(WrappedException(javaException));
+            end
+        end
+        
+    end
 end
 ----
 
-This custom API worked very well for our lab until we started building a much more sophisticated generation of hardware that had many tuning options that users needed to access. Due to the nature of message passing systems, each new sensor or settable option required changes to every level of the stack, including the firmware, the network protocol, the receiving process, the message type, as well as the API layer. It quickly became a maintenance nightmare to go through this many layers and we started writing more sophisticated APIs that communicated with the hardware directly, which eliminated several layers.
+There are several different ways to publish and subscribe to topics. An example of one of the ways to publish is shown below.
+
+[source,matlab]
+----
+% Setup Publisher
+chatpub = rospublisher('/chatter', 'std_msgs/String');
+
+% Fill message
+msg = rosmessage(chatpub);
+msg.Data = 'Some test string';
+
+% Publish
+chatpub.send(msg);
+----
+
+There are three different interfaces for receiving messages.
+
+[source,matlab]
+----
+% Setup Subscriber
+laser = rossubscriber('/scan');
+
+% (1) Blocking receive
+scan = laser.receive(1); % timeout [s]
+
+% (2) Non-blocking latest message (may not be new)
+scan = laser.LatestMessage;
+
+% (3) Callback
+callback = @(msg) disp(msg);
+subscriber = rossubscriber('/scan', @callback);  
+----
+
+It is nice that they offer different options to allow users to program in their preferred style. We found the API to be nicer than LCM's because there is less burden on the user for creating and parsing messages which results in more concise code with little overhead. Each topic needs a separate subscriber, but that is not a big limitation and may actually improve code readability.
+
+However, one of the features we were missing when going through the demo code (we didn't have time to actually use the toolbox, so we may have missed something) was a simple way to do non-blocking calls that allow for ignoring old messages equivalent to LCM's _getNextMessage(0)_. We often found this useful when combining sensor topics with e.g. joystick input that creates events in bursts. We tried to see whether we could emulate the same behavior with an extremely small timeout, but any value below 0.1s always returned an error.
+
+[source,matlab]
+----
+try
+    msg = sub.receive(0.1); % below 0.1s always threw an error
+    % ... use message ...
+catch ex
+    % ignore
+end
+----
+
+Overall, the ROS support looks quite nice and even includes support for importing rosbags and doing path planning. They pre-bundled a lot of commonly used message types, but also support the use of custom messages. This toolbox proably represents the golden standard of how well a library in another language can be seamlessly integrated with MATLAB.
 
 == Related Work
 
@@ -188,3 +282,38 @@ Performance is actually better than original C++ due to no message passing overh
 Original implementation required additional process that connects to robot and handles other message type.
 ////
 
+== Our Experiences
+
+As a side note, the http://biorobotics.ri.cmu.edu/robots/index.php[snake robot project] that we used to work on at http://www.cmu.edu[CMU] was entirely based on LCM. We used the MATLAB bindings extensively, but we eventually hit a point where we needed to deal with many messages coming from many channels. This  significantly increased the parsing overhead and made the resulting code very difficult to maintain. We later built a specialized Java API that hid subscriptions and message conversion internally and exposed more convenient methods to users. The resulting API looked similar to the following.
+
+[source,matlab]
+----
+% Setup
+lcmBridge = org.biorobotics.matlab.LcmBridge();
+
+% Control
+while true
+
+    if lcmBridge.hasNewFeedback()
+        
+        % access feedback
+        fbk = lcmBridge.getFeedback();
+        headPose = lcmBridge.getHeadPose();
+        mocap = lcmBridge.getMocapMarkers();
+        joy = lcmBridge.getJoystickState();
+        
+        % ... do stuff ...
+        
+        % command robot
+        lcmBridge.setAngles(zeros(1,16));
+    
+    end
+
+end
+----
+
+This custom API worked very well for our lab until we started building a much more sophisticated generation of hardware that had many tuning options that users needed to access. Due to the nature of message passing systems, each new sensor or settable option required changes to every level of the stack, including the firmware, the network protocol, the receiving process, the message type, as well as the API layer. It quickly became a maintenance nightmare to go through this many layers and we started writing more sophisticated APIs that communicated with the hardware directly, which eliminated several layers.
+
+
+// LCM improvements
+Note that the call to _msg.data_ likely converts Java's _byte[]_ into an _int8_ vector that gets converted back into a _byte[]_ when calling the Java method. This results in the language barrier being crossed twice unnecessarily, which may be quite expensive for larger messages.
