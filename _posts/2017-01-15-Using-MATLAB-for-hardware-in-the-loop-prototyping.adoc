@@ -25,6 +25,7 @@ Thus, a lot of time gets spent on the communications side, resulting in almost n
 
 Fortunately, MATLAB does have the ability to interface with other programming languages such as Java and C++ that allow users to create background threads in order to offload the communications aspect from the main thread.
 
+////
 == Message Passing Frameworks
 
 In https://en.wikipedia.org/wiki/Message_passing[Message passing] systems components communicate by exchanging messages rather than by calling functions directly. At the core they consist of two parts, a way to exchange messages (e.g. UDP or TCP), and a consistent messaging format. They allow system to be built with components (e.g. processes) that run on different computers, different operating systems, and different programming languages. 
@@ -32,6 +33,11 @@ In https://en.wikipedia.org/wiki/Message_passing[Message passing] systems compon
 These systems are great for larger research projects as they are very extensible and provide a simple way for prototyping. For example, a new component (e.g. a new walking controller) could be implemented in MATLAB and be integrated seamlessly with the rest of the system. Another common example is that an interface to real hardware can easily be exchanged for an interface to simulated hardware.
 
 The ability to interchange components as well as the robotics community's widespread adoption of message passing systems (ROS, LCM, DDS, etc.) make them a great and relatively easy target for MATLAB bindings.
+
+== Dedicated Product Interfaces
+
+While there aren't many, there are at least a few companies that offer MATLAB interfaces for some of their products. These libraries are typically only useful to customers who bought a particular product.
+////
 
 === Lightweight Communication and Marshalling (LCM)
 
@@ -287,10 +293,6 @@ receiver = zmq('poll', 1000); // polls for next message
 disp(char(recv_data));
 ----
 
-== Dedicated Product Interfaces
-
-While there aren't many, there are at least a few companies that offer MATLAB interfaces for some of their products. These libraries are typically only useful to customers who bought a particular product.
-
 === HAPTIX
 
 http://www.osrfoundation.org/haptix-simulation-of-prosthetic-devices/[OSRF developed a MATLAB interface] that can communicate with a DEKA Luke Hand as well as a step-in Gazebo simulation. It is also built on top of a message passing framework in order to decouple the core components, i.e., the hardware interface and the behavior generation. The messaging is done via  http://ignitionrobotics.org/libraries/transport[ignition-transport] which is a combination of ZeroMQ (communication) and Protobuf (wire format). This provides a simple way for behaviors to be written in different languages, and for the hardware interface to seamlessly switch to a simulator. 
@@ -401,30 +403,6 @@ Overall we found their implementation to be done pretty well and it was nice to 
 
 The usability could probably be improved a bit by adding a helper function that returns a default command struct (or making it a class so that users can't mess with the fields), e.g., _hxs_command_struct()_, and by accepting NaN or empty as being disabled rather than using fields with separate boolean flags. https://bitbucket.org/osrf/haptix-comm/src/a961986b0254a3dbcabcc89ba14f78915d5d968a/matlab/hx_update.m[_hx_update()_] could also benefit from a second return argument that indicates whether the returned state is new, and a blocking call with timeout to get rid of the busy loop.
 
-=== RoboDK
-
-https://www.robodk.com/[RoboDK] is a simulation environment that can help with programming industrial robots. In addition to their Python API, they offer a http://www.robodk.com/Matlab-API.html[MATLAB API] that allows users to program a sequence of high-level tasks.
-
-The API communicates with the main application via a TCP connection using MATLAB's built-in _tcpclient_. The messages are simple strings separated by the newline character. Their example programs are too involved to include here, but below is a small snippet from one of their examples. More info can be found http://www.robodk.com/Matlab-API.html[here].
-
-[source,matlab]
-----
-% ... setup
-RL.Item('Replace objects').RunProgram();
-
-fprintf('Moving by target item...\n');
-robot.setFrame(frametable);
-RL.setSimulationSpeed(10);
-for i=1:2
-    robot.setSpeed(10000,1000);
-    robot.MoveJ(target1);
-    robot.setSpeed(100,200);
-    robot.MoveL(target2);
-end
-----
-
-We assume that the performance is probably not an issue in this case since the commands are very high level and they run in simulation. It technically doesn't fit the criteria for hardware-in-the-loop code, but we wanted to include it since it uses a pure MATLAB implementation.
-
 === Arduino
 
 Mathworks offers a https://www.mathworks.com/hardware-support/arduino-matlab.html[support package for Arduino] that allows users to interface with the pins on an https://www.arduino.cc/[Arduino] in real-time. On initialization MATLAB programs firmware on the device that lets it control pins over a Serial connection. Dimming an LED based on some analog input could look as shown below.
@@ -459,11 +437,13 @@ This post is already very long as is, so we were reluctant to include any more e
 | Our own API. We will cover it in a separate blog post
 
 | https://www.mathworks.com/hardware-support/android-sensor.html[Android Sensor Support] 
-| Periodically sends data from a mobile device to the MATLAB host
+| Periodically sends data from the mobile device to the MATLAB host
+
+| http://www.robodk.com/Matlab-API.html[RoboDK]
+| Sends strings via TCP to their main simulation app
 
 | https://henschel-robotics.ch/hdrive/software/[Henschel Servos] 
 | Creates XML messages and sends them to a service running locally on the servo
-
 
 | https://github.com/ragavsathish/RabbitMQ-Matlab-Client[RabbitMQ] 
 | Simple Java wrapper for RabbitMQ 
