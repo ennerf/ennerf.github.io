@@ -476,7 +476,7 @@ positionError = data.positionCmd - data.position;
 plot(data.time, positionError);
 ----
 
-TODO: Add MSI picture or video? Alternatively, switch to a sine wave and add video of sidewinding? 
+ TODO: Add MSI picture or video? Alternatively, switch to a sine wave and add video of sidewinding? 
 
 
 
@@ -538,9 +538,23 @@ Performance is actually better than original C++ due to no message passing overh
 Original implementation required additional process that connects to robot and handles other message type.
 ////
 
-== Conclusion and Experiences
+== Final Notes
 
+Contrary to the situation a few years ago, nowadays there are several available interfaces that allow researchers to do hardware-in-the-loop prototyping directly from MATLAB. If for some reason none of the existing options work for you and you need to write your own, we would recommend to start with an LCM-like implementation and to add complexity as needed. 
+
+Interfaces that expose MATLAB code can provide a much better and more consistent user experience (e.g. help documentation), but they almost always require significant time investments to maintain all of the involved layers and to write tools for code generation.
+
+If there is no clear preference between C++ and Java, we would recommend to at least start with a Java implementation. MEX interfaces require a lot of conversion code that MATLAB would automatically handle for Java calls.
+
+ TODO: fix rest of the intro
+
+Keep in mind that research is also a very dynamic environment where needs and requirements can change all the time. Some of us used to work on the  http://biorobotics.ri.cmu.edu/robots/index.php[snake robot project] at http://www.cmu.edu[CMU], which was entirely based on LCM. We used LCM's MATLAB bindings extensively, but we eventually hit a point where we needed to deal with many messages coming from many channels. This  significantly increased the parsing overhead and made the resulting code very difficult to maintain. We later built a specialized Java API that hid subscriptions and message conversion internally and exposed more convenient methods to user, similar to OSRF's approach for HAPTIX. 
+
+The resulting API looked similar to the following.
+
+////
 As a side note, the http://biorobotics.ri.cmu.edu/robots/index.php[snake robot project] that we used to work on at http://www.cmu.edu[CMU] was entirely based on LCM. We used the MATLAB bindings extensively, but we eventually hit a point where we needed to deal with many messages coming from many channels. This  significantly increased the parsing overhead and made the resulting code very difficult to maintain. We later built a specialized Java API that hid subscriptions and message conversion internally and exposed more convenient methods to users. The resulting API looked similar to the following.
+////
 
 [source,matlab]
 ----
