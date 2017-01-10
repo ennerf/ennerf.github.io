@@ -1,5 +1,6 @@
 /*
-
+ Modified visual studio style to better match the MATLAB stock color scheme.
+ 
 Visual Studio-like style based on original C# coloring by Jason Diamond <jason@diamond.name>
 
 */
@@ -7,26 +8,24 @@ Visual Studio-like style based on original C# coloring by Jason Diamond <jason@d
   display: block;
   overflow-x: auto;
   padding: 0.5em;
-  background: white;
+  background: #F7F7F8;
   color: black;
 }
 
 .hljs-comment,
 .hljs-quote,
 .hljs-variable {
-  color: #008000;
+  color: #228B22;
 }
 
 .hljs-keyword,
 .hljs-selector-tag,
-.hljs-built_in,
 .hljs-name,
 .hljs-tag {
   color: #00f;
 }
 
 .hljs-string,
-.hljs-title,
 .hljs-section,
 .hljs-attribute,
 .hljs-literal,
@@ -34,7 +33,7 @@ Visual Studio-like style based on original C# coloring by Jason Diamond <jason@d
 .hljs-template-variable,
 .hljs-type,
 .hljs-addition {
-  color: #a31515;
+  color: #A020F0;
 }
 
 .hljs-deletion,
@@ -58,6 +57,13 @@ Visual Studio-like style based on original C# coloring by Jason Diamond <jason@d
   color: #00b0e8;
 }
 
+.hljs-substr,
+.hljs-class,
+.hljs-function,
+.hljs-title,
+.hljs-built_in {
+  color: black;
+}
 
 .hljs-emphasis {
   font-style: italic;
