@@ -13,9 +13,7 @@ System strings, unterminated strings and syntax errors have different colors in 
 
 /* Keywords */
 .language-matlab
-.hljs-keyword,
-.hljs-class,
-.hljs-function {
+.hljs-keyword {
   color: blue;    
   font-style: normal;
   font-weight: normal;
