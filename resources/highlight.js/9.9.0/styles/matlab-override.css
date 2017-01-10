@@ -1,0 +1,83 @@
+/* Stylesheet for highlight.js that overrides the default style sheet for MATLAB-code to match the MATLAB editor defaults.
+
+See stylable classes:  http://highlightjs.readthedocs.io/en/latest/css-classes-reference.html#stylable-classes 
+
+MATLAB by default uses the following color scheme:
+
+- Keywords    blue
+- Strings     #A020F0 (purple)
+- Comments    #228B22 (green)
+- Other       black
+
+System strings, unterminated strings and syntax errors have different colors in the editor as well, but I omitted them here. All words in the MATLAB editor have normal weight and style. */
+
+/* Keywords */
+.language-matlab
+.hljs-keyword,
+.hljs-class,
+.hljs-function {
+  color: blue;    
+  font-style: normal;
+  font-weight: normal;
+}
+
+/* Strings */
+.language-matlab
+.hljs-string {
+  color: #A020F0;
+  font-style: normal;
+  font-weight: normal;
+}
+
+/* Comments */
+.language-matlab
+.hljs-comment {
+  color: #228B22;
+  font-style: normal;
+  font-weight: normal;
+}
+
+/* Other */
+.language-matlab
+.hljs,
+.hljs-built_in,
+.hljs-type,
+.hljs-literal,
+.hljs-number,
+.hljs-title,
+.hljs-params {
+  color: black;
+  font-style: normal;
+  font-weight: normal;
+}
+
+/* Markup - not necessary */
+/*
+.language-matlab
+.hljs-code,
+.hljs-emphasis,
+.hljs-strong,
+.hljs-formula,
+.hljs-link,
+.hljs-quote {
+  color: black; 
+  font-style: normal;
+  font-weight: normal;
+} */
+
+/* Other - not applicable */
+/*
+.language-matlab
+.hljs-regexp,
+.hljs-subst,
+.hljs-symbol,
+.hljs-doctag,
+.hljs-meta,
+.hljs-meta-keyword,
+.hljs-meta-string,
+.hljs-bullet,
+.hljs-code {
+  color: black;
+  font-style: normal;
+  font-weight: normal;
+} */
