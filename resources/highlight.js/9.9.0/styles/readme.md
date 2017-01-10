@@ -19,3 +19,5 @@ Pass-through highlight.js styles and scripts
 <script>hljs.initHighlightingOnLoad()</script>
 ++++
 ```
+
+Github serves content as text/plain, but we can use https://rawgit.com/ for referencing the css. See http://stackoverflow.com/questions/7780550/referencing-a-css-file-in-github-repo-as-stylesheet-in-a-html-file for more info.
