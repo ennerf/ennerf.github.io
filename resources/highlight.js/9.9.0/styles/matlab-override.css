@@ -40,12 +40,13 @@ System strings, unterminated strings and syntax errors have different colors in 
 /* Other */
 .language-matlab
 .hljs,
+.hljs-subst,
 .hljs-built_in,
 .hljs-type,
 .hljs-literal,
 .hljs-number,
 .hljs-title,
-.hljs-params {
+.hljs-params  {
   color: black;
   font-style: normal;
   font-weight: normal;
@@ -69,7 +70,6 @@ System strings, unterminated strings and syntax errors have different colors in 
 /*
 .language-matlab
 .hljs-regexp,
-.hljs-subst,
 .hljs-symbol,
 .hljs-doctag,
 .hljs-meta,
