@@ -1,0 +1,80 @@
+/* 
+Stylesheet for highlight.js that matches the MATLAB editor for MATLAB code. Filled
+elements that aren't applicable to MATLAB with visual studio like style by 
+Jason Diamond <jason@diamond.name>.
+
+by Florian Enner <florian@enner.org> (Jan 1, 2017)
+
+Stylable classes:  http://highlightjs.readthedocs.io/en/latest/css-classes-reference.html#stylable-classes 
+
+MATLAB by default uses the following color scheme:
+
+- Keywords    blue
+- Strings     #A020F0 (purple)
+- Comments    #228B22 (green)
+- Other       black
+*/
+
+.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 0.5em;
+  background: #F7F7F8;
+  color: black;
+}
+
+/* Keywords */
+.hljs-keyword {
+  color: blue;    
+}
+
+/* Strings */
+.hljs-string {
+  color: #A020F0;
+}
+
+/* Comments */
+.hljs-comment {
+  color: #228B22;
+}
+
+/* Other */
+.hljs-subst,
+.hljs-built_in,
+.hljs-type,
+.hljs-literal,
+.hljs-number,
+.hljs-title,
+.hljs-params  {
+  color: black;
+}
+
+/* Not Applicable to MATLAB - copied from visual studio style */
+.hljs-deletion,
+.hljs-selector-attr,
+.hljs-selector-pseudo,
+.hljs-meta {
+   color: #2b91af;
+}
+
+.hljs-doctag {
+  color: #808080;
+}
+
+.hljs-attr {
+  color: #f00;
+}
+
+.hljs-symbol,
+.hljs-bullet,
+.hljs-link {
+  color: #00b0e8;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
+}
