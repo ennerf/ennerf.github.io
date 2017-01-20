@@ -11,72 +11,65 @@
 <script>hljs.initHighlightingOnLoad()</script>
 ++++
 
-== API Design
+APIs for MATLAB that were implemented in other languages often don't look like native MATLAB interfaces. We looked at providing a seamless interface that looks like native code. 
 
-One thing that all of the other work referenced above have in common is that they call into other languages with a set number of arguments. We did this for a long time as well and had great experiences with it, but the APIs didn't quite feel like native MATLAB code. It worked well for simple use cases, but we kept running into advanced use cases where the resulting syntax is somewhat ugly.
+== Motivation
 
-Consider a case where most users only send commands, but some experts may want to send commands, gains, and set led colors (for e.g. synchronization of a high-speed camera with logged feedback) in the same message. Using fixed argument calls we could approach this in a few ways:
+After several iterations on our MATLAB APIs we became somewhat frustrated because despite significant efforts, the APIs never felt quite like native MATLAB code. The main reason for this was that we limited ourselves to fixed numbers of arguments to simplify the implementation. This worked well for simple use cases, but we kept running into advanced use cases that resulted in confusing behavior or ugly syntax. 
 
-* Send each in a separate message. Easy, but users can't be sure that all of them arrive at the same time (or at all depending on the protocol).
+Consider the following (real) example for controlling robot actuators: The majority of users wants to only send position/velocity/torque commands to each joint. However, some expert users would additionally like to set corresponding gains (https://en.wikipedia.org/wiki/Gain_scheduling[gain scheduling]) as well as LED colors for synchronization or debugging with video data from a high-speed camera.
+
+With fixed argument calls this could typically be approached in a few different ways, e.g., as separate method calls, as transactions, or with empty arguments.
 
 [source,matlab]
 ----
+% (1) Separate method calls
 sendCommand(cmd);
 sendLed(led);
 sendGains(gains);
-----
 
-
-* Have multiple calls and combine them into a transaction. More complicated API for 90% use case.
-
-[source,matlab]
-----
+% (2) Transactions
 startMessage();
 addCommand(cmd);
 addLed(led);
 addGains(led);
 sendMessage();
+
+% (3) Empty arguments
+sendMessage(cmd, [], led);
 ----
 
-* Implement both ways and let the user choose. Works, but he API becomes inconsistent between novices and advanced users.
+All of these options come with drawbacks. (1) divides commands up into three different messages that may not get there at the same time, (2) adds boiler plate code and complicates the common case, and (3) results in code that is difficult to read and write. In reality this gets much worse since there are more than 20 other parameters that users may want to set, e.g., _safety limits_,  _reset flags_, _name/id_, _calibration commands_. 
 
-* Keep fixed positions and add dummy arguments that get ignored internally. Confusing which argument is at what position. 
+Some groups approached similar problems by combining gains and commands into a single struct, but in our case this became overwhelming (>60 fields) and messed with autocomplete in cases like 'position' vs. 'positionKp'. 
+
+At the end of the day, none of these options are particularly satisfying. It'd be much more appropriate to map optional functionality to actual optional parameters. MATLAB already established a way to do this by splitting arguments into _required_, _optional_, and _key/value parameter_ arguments. The example below shows some different ways to call the plot command.
 
 [source,matlab]
-----
-sendMessage([], [], gains);
-----
-
-* Use a single struct with all available commands. Looks overwhelming (>60 fields) and messes with autocomplete (cases like 'position' vs 'positionGainKp'). May interfere with serialization.
-
-At the end of the day, none of these options is particularly great and interfaces well with MATLAB. After several tests and looking throguh many of the built-in methods, we found that the least confusing and most MATLAB-style way to do this is to use parameters, e.g., 
-
-[source,matlab]
-----
-% simple
-sendMessage(cmd);
-
-% advanced
-sendMessage(cmd, 'led', led, 'gains', gains);
-----
-
-This way the syntax matches built-in functions such as _plot_ and remains consistent for all user levels. The string parameters also helps in understanding code without having to consult the documentation at every step.
-
-[source,]
 ----
 plot(x,y);
 plot(x,y,'--rs');
 plot(x,y,'--rs', ...
-    'LineWidth',2,...
-    'MarkerEdgeColor','k',...
-    'MarkerFaceColor','g',...
-    'MarkerSize',10)
+    'LineWidth', 2,...
+    'MarkerEdgeColor', 'k', ...
+    'MarkerFaceColor', 'g', ...
+    'MarkerSize', 10)
 ----
 
-Unfortunately, this does not work with a fixed argument approach and requires dynamic argument parsing and input validation. However, after we switched our APIs to this format we had far fewer requests from confused users and we had people come in and be able to control robots within minutes. Note that implementing dynamic parsing was quite a bit of work and not particularly straight forward.
+The problem stated earlier could be solved in the same way, e.g.,
 
-// We also learned that users often try random inputs and work their way through an API by discovering error messages.
+[source,matlab]
+----
+% common use case
+sendMessage(cmd);
 
+% expert use case
+sendMessage(cmd, 'led', led, 'gains', gains);
+----
+
+This way the syntax matches built-in functions and is much more intuitive for MATLAB users. Additionally, the string arguments make the code much more readable because it is immediately obvious which argument is at which position.
+
+Unfortunately, this does not work with a fixed argument approach and requires dynamic parsing and more input validation. However, adding dynamic parsing resulted in far fewer requests from confused users and we had people come in and were able to control robots within minutes. Below we show some options for implementing this.
 
 
 == InputParser
