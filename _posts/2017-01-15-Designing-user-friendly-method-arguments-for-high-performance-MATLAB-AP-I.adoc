@@ -74,6 +74,41 @@ Due to our first MATLAB APIs (in ~2011) being built on top of LCM, we were alrea
 
 However, if you are planning on developing such an API for MATLAB, be prepared to spend a lot of time on it. Both languages require multiple levels of translation and lots of workarounds for making it work well.
 
+== Wrapper Classes
+
+Our earlier API versions were actually implemented purely in Java without any MATLAB code at all. While the performance was very good and the resulting code looked identical to native MATLAB code, we ran into fundamental limitations with help documentation, setup steps, and access to destructors. We provided help documentation through a call to a _.help()_ method, but this confused users more than we anticipated. Additionally, having to call a setup script to import the right namespaces, as well as doing manual resource management for some cases were confusing and inconvenient. In general, all elements that did not perfectly fit the standard MATLAB paradigm 
+
+In subsequent versions we created MATLAB wrapper classes that provide help documentation and automatically handle any necessary setup and dependency management. This has greatly simplified initialization and removed the most confusing parts. We now believe that users should not even be aware of the fact that there is another language underneath.
+
+[source,matlab]
+----
+classdef (Sealed) WrapperClass
+    %WrapperClass general documentation
+
+    methods(Access = public)
+    
+        function this = WrapperClass()
+            %WrapperClass short documentation
+            import namespace.JavaClass;
+            this.javaObj = JavaClass(); % corresponding Java object
+        end
+        
+        function [out] = myMethod(this, varargin)
+            %myMethod documentation
+            out = myMethod(this.obj, varargin{:}); % forwards calls
+        end
+
+    end
+    
+    properties(Access = private, Hidden = true)
+        javaObj % backing implementation
+    end
+    
+end
+----
+
+Our wrapping methods typically don't contain any logic and purely forward all calls. Note that the performance hit of this additional method call is completely negligible. This is especially true after the advancements in MATLAB's JIT compiler in 2015b.
+
 == Notes
 
 ////

@@ -13,6 +13,8 @@
 
 APIs for MATLAB that were implemented in other languages often don't look like native MATLAB interfaces. We looked at providing a seamless interface that looks like native code. 
 
+Adding dynamic parsing resulted in far fewer support requests caused by confusing behavior. Below we show some options for implementing this.
+
 == Motivation
 
 After several iterations on our MATLAB APIs we became somewhat frustrated because despite significant efforts, the APIs never felt quite like native MATLAB code. The main reason for this was that we limited ourselves to fixed numbers of arguments to simplify the implementation. This worked well for simple use cases, but we kept running into advanced use cases that resulted in confusing behavior or ugly syntax. 
@@ -39,7 +41,7 @@ sendMessage();
 sendMessage(cmd, [], led);
 ----
 
-All of these options come with drawbacks. (1) divides commands up into three different messages that may not get there at the same time, (2) adds boiler plate code and complicates the common case, and (3) results in code that is difficult to read and write. In reality this gets much worse since there are more than 20 other parameters that users may want to set, e.g., _safety limits_,  _reset flags_, _name/id_, _calibration commands_. 
+All of these options come with drawbacks. (1) divides commands up into three different messages that may not get there at the same time, (2) adds boiler plate code and complicates the common case, and (3) results in code that is difficult to read and write. In reality this gets much worse since there are more than 20 other parameters that users may want to set, e.g., _safety limits_,  _reset flags_, _name/id_, or _calibration commands_. 
 
 Some groups approached similar problems by combining gains and commands into a single struct, but in our case this became overwhelming (>60 fields) and messed with autocomplete in cases like 'position' vs. 'positionKp'. 
 
@@ -67,14 +69,19 @@ sendMessage(cmd);
 sendMessage(cmd, 'led', led, 'gains', gains);
 ----
 
-This way the syntax matches built-in functions and is much more intuitive for MATLAB users. Additionally, the string arguments make the code much more readable because it is immediately obvious which argument is at which position.
+This way the syntax matches built-in functions and is much more intuitive for MATLAB users. Additionally, the string arguments make the code much more readable because the argument order is immediately obvious.
 
-Unfortunately, this does not work with a fixed argument approach and requires dynamic parsing and more input validation. However, adding dynamic parsing resulted in far fewer requests from confused users and we had people come in and were able to control robots within minutes. Below we show some options for implementing this.
-
+Unfortunately, this does not work with a fixed argument approach and is more difficult to implement due to additional parsing and input validation.
 
 == InputParser
 
-MATLAB's https://www.mathworks.com/help/matlab/ref/inputparser-class.html[inputParser] helps to parse function inputs of the standard format. It supports the different argument types (required, optional, parameter) as well as default values and input validation.
+The simplest way to do parse arguments would be to use MATLAB's built-in https://www.mathworks.com/help/matlab/ref/inputparser-class.html[inputParser].  It supports the different argument types as well as default values and input validation. The rules are as follows,
+
+* *Required* arguments come first and are parsed in the same order they were defined in.
+* *Optional* arguments are expected after all required arguments are satisfied. An optional argument is set if its validator returns true. If the validator returns false, the parser will try the validator of the next optional argument.
+* *Parameters* are parsed last and consist of a string-key and a single corresponding value argument. They can be set in any order.
+
+Creating a parser looks as shown in the code below.
 
 [source,matlab]
 ----
@@ -95,67 +102,34 @@ p.parse(varargin{:});
 a = p.Results.width .* p.Results.height;
 ----
 
-We could use this built-in parser for parsing user inputs and then forward the output to a fixed argument call.
+Once the argument is parsed, the result can be forwarded to an internal method that is implemented with fixed arguments.
 
 [source,matlab]
 ----
 function [out] = myMethod(this, varargin)
-    % parse inputs
+    % parse user inputs
     p = inputParser;
-    % ... setup ...
     p.parse(varargin{:});
+    
+    % call backing implementation
     r = p.Results;
     out = myMethod(this.javaObj, r.width, r. height, r.units, r.shape);
 end
 ----
 
-This works well for some cases, but we also ran into some limitations with this approach. Some of them were
+Overall this worked well for some cases, but we quickly ran into some limitations such as,
 
-* Automated end-to-end tests now have a dependency on MATLAB
-* No good way to distinguish between default value and not-set (e.g. empty could be a valid user-set value)
-* Validation can become very complicated
-* Error messages are not useful for cases with non-trivial validation
+* Automated API tests now have a dependency on MATLAB
+* It can be difficult to check whether a user actually set a value, e.g., common default values like nan or empty may sometimes be valid inputs
+* Validation can become very complex
+* Error messages become less useful for cases with non-trivial validation
 * There are methods with >20 parameters, at which point this approach becomes unmaintainable and actually degrades performance.
 
-Thus, we ended up implementing our own input parser equivalent entirely behind the Java barrier.
+Thus, we ended up implementing our own input parser equivalent entirely behind the language barrier.
 
+== Custom InputParser
 
-== Wrapper Classes
-
-Our earlier API versions were actually implemented purely in Java without any MATLAB code at all. While the performance was very good and the resulting code looked identical to native MATLAB code, we ran into fundamental limitations with help documentation, setup steps, and access to destructors. We provided help documentation through a call to a _.help()_ method, but this confused users more than we anticipated. Additionally, having to call a setup script to import the right namespaces, as well as doing manual resource management for some cases were confusing and inconvenient. In general, all elements that did not perfectly fit the standard MATLAB paradigm 
-
-In subsequent versions we created MATLAB wrapper classes that provide help documentation and automatically handle any necessary setup and dependency management. This has greatly simplified initialization and removed the most confusing parts. We now believe that users should not even be aware of the fact that there is another language underneath.
-
-[source,matlab]
-----
-classdef (Sealed) WrapperClass
-    %WrapperClass general documentation
-
-    methods(Access = public)
-    
-        function this = WrapperClass()
-            %WrapperClass short documentation
-            import namespace.JavaClass;
-            this.javaObj = JavaClass(); % corresponding Java object
-        end
-        
-        function [out] = myMethod(this, varargin)
-            %myMethod documentation
-            out = myMethod(this.obj, varargin{:}); % forwards calls
-        end
-
-    end
-    
-    properties(Access = private, Hidden = true)
-        javaObj % backing implementation
-    end
-    
-end
-----
-
-Our wrapping methods typically don't contain any logic and purely forward all calls. Note that the performance hit of this additional method call is completely negligible. This is especially true after the advancements in MATLAB's JIT compiler in 2015b.
-
-== Handling Varargs in Java
+=== varargin
 
 In our attempt to replicate this functionality in Java, we immediately faced the first issue. The Java language has an equivalent of MATLAB's _varargin_ called _varargs_, which can accept zero or more arguments of the given type.
 
@@ -244,7 +218,7 @@ Thus, for a single module it needs to support the following representations:
 
 Additionally, more than one module may be targeted in a single call, so it also needs to support the corresponding vector/matrix versions. MATLAB numbers can be practically any data type, so the parser needs to support all of the following Java types, as well as provide input validation with proper error checks.
 
-[source,]
+[source,Java]
 ----
 String, String[], 
 byte[], short[], int[], long[], float[], double[], 
