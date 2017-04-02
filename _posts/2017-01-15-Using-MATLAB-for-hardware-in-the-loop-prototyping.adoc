@@ -27,13 +27,21 @@ This poses a problem for real-time control because all communication with hardwa
 
 A second hurdle is that while MATLAB is very efficient in the execution of math operations, it is not particularly well suited for byte manipulation. This makes it difficult to develop code that can efficiently create and parse binary message formats that the target hardware can understand.
 
-After having the main thread spend its time on waiting for and parsing the incoming data, there may not be any time left for performing interesting math operations. Pure MATLAB implementations do work for simple applications, e.g., interfacing with an Arduino to gather temperature data or blink an LED, but it is not feasible control complex robotic systems at reasonable rates.
+[.text-center]
+.Single-Threaded Communications
+image::matlab/comms-single-threaded.png[link="{imagesdir}/matlab/comms-single-threaded.png", width="100%"]
 
-Fortunately, MATLAB does have the ability to interface with other programming languages that allow users to create background threads in order to offload the communications aspect from the main thread. Out of the box MATLAB provides two interfaces to other languages:  https://www.mathworks.com/help/matlab/matlab_external/introducing-mex-files.html[MEX] for calling C++ code and the https://www.mathworks.com/help/matlab/matlab_external/product-overview.html[Java Interface] for calling Java code. There are https://www.mathworks.com/help/matlab/calling-external-functions.html[other interfaces] as well, but those require additional setup steps.  
+After having the main thread spend its time on waiting for and parsing the incoming data, there may not be any time left for performing interesting math operations. Pure MATLAB implementations do work for simple applications, such as interfacing with an Arduino to gather temperature data or blink an LED, but it is not feasible control complex robotic systems at reasonable rates.
 
-There are some subtle differences between the capabilities of the MEX and Java interfaces, but both provide enough capabilities for developing sophisticated interfaces, and have orders of magnitude better performance than required. At the end of the day the choice mostly comes down to personal preference.
+Fortunately, MATLAB does have the ability to interface with other programming languages that allow users to create background threads in order to offload the communications aspect from the main thread. This frees MATLAB to focus on the calculations that it has been optimized for.
 
-There are generally two approaches to integrate MATLAB with hardware. The most common way is to setup a distributed system in which the actual hardware communication is done in a separate process, and data is exchanged with MATLAB through a messaging framework, e.g., ROS-messaging. This is often easier to develop and typically results in a relatively hardware agnostic interface. However, it does burden the users with setting up the rest of the system. The alternative approach is to create a standalone implementation that runs entirely within MATLAB.
+[.text-center]
+.Multi-Threaded Communications
+image::matlab/comms-multi-threaded.png[link="{imagesdir}/matlab/comms-multi-threaded.png", width="100%"]
+
+Out of the box MATLAB provides two interfaces to other languages:  https://www.mathworks.com/help/matlab/matlab_external/introducing-mex-files.html[MEX] for calling C++ code, and the https://www.mathworks.com/help/matlab/matlab_external/product-overview.html[Java Interface] for calling Java code. There are some differences between the two, but at the end of the day the choice mostly comes down to personal preference. Both provide enough capabilities for developing sophisticated interfaces and have orders of magnitude better performance than required.  There are additional interfaces to https://www.mathworks.com/help/matlab/calling-external-functions.html[other languages], but those require additional setup steps.
+
+There are two general approaches to integrate MATLAB with hardware. The most common way is to setup a distributed system in which the actual hardware communication is done in a separate process, and data is exchanged with MATLAB through a messaging framework such as ROS-messaging. This is often easier to develop and typically results in a relatively hardware agnostic interface. However, it does burden the users with setting up the rest of the system. The alternative approach is to create a standalone implementation that runs entirely within MATLAB.
 
 ////
 == Message Passing Frameworks
