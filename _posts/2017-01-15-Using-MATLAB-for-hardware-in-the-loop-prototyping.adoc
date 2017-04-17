@@ -25,23 +25,21 @@ The main limitation when trying to use MATLAB to interface with hardware is that
 
 This poses a problem for real-time control because all communication with hardware is forced to happen synchronously in the main thread. For example, if we were to run a loop at 100Hz and it took a message ~8ms for a round-trip, the main thread would spend 80% of the available time budget waiting for a response without doing any actual work.
 
-A second hurdle is that while MATLAB is very efficient in the execution of math operations, it is not particularly well suited for byte manipulation. This makes it difficult to develop code that can efficiently create and parse binary message formats that the target hardware can understand.
+A second hurdle is that while MATLAB is very efficient in the execution of math operations, it is not particularly well suited for byte manipulation. This makes it difficult to develop code that can efficiently create and parse binary message formats that the target hardware can understand. Thus, after having the main thread spend its time on waiting for and parsing the incoming data, there may not be any time left for performing interesting math operations.
 
 [.text-center]
-.Single-Threaded Communications
+.Communications overhead in the main MATLAB thread
 image::matlab/comms-single-threaded.png[link="{imagesdir}/matlab/comms-single-threaded.png", width="100%"]
 
-After having the main thread spend its time on waiting for and parsing the incoming data, there may not be any time left for performing interesting math operations. Pure MATLAB implementations do work for simple applications, such as interfacing with an Arduino to gather temperature data or blink an LED, but it is not feasible control complex robotic systems at reasonable rates.
-
-Fortunately, MATLAB does have the ability to interface with other programming languages that allow users to create background threads in order to offload the communications aspect from the main thread. This frees MATLAB to focus on the calculations that it has been optimized for.
+Pure MATLAB implementations do work for simple applications, such as interfacing with an Arduino to gather temperature data or blink an LED, but it is not feasible control complex robotic systems at high rates. Fortunately, MATLAB does have the ability to interface with other programming languages that allow users to create background threads in order to offload the communications aspect from the main thread. This frees MATLAB to focus on the calculations that it has been optimized for.
 
 [.text-center]
-.Multi-Threaded Communications
+.Communications overhead offloaded to other threads
 image::matlab/comms-multi-threaded.png[link="{imagesdir}/matlab/comms-multi-threaded.png", width="100%"]
 
 Out of the box MATLAB provides two interfaces to other languages:  https://www.mathworks.com/help/matlab/matlab_external/introducing-mex-files.html[MEX] for calling C++ code, and the https://www.mathworks.com/help/matlab/matlab_external/product-overview.html[Java Interface] for calling Java code. There are some differences between the two, but at the end of the day the choice mostly comes down to personal preference. Both provide enough capabilities for developing sophisticated interfaces and have orders of magnitude better performance than required.  There are additional interfaces to https://www.mathworks.com/help/matlab/calling-external-functions.html[other languages], but those require additional setup steps.
 
-There are two general approaches to integrate MATLAB with hardware. The most common way is to setup a distributed system in which the actual hardware communication is done in a separate process, and data is exchanged with MATLAB through a messaging framework such as ROS-messaging. This is often easier to develop and typically results in a relatively hardware agnostic interface. However, it does burden the users with setting up the rest of the system. The alternative approach is to create a standalone implementation that runs entirely within MATLAB.
+In the systems we looked at we found two general approaches to integrate MATLAB with hardware. The most common way is to setup a distributed system in which the actual hardware communication is done in a separate process, and data is exchanged with MATLAB through a messaging framework such as ROS-messaging. This tends to be relatively hardware agnostic and easier to develop, but it does add additional burden during the setup phase and when evolving interfaces. The alternative approach is to create a standalone implementation that runs entirely within MATLAB.
 
 ////
 == Message Passing Frameworks
@@ -57,20 +55,17 @@ The ability to interchange components as well as the robotics community's widesp
 While there aren't many, there are at least a few companies that offer MATLAB interfaces for some of their products. These libraries are typically only useful to customers who bought a particular product.
 ////
 
+// Add section on "Comparison" and how we used a typical low-level feedback loop as example?
+
 == Distributed Systems
 
+// Add some info here related to distributed systems and interface evolution / common pain points? Using several MATLAB instances that work together wth C++ processes?
 
 === Lightweight Communication and Marshalling (LCM)
 
-https://lcm-proj.github.io/tut_matlab.html[LCM] is a message passing framework that was developed at http://www.mit.edu/[MIT] in 2006 for their entry to DARPA's Urban Challenge. In the robotics community it became a popular alternative to ROS and was as far as we know the first messaging framework that supported MATLAB as a core language. Its MATLAB bindings were implemented in Java and did not contain any actual MATLAB code.
+https://lcm-proj.github.io/tut_matlab.html[LCM] is a message passing framework that was developed at http://www.mit.edu/[MIT] in 2006 for their entry to DARPA's Urban Challenge. In the robotics community it became a popular alternative to ROS and was as far as we know the first messaging framework that supported MATLAB as a core language. We found its implementation to be comparatively simple and would recommend it as a starting point when developing new interfaces.
 
-The interface exposed two Java classes as well as generated message types.
-
-* The https://github.com/lcm-proj/lcm/blob/master/lcm-java/lcm/lcm/LCM.java[LCM] class provided a way to publish messages and subscribe to channels
-* The https://github.com/lcm-proj/lcm/blob/master/lcm-java/lcm/lcm/MessageAggregator.java[MessageAggregator] class received messages from a background thread and queued them for MATLAB
-* The generated Java messages handled the binary encoding and exposed fields that MATLAB can access
-
-By receiving messages on a background thread and by moving the encoding and decoding steps to the Java language, the main thread was able to spend most of its time on actually working with the data. Publishing a message could look as follows.
+The snippet below shows how the MATLAB code for sending a command message could look like. The code creates a struct-like _message_, sets some values, and publishes it on a selected channel. The encoding and transmission steps are hidden.
 
 [source,matlab]
 ----
@@ -78,17 +73,56 @@ By receiving messages on a background thread and by moving the encoding and deco
 lc = lcm.lcm.LCM.getSingleton();
 
 % Fill message
-msg = types.command();
-msg.position = [1 2 3];
-msg.velocity = [1 2 3];
+cmd = types.command();
+cmd.position = [1 2 3];
+cmd.velocity = [1 2 3];
 
 % Publish
 lc.publish('COMMAND_CHANNEL', cmd);
 ----
 
-Receiving messages was done by subscribing an aggregator to one or more channels, and by then picking up messages from the aggregator's queue. Since Java is limited to a single return argument, the _getNextMessage_ call returned a Java type that contained the received bytes as well as meta data to identify the type, i.e., the source channel name. 
+Receiving messages is done by subscribing an _aggregator_ to one or more channels. The aggregator receives messages from a background thread and stores them in a queue that MATLAB can access in a synchronous manner using _aggregator.getNextMessage()_. Each message contains the raw bytes as well as some meta data for selecting the appropriate type for decoding.
 
-The snippet below shows a simplified part of the backing Java code.
+[source,matlab]
+----
+% Setup 
+lc = lcm.lcm.LCM.getSingleton();
+aggregator = lcm.lcm.MessageAggregator();
+lc.subscribe('FEEDBACK_CHANNEL', aggregator);
+
+% Listen for messages
+timeoutMs = 1000;
+while true
+    
+    % Receive raw message
+    msg = aggregator.getNextMessage(timeoutMs);
+    
+    % Ignore timeouts
+    if ~isempty(msg)
+    
+        % Select message type based on channel name
+        if strcmp('FEEDBACK_CHANNEL', char(msg.channel))
+    
+            % Decode raw bytes to a usable type
+            fbk = types.feedback(msg.data);
+            
+            % Use data
+            position = fbk.position;
+            velocity = fbk.velocity;
+        
+        end
+    
+    end
+end
+----
+
+Interestingly, the backing implementation of these bindings was done in pure Java and didn't contain any actual MATLAB code. The exposed interface consisted of two Java classes as well as auto-generated message types.
+
+* The https://github.com/lcm-proj/lcm/blob/master/lcm-java/lcm/lcm/LCM.java[LCM] class provided a way to publish messages and subscribe to channels
+* The https://github.com/lcm-proj/lcm/blob/master/lcm-java/lcm/lcm/MessageAggregator.java[MessageAggregator] class received messages from a background thread and queued them for MATLAB
+* The generated Java messages handled the binary encoding and exposed fields that MATLAB can access
+
+The snippet below shows a simplified version of the backing Java code for the aggregator class. Since Java is limited to a single return argument, the _getNextMessage_ call returns a Java type that contains the received bytes as well as meta data to identify the type, i.e., the source channel name.
 
 [source,java]
 ----
@@ -124,48 +158,29 @@ public class MessageAggregator implements LCMSubscriber {
 }
 ----
 
-Note that the _getNextMessage_ method expects a user settable timeout argument. In general it is important for blocking Java methods to have a timeout in order to prevent the main thread from getting permanently stuck inside Java. Otherwise this could cause the UI to become unresponsive and users may be forced to close MATLAB without being able to save their workspace. Being in a Java call also prohibits users from aborting an execution (ctrl-c), so timeouts should be reasonably short, i.e., in the low seconds.
+Note that the _getNextMessage_ method expects a user settable timeout argument. In general it is important for blocking Java methods to have a timeout in order to prevent the main thread from getting permanently stuck inside Java. Otherwise this could cause the UI to become unresponsive and users may be forced to close MATLAB without being able to save their workspace. Being in a Java call also prohibits users from aborting the execution (ctrl-c), so timeouts should be reasonably short, i.e., in the low seconds.
 
-Passing in a timeout of zero served as a non-blocking interface that returned empty if no messages were available.
+Passing in a timeout of zero serves as a non-blocking interface that immediately returns empty if no messages are available. This is often useful for working with multiple aggregators or for integrating asynchronous messages with unknown timing, such as user input.
 
-The example below shows the Java Aggregator class being used from MATLAB. Note that primitive types are automatically translated between Java and MATLAB types, so there is no need to add an additional conversion layer.
+Similarly, the struct-like message types are actually Java objects that expose public fields. Users can access them the same way as fields of a standard MATLAB struct (or class properties) resulting in nice syntax. The types are automatically converted according to the https://mathworks.com/help/matlab/matlab_external/passing-data-to-java-methods.html[type mapping].
 
-[source,matlab]
+[source,java]
 ----
-% Setup 
-lc = lcm.lcm.LCM.getSingleton();
-aggregator = lcm.lcm.MessageAggregator();
-lc.subscribe('FEEDBACK_CHANNEL', aggregator);
-
-% Listen for messages
-timeoutMs = 1000;
-while true
-    
-    % Receive raw message
-    msg = aggregator.getNextMessage(timeoutMs);
-    
-    % Ignore timeouts
-    if ~isempty(msg)
-    
-        % Select message type based on channel name
-        if strcmp('FEEDBACK_CHANNEL', char(msg.channel))
-    
-            % Decode raw bytes to a usable type
-            fbk = types.feedback(msg.data);
-            
-            % Use data
-            position = fbk.position;
-            velocity = fbk.velocity;
-        
-        end
-    
-    end
-end
+public final class command implements lcm.lcm.LCMEncodable
+{
+    public double[] position;
+    public double[] velocity;
+    // etc. ...
+}
 ----
 
-Overall, we think that this is well thought out API and a great example of a minimum viable interface that works well in practice.
+Overall, we thought that this was a well thought out API and a great example for a minimum viable interface that works well in practice. By receiving messages on a background thread and by moving the encoding and decoding steps to the Java language, the main thread was able to spend most of its time on actually working with the data.
 
-One minor issue we found was that the decoding step _fbk = types.feedback(msg.data)_ forces two unnecessary translations due to _msg.data_ being a _byte[]_, which automatically gets converted to and from _int8_. This could result in a noticeable performance hit when receiving larger messages (e.g. images) and could be avoided by adding an overload that accepts a non-primitive type that does not get translated, e.g., _fbk = types.feedback(msg)_. The Java classes also didn't implement _Serializable_, which could become a problem when trying to save the workspace. 
+Some minor points for improvement that we found were:
+
+* The decoding step _fbk = types.feedback(msg.data)_ forced two unnecessary translations due to _msg.data_ being a _byte[]_, which automatically gets converted to and from _int8_. This could result in a noticeable performance hit when receiving larger messages (e.g. images) and could be avoided by adding an overload that accepts a non-primitive type that does not get translated, e.g., _fbk = types.feedback(msg)_.
+* The Java classes didn't implement _Serializable_, which could become a problem when trying to save the workspace. 
+* We thought that it may have been better to select the decoding type during the subscription step, e.g., _lc.subscribe('FEEDBACK_CHANNEL', aggregator, 'types.feedback')_, rather than requiring users to instantiate the type manually. This could clean up the code a bit and allow for a much less confusing error message if types are missing.
 
 === Robot Operating System (ROS)
 
