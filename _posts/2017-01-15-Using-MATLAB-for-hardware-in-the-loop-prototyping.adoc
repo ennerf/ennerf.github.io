@@ -186,6 +186,39 @@ Some minor points for improvement that we found were:
 
 ROS is by far the most widespread messaging framework in the robotics research community and has been officially supported by Mathworks' https://www.mathworks.com/products/robotics.html[Robotics System Toolbox] since 2014. Simulink code generation was implemented on top of ROS C++ and the MATLAB interface was built on top of RosJava.
 
+They designed the API such that each topic required dedicated publishers and subscribers, which was contrary to LCM where each subscriber was able to listen to multiple channels (topics). This in combination with specifying the type on initialization removed most of the boiler plate code necessary for dealing with message types. The resulting user code was more concise and was arguably more readable than LCM's interface.
+
+[source,matlab]
+----
+% Setup Publisher
+chatpub = rospublisher('/chatter', 'std_msgs/String');
+
+% Fill message
+msg = rosmessage(chatpub);
+msg.Data = 'Some test string';
+
+% Publish
+chatpub.send(msg);
+----
+
+For receiving messages they offered three different APIs: blocking calls, non-blocking calls, and callbacks. This allowed users to choose the style they were most comfortable with.
+
+[source,matlab]
+----
+% Setup Subscriber
+laser = rossubscriber('/scan');
+
+% (1) Blocking receive
+scan = laser.receive(1); % timeout [s]
+
+% (2) Non-blocking latest message (may not be new)
+scan = laser.LatestMessage;
+
+% (3) Callback
+callback = @(msg) disp(msg);
+subscriber = rossubscriber('/scan', @callback);  
+----
+
 We unfortunately haven't had a chance to use the library in a real project, so our impressions were purely based on looking through the toolbox files and the compiled Java bytecode. As far as we could tell they built a small Java library that wrapped RosJava functionality and provided an interface that was easier to call from MATLAB. Most of the actual logic seemed to be implemented in MATLAB code, but they made extensive use of various Java libraries for problems that would have been difficult to implement in pure MATLAB, e.g., listing networking interfaces or doing in-memory decompression of images.
 
 The underlying Java interface was completely hidden from users as all of the Java calls happened inside of wrapping MATLAB classes. For example, there was a wrapper class for each Java message type that exposed typical MATLAB properties (get/set) that modified the state of the underlying Java object. Similarly, all Java exceptions got intercepted and wrapped in a MATLAB exception before being exposed to the user. The code below shows a simplified example of such a message wrapper.
@@ -222,42 +255,9 @@ classdef WrappedMessage
 end
 ----
 
-They designed the API such that each topic required dedicated publishers and subscribers, which was contrary to LCM where each subscriber was able to listen to multiple channels (topics). This in combination with specifying the type on initialization removed most of the boiler plate code necessary for dealing with message types. The resulting user code was more concise and was arguably more readable than LCM's interface.
-
-[source,matlab]
-----
-% Setup Publisher
-chatpub = rospublisher('/chatter', 'std_msgs/String');
-
-% Fill message
-msg = rosmessage(chatpub);
-msg.Data = 'Some test string';
-
-% Publish
-chatpub.send(msg);
-----
-
-They offered three different APIs for receiving messages: blocking calls, non-blocking calls, and callbacks. This allowed users to choose the style they were most comfortable with.
-
-[source,matlab]
-----
-% Setup Subscriber
-laser = rossubscriber('/scan');
-
-% (1) Blocking receive
-scan = laser.receive(1); % timeout [s]
-
-% (2) Non-blocking latest message (may not be new)
-scan = laser.LatestMessage;
-
-% (3) Callback
-callback = @(msg) disp(msg);
-subscriber = rossubscriber('/scan', @callback);  
-----
-
 Overall, we found that the ROS support toolbox looked very nice and was a great example of how seamless external languages could be integrated with MATLAB. We also really liked that they offered a way to load log files (rosbags).
 
-One concern we had was that there didn't seem to be a simple non-blocking way to check for new messages, e.g., a _hasNewMessage()_ method or functionality equivalent to LCM's _getNextMessage(0)_. We often found this useful for applications that combined data from multiple topics that arrived at different rates (e.g. sensor feedback and joystick input events). We checked whether this behavior could be emulated by specifying a very small timeout (see below), but any value below 0.1s seemed to never successfully return.
+One concern we had was that there didn't seem to be a simple non-blocking way to check for new messages, e.g., a _hasNewMessage()_ method or functionality equivalent to LCM's _getNextMessage(0)_. We often found this useful for applications that combined data from multiple topics that arrived at different rates (e.g. sensor feedback and joystick input events). We checked whether this behavior could be emulated by specifying a very small timeout (such as in the snippet below), but any value below 0.1s seemed to never successfully return.
 
 [source,matlab]
 ----
@@ -272,9 +272,7 @@ end
 === Data Distribution Service (DDS)
 
 In 2014 Mathworks also added a https://www.mathworks.com/hardware-support/rti-dds.html[support package for DDS], which is the messaging middleware that ROS 2.0 will be based on. It supports MATLAB and Simulink, as 
-well as code generation. 
-
-Unfortunately, we didn't have all the requirements to get it setup, and we couldn't find much information about the underlying implementation. Based on looking at some of their intro videos, the resulting code looked as follows.
+well as code generation. Unfortunately, we didn't have all the requirements to get it setup, and we couldn't find much information about the underlying implementation. Based on looking at some of their intro videos, the resulting code looked as follows.
 
 [source,matlab]
 ----
@@ -298,9 +296,26 @@ readTopic = dp.read();
 
 === ZeroMQ
 
-ZeroMQ is another asynchonous messaging library that is popular for building distributed systems. It only handles the messaging aspect, so users need to supply their own wire format.
+ZeroMQ is another asynchonous messaging library that is popular for building distributed systems. It only handles the messaging aspect, so users need to supply their own wire format. https://github.com/smcgill3/zeromq-matlab[ZeroMQ-matlab] was a MATLAB interface to ZeroMQ that was developed at UPenn between 2013-2015. We weren't able to find much documentation, but as far as we could tell the resulting code should look similar to following snippet.
 
-https://github.com/smcgill3/zeromq-matlab[ZeroMQ-matlab] was a MATLAB interface to ZeroMQ that was developed at UPenn between 2013-2015. It was implemented as a single MEX function that selected the appropriate action based on the first argument. State was maintained by using socket IDs that were passed in by the user at every call. The code below shows a simplified snippet of the send action.
+[source,matlab]
+----
+% Setup
+subscriber = zmq( 'subscribe', 'tcp', '127.0.0.1', 43210 );
+publisher = zmq( 'publish', 'tcp', 43210 );
+
+% Publish data
+bytes = uint8(rand(100,1));
+nbytes = zmq( 'send', publisher, bytes );
+
+% Receive data
+receiver = zmq('poll', 1000); // polls for next message
+[recv_data, has_more] = zmq( 'receive', receiver );
+
+disp(char(recv_data));
+----
+
+It was implemented as a single MEX function that selected the appropriate action based on the first argument. State was maintained by using socket IDs that were passed in by the user at every call. The code below shows a simplified snippet of the send action.
 
 [source,c++]
 ----
@@ -326,66 +341,9 @@ if (strcasecmp(command, "send") == 0){
 }
 ----
 
-There wasn't much documentation, but as far as we can tell the resulting code should look similar to following snippet.
-
-[source,matlab]
-----
-% Setup
-subscriber = zmq( 'subscribe', 'tcp', '127.0.0.1', 43210 );
-publisher = zmq( 'publish', 'tcp', 43210 );
-
-% Publish data
-bytes = uint8(rand(100,1));
-nbytes = zmq( 'send', publisher, bytes );
-
-% Receive data
-receiver = zmq('poll', 1000); // polls for next message
-[recv_data, has_more] = zmq( 'receive', receiver );
-
-disp(char(recv_data));
-----
-
 === Hand Proprioception and Touch Interfaces (HAPTIX)
 
-OSRF developed a http://www.osrfoundation.org/haptix-simulation-of-prosthetic-devices/[MATLAB interface] for DARPA's  http://www.darpa.mil/program/hand-proprioception-and-touch-interfaces[HAPTIX] program that allowed users to interface with real hardware as well as a step-in Gazebo simulation. They chose to create an API that hid the messaging part from the user and exposed more product specific functions. The underlying implementation was based on http://ignitionrobotics.org/libraries/transport[ignition-transport] which was a combination of ZeroMQ with Protobuf as the wire format. 
-
-At the top level, the API consisted of https://bitbucket.org/osrf/haptix-comm/src/a961986b0254a3dbcabcc89ba14f78915d5d968a/matlab/[several MATLAB functions] that provided help text and forwarded calls to an underlying MEX function.
-
-[source,matlab]
-----
-% Example for a forwarding function
-% <help text>
-function result = hxs_add_model(sdf, name, pos, orient, gravity_mode)
-    result = hxgz('add_model', sdf, name, pos, orient, gravity_mode);
-end
-----
-
-The MEX code was implemented in a similar way as the ZeroMQ-matlab project in that there was a single function implementation (https://bitbucket.org/osrf/haptix-comm/src/a961986b0254a3dbcabcc89ba14f78915d5d968a/matlab/hxgz.c[hxgz.c]) that expected a string as the first argument in order to select the desired action. The MEX function internally translated the additional input arguments according to the action, and called a corresponding function in their C API. The underlying C code then sent an appropriate message via ZeroMQ. The snippet below shows a simplified example for an action implementation.
-
-[source,c++]
-----
-// Dispatch to the appropriate function based on the first argument
-// ...
-else if (!strcmp(funcName, "add_model"))
-    hxgzs_add_model(nlhs, plhs, nrhs-1, prhs+1);
-
-// ...   
-void hxgzs_add_model(int nlhs, mxArray *plhs[],
-                int nrhs, const mxArray *prhs[]) {
-    // ... input translation
-    
-    // Call to C API
-    if (hxs_add_model(sdf, name, x, y, z,
-                      roll, pitch, yaw, gravity_mode, &model) != hxOK)
-        mexErrMsgIdAndTxt("HAPTIX:hxs_add_model", hx_last_result());
-
-  // ... output translation
-  plhs[0] = model_to_matlab(&model);
-}
-
-----
-
-Note that their http://gazebosim.org/haptix[documentation] mentioned that the MATLAB API was generated from their C API. Without auto-generation it would be extremely tedious to maintain and extend four or more calling layers for every function.
+OSRF developed a http://www.osrfoundation.org/haptix-simulation-of-prosthetic-devices/[MATLAB interface] for DARPA's  http://www.darpa.mil/program/hand-proprioception-and-touch-interfaces[HAPTIX] program that allowed users to interface with real hardware as well as a step-in Gazebo simulation. They chose to create an API that hides the messaging part from the user and exposes more product specific functions. The underlying implementation was based on http://ignitionrobotics.org/libraries/transport[ignition-transport] which was a combination of ZeroMQ with Protobuf as the wire format. 
 
 Below is a copy of an http://gazebosim.org/tutorials?cat=haptix&tut=haptix_matlab[example] from their website.
 
@@ -451,9 +409,52 @@ end
 hx_close();
 ----
 
+
+At the top level, the API consisted of https://bitbucket.org/osrf/haptix-comm/src/a961986b0254a3dbcabcc89ba14f78915d5d968a/matlab/[several MATLAB functions] that provided help text and forwarded calls to an underlying MEX function.
+
+[source,matlab]
+----
+% Example for a forwarding function
+% <help text>
+function result = hxs_add_model(sdf, name, pos, orient, gravity_mode)
+    result = hxgz('add_model', sdf, name, pos, orient, gravity_mode);
+end
+----
+
+The MEX code was implemented in a similar way as the ZeroMQ-matlab project in that there was a single function implementation (https://bitbucket.org/osrf/haptix-comm/src/a961986b0254a3dbcabcc89ba14f78915d5d968a/matlab/hxgz.c[hxgz.c]) that expected a string as the first argument in order to select the desired action. The MEX function internally translated the additional input arguments according to the action, and called a corresponding function in their C API. The underlying C code then sent an appropriate message via ZeroMQ. The snippet below shows a simplified example for an action implementation.
+
+[source,c++]
+----
+// Dispatch to the appropriate function based on the first argument
+// ...
+else if (!strcmp(funcName, "add_model"))
+    hxgzs_add_model(nlhs, plhs, nrhs-1, prhs+1);
+
+// ...   
+void hxgzs_add_model(int nlhs, mxArray *plhs[],
+                int nrhs, const mxArray *prhs[]) {
+    // ... input translation
+    
+    // Call to C API
+    if (hxs_add_model(sdf, name, x, y, z,
+                      roll, pitch, yaw, gravity_mode, &model) != hxOK)
+        mexErrMsgIdAndTxt("HAPTIX:hxs_add_model", hx_last_result());
+
+  // ... output translation
+  plhs[0] = model_to_matlab(&model);
+}
+
+----
+
+Note that their http://gazebosim.org/haptix[documentation] mentioned that the MATLAB API was generated from their C API. Without auto-generation it would be extremely tedious to maintain and extend four or more calling layers for every function.
+
 Overall we found that their implementation was done quite well and we assume that they must have spent significant time on creating this interface. It was also nice to see that they included functionality to enable and disable logging.
 
-The usability could have been improved a bit though. More than half of the example code could have been removed by adding a helper function that returns a default command struct (or making it a class so that users can't mess with the fields), e.g., _hxs_command_struct()_, and by accepting NaN or empty as being disabled rather than using fields with separate boolean flags. Additionally,  https://bitbucket.org/osrf/haptix-comm/src/a961986b0254a3dbcabcc89ba14f78915d5d968a/matlab/hx_update.m[_hx_update()_] would have benefitted from a second return argument that indicates whether the returned state is new, and a blocking call with timeout to get rid of the busy loop.
+While we really liked their implementation, we thought that some minor changes could simplify the resulting API:
+
+* More than half of the example code could've been replaced by adding a helper function that returns a default command struct (or making it a class so that users can't mess with the fields), e.g., _hxs_command_struct()_.
+* The disabled state could've been represented by NaN or empty values rather than introducing separate fields for boolean flags.
+* https://bitbucket.org/osrf/haptix-comm/src/a961986b0254a3dbcabcc89ba14f78915d5d968a/matlab/hx_update.m[_hx_update()_] could've benefitted from a second return argument that indicates whether the returned state is new, and a blocking call with timeout to get rid of the busy loop.
 
 == Standalone Systems
 
@@ -475,7 +476,9 @@ while true
 end
 ----
 
-We thought that this was a nice interface for Arduino users that also served as a great example for the performance problems caused by the synchonous programming model. On our test machine we were only able to get about 80 operations (reads or writes) per second, so the above loop would run at maximum 40 Hz. This would be enough for simple Arduino-type problems, but far too slow for serious robotics applications.
+We thought that this was a nice interface for Arduino users that is significantly more usable than the previously common approaches of exchanging strings over serial.
+
+Unfortunately this interface also serves as a great example for the performance problems caused by the synchronous programming model. On our test machine we were only able to get about 80 operations (reads and writes combined) per second, so the above loop would run at maximum 40 Hz. This would be enough for simple Arduino-type problems, but far too slow for serious robotics applications.
 
 Note that most of the overhead comes from waiting for device responses, so code generated from Simulink models that gets deployed locally on the device should be able to run significantly faster.
 
