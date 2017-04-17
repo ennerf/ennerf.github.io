@@ -2,6 +2,7 @@
 :published_at: 2017-01-15
 :hp-tags: MATLAB, Java
 :imagesdir: ../images
+//:imagesdir: https://github.com/ennerf/ennerf.github.io/raw/master/images/
 :source-highlighter: none
 
 ++++
@@ -408,8 +409,6 @@ end
 
 hx_close();
 ----
-
-
 At the top level, the API consisted of https://bitbucket.org/osrf/haptix-comm/src/a961986b0254a3dbcabcc89ba14f78915d5d968a/matlab/[several MATLAB functions] that provided help text and forwarded calls to an underlying MEX function.
 
 [source,matlab]
@@ -484,8 +483,28 @@ Note that most of the overhead comes from waiting for device responses, so code 
 
 === HEBI Robotics' Modular Actuators
 
-Lastly, we developed our own http://hebirobotics.com/matlab[MATLAB API] for controlling modular actuators. We decided to implement it as a standalone library in order reduce the number of setup steps and to provide an overall better user experience. The details of the implementation will be covered in a separate blog post.
+Lastly, we developed our own http://hebirobotics.com/matlab[MATLAB API] for controlling modular actuators. We decided to implement it as a standalone library in order reduce the number of setup steps and to provide an overall better user experience. The below example shows a closed-loop controller implementing a virtual spring that uses torque control to drive the output towards the origin.
 
+[source,matlab]
+----
+% Find actuator by human readable ID
+actuator = HebiLookup.newGroupFromNames('Family', 'Name');
+stiffness = 1; % [Nm/rad]
+
+% Virtual spring using torque control
+cmd = CommandStruct();
+while true
+    fbk = actuator.getNextFeedback();
+    cmd.torque = -stiffness * fbk.position;
+    actuator.set(cmd);
+end
+----
+
+// TODO: expand?
+
+The details of the implementation will be covered in a separate blog post.
+
+////
 The code below shows a full example of kinesthetic control of two 16-DoF snake robots where one acts as a master, and the other one as a slave that copies its motion. A single run lasts 60 seconds. The slave robot's data is automatically logged to disk and the position tracking error is plotted after each trial.
 
 [source,matlab]
@@ -522,8 +541,8 @@ plot(data.time, positionError);
 ----
 
  TODO: Add MSI picture or video? Alternatively, switch to a sine wave and add video of sidewinding? 
-
-
+ 
+////
 
 == Other Hardware Interfaces
 
