@@ -1,0 +1,14 @@
+= Using MATLAB to control hardware #1 : Message Passing Systems
+:published_at: 2017-06-20
+:hp-tags: MATLAB, ROS, LCM, DDS, ZeroMQ, MEX, Java
+:imagesdir: ../images
+//:imagesdir: https://github.com/ennerf/ennerf.github.io/raw/master/images/
+:source-highlighter: none
+
+++++
+<link rel="stylesheet" href="https://cdn.rawgit.com/ennerf/ennerf.github.io/master/resources/highlight.js/9.9.0/styles/matlab.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/languages/matlab.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+++++
+
