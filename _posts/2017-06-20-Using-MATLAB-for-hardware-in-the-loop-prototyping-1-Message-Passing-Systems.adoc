@@ -1,4 +1,4 @@
-= Using MATLAB to control hardware #1 : Message Passing Systems
+= Using MATLAB for hardware-in-the-loop prototyping #1 : Message Passing Systems
 :published_at: 2017-06-20
 :hp-tags: MATLAB, ROS, LCM, DDS, ZeroMQ, MEX, Java
 :imagesdir: ../images
