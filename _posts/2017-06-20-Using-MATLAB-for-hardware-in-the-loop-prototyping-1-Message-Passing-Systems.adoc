@@ -66,7 +66,7 @@ The snippet below shows how the MATLAB code for sending a command message could 
 
 [source,matlab]
 ----
-%% Sending a command message from MATLAB
+%% MATLAB code for sending an LCM message
 % Setup
 lc = lcm.lcm.LCM.getSingleton();
 
@@ -104,7 +104,7 @@ Receiving messages is done by subscribing an _aggregator_ to one or more channel
 
 [source,matlab]
 ----
-%% Receiving a feedback message in MATLAB
+%% MATLAB code for receiving an LCM message
 % Setup 
 lc = lcm.lcm.LCM.getSingleton();
 aggregator = lcm.lcm.MessageAggregator();
@@ -185,7 +185,201 @@ Some minor points for improvement that we found were:
 
 * The decoding step _fbk = types.feedback(msg.data)_ forced two unnecessary translations due to _msg.data_ being a _byte[]_, which automatically gets converted to and from _int8_. This could result in a noticeable performance hit when receiving larger messages (e.g. images) and could be avoided by adding an overload that accepts a non-primitive type that does not get translated, e.g., _fbk = types.feedback(msg)_.
 * The Java classes didn't implement https://mathworks.com/help/matlab/matlab_external/save-and-load-java-objects-to-mat-files.html[Serializable], which could become bothersome when trying to save the workspace. 
-* We'd prefer to select the decoding type during the subscription step, e.g., _lc.subscribe('FEEDBACK_CHANNEL', aggregator, 'types.feedback')_, rather than requiring users to instantiate the type manually. This cleans up the parsing code a bit and allows for a much less confusing error message if types are missing.
+* We'd prefer to select the decoding type during the subscription step, e.g., _lc.subscribe('FEEDBACK_CHANNEL', aggregator, 'types.feedback')_, rather than requiring users to instantiate the type manually. This would clean up the parsing code a bit and allow for a less confusing error message if types are missing.
 
+=== Robot Operating System (ROS)
 
+http://www.ros.org[ROS] is by far the most widespread messaging framework in the robotics research community and has been officially supported by Mathworks' https://www.mathworks.com/products/robotics.html[Robotics System Toolbox] since 2014. The MATLAB implementation is built on RosJava, and Simulink code generation is built on ROS C++.
+
+The API was designed such that each topic requires dedicated publishers and subscribers, which is contrary to LCM where each subscriber is able to listen to multiple channels (topics). This in combination with specifying the type on initialization removes much of the boiler plate code necessary for dealing with message types. 
+
+[source,matlab]
+----
+%% MATLAB code for publishing a ROS message
+% Setup Publisher
+chatpub = rospublisher('/chatter', 'std_msgs/String');
+
+% Fill message
+msg = rosmessage(chatpub);
+msg.Data = 'Some test string';
+
+% Publish
+chatpub.send(msg);
+----
+
+Messages can be received by creating a dedicated subscriber for each topic of interest. Subscribers support three different styles to access messages: blocking calls, non-blocking calls, and callbacks.
+
+[source,matlab]
+----
+%% MATLAB code for receiving a ROS message
+% Setup Subscriber
+laser = rossubscriber('/scan');
+
+% (1) Blocking receive
+scan = laser.receive(1); % timeout [s]
+
+% (2) Non-blocking latest message (may not be new)
+scan = laser.LatestMessage;
+
+% (3) Callback
+callback = @(msg) disp(msg);
+subscriber = rossubscriber('/scan', @callback);  
+----
+
+Contrary to LCM, all objects that are visible to users are actually MATLAB classes. Even though the implementation is using Java underneath, all exposed functionality is wrapped in MATLAB classes that hide all Java calls. For example, each message type generates a custom wrapper class. The code below shows a simplified example for a message that has a _Name_ property.
+
+[source,matlab]
+----
+%% MATLAB code for wrapping a Java message type (simplified)
+classdef WrappedMessage
+
+    properties (Access = protected)
+        % The underlying Java message object (hidden from user)
+        JavaMessage
+    end
+    
+    methods
+    
+        function name = get.Name(obj)
+            % value = msg.Name;
+            name = char(obj.JavaMessage.getName);
+        end
+        
+        function set.Name(obj, name)
+            % msg.Name = value;
+            validateattributes(name, {'char'}, {}, 'WrappedMessage', 'Name');
+            obj.JavaMessage.setName(name); % Forward to Java method
+        end
+        
+        function out = doSomething(obj)
+            % msg.doSomething() and doSomething(msg)
+            try
+                out = obj.JavaMessage.doSomething(); % Forward to Java method
+            catch javaException
+                throw(WrappedException(javaException)); % Hide Java exception
+            end
+        end
+        
+    end
+end
+----
+
+The implementation is unfortunately closed-source, but be were able to get an idea of the internals by looking at the MATLAB tooolbox files as well as the compiled Java bytecode. As far as we could tell they built a small Java library that wrapped RosJava functionality in order to provide an interface that was easier to call from MATLAB. Most of the actual logic seemed to be implemented in MATLAB code, but we also found several calls to various Java libraries for problems that would have been difficult to implement in pure MATLAB, e.g., listing networking interfaces or doing in-memory decompression of images.
+
+Overall, we found that the ROS support toolbox looked very nice and was a great example of how seamless external languages could be integrated with MATLAB. We also really liked that they offered a way to load log files (rosbags).
+
+One concern we had was that there didn't seem to be a simple non-blocking way to check for new messages, e.g., a _hasNewMessage()_ method or functionality equivalent to LCM's _getNextMessage(0)_. We often found this useful for applications that combined data from multiple topics that arrived at different rates (e.g. sensor feedback and joystick input events). We checked whether this behavior could be emulated by specifying a very small timeout in the _receive_ method (shown in the snippet below), but any value below 0.1s seemed to never successfully return.
+
+[source,matlab]
+----
+%% Trying to check whether a new message has arrived without blocking
+try
+    msg = sub.receive(0.1); % below 0.1s always threw an error
+    % ... use message ...
+catch ex
+    % ignore
+end
+----
+
+=== Data Distribution Service (DDS)
+
+In 2014 Mathworks also added a https://www.mathworks.com/hardware-support/rti-dds.html[support package for DDS], which is the messaging middleware that ROS 2.0 is based on. It supports MATLAB and Simulink, as 
+well as code generation. Unfortunately, we didn't have all the requirements to get it setup, and we couldn't find much information about the underlying implementation. After looking at some of the intro videos, we believe that the resulting code should look as follows.
+
+[source,matlab]
+----
+%% MATLAB code for sending and receiving DDS messages
+% Setup
+DDS.import('ShapeType.idl','matlab');
+dp = DDS.DomainParticipant
+
+% Create message
+myTopic = ShapeType;
+myTopic.x = int32(23);
+myTopic.y = int32(35);
+
+% Send Message
+dp.addWriter('ShapeType', 'Square');
+dp.write(myTopic);
+
+% Receive message
+dp.addReader('ShapeType', 'Square');
+readTopic = dp.read();
+----
+
+=== ZeroMQ
+
+ZeroMQ is another asynchonous messaging library that is popular for building distributed systems. It only handles the messaging aspect, so users need to supply their own wire format. https://github.com/smcgill3/zeromq-matlab[ZeroMQ-matlab] was a MATLAB interface to ZeroMQ that was developed at UPenn between 2013-2015. We weren't able to find much documentation, but as far as we could tell the resulting code should look similar to following snippet.
+
+[source,matlab]
+----
+%% MATLAB code for sending and receiving ZeroMQ data
+% Setup
+subscriber = zmq( 'subscribe', 'tcp', '127.0.0.1', 43210 );
+publisher = zmq( 'publish', 'tcp', 43210 );
+
+% Publish data
+bytes = uint8(rand(100,1));
+nbytes = zmq( 'send', publisher, bytes );
+
+% Receive data
+receiver = zmq('poll', 1000); // polls for next message
+[recv_data, has_more] = zmq( 'receive', receiver );
+
+disp(char(recv_data));
+----
+
+It was implemented as a single MEX function that selects an appropriate action based on the first argument. State was maintained by using socket IDs that were passed in by the user at every call. The code below shows a simplified snippet of the send action.
+
+[source,c++]
+----
+// Parsing the selected ZeroMQ action behind the MEX barrier
+// Grab command String
+if ( !(command = mxArrayToString(prhs[0])) )
+	mexErrMsgTxt("Could not read command string. (1st argument)");
+
+// Match command String with desired action (e.g. 'send')
+if (strcasecmp(command, "send") == 0){
+	// ... (argument validation)
+	
+	// retrieve arguments 
+	socket_id = *( (uint8_t*)mxGetData(prhs[1]) );
+	size_t n_el = mxGetNumberOfElements(prhs[2]);
+	size_t el_sz = mxGetElementSize(prhs[2]);		
+	size_t msglen = n_el*el_sz;
+	
+	// send data
+	void* msg = (void*)mxGetData(prhs[2]);
+	int nbytes = zmq_send( sockets[ socket_id ], msg, msglen, 0 );
+	
+	// ... check outcome and return
+}
+// ... other actions
+----
+
+=== Interfaces to Other Frameworks
+
+Below is a list of APIs to other frameworks that we looked at but couldn't cover in more detail.
+
+[width="100%",options="header",cols="1a,3a"]
+|====================
+| Project | Notes
+
+| https://github.com/ragavsathish/RabbitMQ-Matlab-Client[RabbitMQ] 
+| Simple Java wrapper for RabbitMQ 
+
+| https://sourceforge.net/projects/urbi/?source=typ_redirect[URBI] (http://agents.csse.uwa.edu.au/aibosig/resources/downloads/tutorial_liburbiMatlab_0.1.pdf[tutorial])
+| Seems to be deprecated
+
+|====================
+
+== Final Notes
+
+Contrary to the situation a few years ago, nowadays there already are interfaces for most of the common message passing frameworks that allow researchers to do at least basic hardware-in-the-loop prototyping directly from MATLAB. If for some reason you need to write a custom interface, we would recommend to start with an LCM-like implementation and to add complexity as needed.
+
+If you don't already have a clear preference between C++ and Java, we would recommend to start with a Java implementation. MEX interfaces require a lot of conversion code that MATLAB would automatically handle for Java calls.
+
+While interfaces that only expose MATLAB code can provide a much better and more consistent user experience (e.g. help documentation), there is a significant cost associated with maintaing all of the involved layers.
+
+Finally, even though message passing systems are very widespread in the robotics community, they do have drawbacks and are not appropriate for every application. Future posts in this series will focus on some of the alternatives.
 
