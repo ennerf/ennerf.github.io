@@ -12,9 +12,9 @@
 <script>hljs.initHighlightingOnLoad()</script>
 ++++
 
-MATLAB(C) is a programming language and environment designed for scientific computing. It is one of the best languages for developing robot control algorithms and is extremely widespread in the research community. While it is generally thought of as an offline programming language, there are several ways to include hardware in the loop. Since there aren't any guidelines for developing such interfaces, we looked at several different projects and compared the approaches they took. This post focuses on projects that integrate with message passing frameworks such as ROS (Robot Operating System) or LCM (lightweight communication and marshalling).
+MATLAB(C) is a programming language and environment designed for scientific computing. It is one of the best languages for developing robot control algorithms and is extremely widespread in the research community. While it is generally thought of as an offline programming language, there are several ways to include hardware in the loop. As part of the development of our own interfaces, we looked at several different projects and compared the approaches they took. This post focuses on projects that integrate with message passing frameworks such as ROS (Robot Operating System) or LCM (lightweight communication and marshalling).
 
-Prototyping directly on real hardware can significantly speed up development because it reduces the time between considering an idea and getting feedback on whether the algorithm can withstand real world physics. A workflow that requires researchers to port prototype code to another language before being able to test on real hardware can lead to multiple weeks or months being lost in chasing down rabbit holes. Additionally, programming in a language like C++ can pose a significant barrier to controls engineers who often don't have a computer science background.
+The main motivation for prototyping directly on real hardware is to significantly speed-up the development cycle by reducing the time it takes from considering an idea to finding out whether an algorithm can withstand real world physics. A workflow that requires researchers to port prototype code to another language before being able to test on real hardware can lead to multiple weeks or months being lost in chasing down rabbit holes. Additionally, programming in a language like C++ can pose a significant barrier to controls engineers who often don't have a computer science background.
 
 We noticed that over the past few years several groups seem to have identified this as a problem and started to develop ways to control hardware directly from MATLAB.
 
@@ -83,14 +83,14 @@ Interestingly, the backing implementation of these bindings was done in pure Jav
 
 * The https://github.com/lcm-proj/lcm/blob/master/lcm-java/lcm/lcm/LCM.java[LCM] class provided a way to publish messages and subscribe to channels
 * The generated Java messages handled the binary encoding and exposed fields that MATLAB can access
-* The https://github.com/lcm-proj/lcm/blob/master/lcm-java/lcm/lcm/MessageAggregator.java[MessageAggregator] class provided a way to receive messages on a background thread and queue to for MATLAB.
+* The https://github.com/lcm-proj/lcm/blob/master/lcm-java/lcm/lcm/MessageAggregator.java[MessageAggregator] class provided a way to receive messages on a background thread and queue them for MATLAB.
 
 Thus, even though the snippet looks similar to MATLAB code, all variables are actually Java objects. For example, the struct-like command message type is a Java object that exposes public fields as shown in the snippet below. Users can access them the same way as fields of a standard MATLAB struct (or class properties) resulting in nice syntax. The types are automatically converted according to the https://mathworks.com/help/matlab/matlab_external/passing-data-to-java-methods.html[type mapping].
 
 [source,java]
 ----
 /**
- * Java class that behaves 'struct-like'
+ * Java class that behaves like a MATLAB struct
  */
 public final class command implements lcm.lcm.LCMEncodable
 {
@@ -357,7 +357,7 @@ if (strcasecmp(command, "send") == 0){
 // ... other actions
 ----
 
-=== Interfaces to Other Frameworks
+=== Interfaces to other Frameworks
 
 Below is a list of APIs to other frameworks that we looked at but couldn't cover in more detail.
 
