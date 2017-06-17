@@ -1,8 +1,8 @@
 = Using MATLAB for hardware-in-the-loop prototyping #1 : Message Passing Systems
 :published_at: 2017-06-20
 :hp-tags: MATLAB, ROS, LCM, DDS, ZeroMQ, MEX, Java
-:imagesdir: ../images
-//:imagesdir: https://github.com/ennerf/ennerf.github.io/raw/master/images/
+//:imagesdir: ../images
+:imagesdir: https://github.com/ennerf/ennerf.github.io/raw/master/images/
 :source-highlighter: none
 
 ++++
@@ -12,7 +12,7 @@
 <script>hljs.initHighlightingOnLoad()</script>
 ++++
 
-MATLAB(C) is a programming language and environment designed for scientific computing. It is one of the best languages for developing robot control algorithms and is extremely widespread in the research community. While it is generally thought of as an offline programming language, there are several ways to include hardware in the loop. As part of our own development we surveyed many different projects and compared the approaches they took. This post focuses on projects that leverage message passing frameworks such as ROS (Robot Operating System) or LCM (lightweight communication and marshalling).
+MATLAB(C) is a programming language and environment designed for scientific computing. It is one of the best languages for developing robot control algorithms and is extremely widespread in the research community. While it is often thought of as an offline programming language, there are several ways to include hardware in the loop. As part of our own development we surveyed many different projects and compared the approaches they took. This post focuses on bindings for message passing frameworks including LCM, ROS, DDS, and ZeroMQ.
 
 The main motivation for prototyping directly on real hardware is to significantly speed-up the development cycle by reducing the time it takes from considering an idea to finding out whether an algorithm can withstand real world physics. A workflow that requires researchers to port prototype code to another language before being able to test on real hardware can lead to multiple weeks or months being lost in chasing down rabbit holes. Additionally, programming in a language like C++ can pose a significant barrier to controls engineers who often do not have a computer science background.
 
@@ -40,7 +40,7 @@ Out of the box MATLAB provides two interfaces to other languages:  https://www.m
 
 == Message Passing Frameworks
 
-https://en.wikipedia.org/wiki/Message_passing[Message passing] frameworks such as http://www.ros.org/[ROS] and https://lcm-proj.github.io/[LCM] have been widely adopted in the robotics research community. At the core they typically consist of two parts: a way to exchange data between processes (e.g. UDP or TCP), as well as a defined messaging format for encoding and decoding the data. They allow systems to be built with distributed components (e.g. processes) that run on different computers, different operating systems, and different programming languages.
+https://en.wikipedia.org/wiki/Message_passing[Message passing] frameworks such as http://www.ros.org/[Robot Operating System (ROS)] and https://lcm-proj.github.io/[Lightweight Communication and Marshalling (LCM)] have been widely adopted in the robotics research community. At the core they typically consist of two parts: a way to exchange data between processes (e.g. UDP or TCP), as well as a defined messaging format for encoding and decoding the data. They allow systems to be built with distributed components (e.g. processes) that run on different computers, different operating systems, and different programming languages.
 
 The resulting systems are very extensible and provide convenient ways for prototyping. For example, a component communicating with a physical robot can be exchanged with a simulator without affecting the rest of the system. Similarly, a new walking controller could be implemented in MATLAB and communicate with external processes (e.g. robot comms) through the exchange of messages.
 
@@ -58,7 +58,7 @@ In the systems we looked at we found two general approaches to integrate MATLAB 
 
 === Lightweight Communication and Marshalling (LCM)
 
-https://lcm-proj.github.io/tut_matlab.html[LCM] is a message passing framework that was developed at http://www.mit.edu/[MIT] in 2006 for their entry to DARPA's Urban Challenge. In recent years it has become a popular alternative to ROS-messaging, and it was as far as we know the first messaging framework for robotics that supported MATLAB as a core language.
+https://lcm-proj.github.io/tut_matlab.html[LCM] was developed at http://www.mit.edu/[MIT] in 2006 for their entry to DARPA's Urban Challenge. In recent years it has become a popular alternative to ROS-messaging, and it was as far as we know the first message passing framework for robotics that supported MATLAB as a core language.
 
 The snippet below shows how the MATLAB code for sending a command message could look like. The code creates a struct-like _message_, sets desired values, and publishes it on an appropriate channel.
 
@@ -83,7 +83,7 @@ Interestingly, the backing implementation of these bindings was done in pure Jav
 * The generated Java messages handled the binary encoding and exposed fields that MATLAB can access
 * The https://github.com/lcm-proj/lcm/blob/master/lcm-java/lcm/lcm/MessageAggregator.java[MessageAggregator] class provided a way to receive messages on a background thread and queue them for MATLAB.
 
-Thus, even though the snippet looks similar to MATLAB code, all variables are actually Java objects. For example, the struct-like command type is a Java object that exposes public fields as shown in the snippet below. Users can access them the same way as fields of a standard MATLAB struct (or class properties) resulting in nice syntax. The types are automatically converted according to the https://mathworks.com/help/matlab/matlab_external/passing-data-to-java-methods.html[type mapping].
+Thus, even though the snippet looks similar to MATLAB code, all variables are actually Java objects. For example, the struct-like _command_ type is a Java object that exposes public fields as shown in the snippet below. Users can access them the same way as fields of a standard MATLAB struct (or class properties) resulting in nice syntax. The types are automatically converted according to the https://mathworks.com/help/matlab/matlab_external/passing-data-to-java-methods.html[type mapping].
 
 [source,java]
 ----
@@ -176,9 +176,7 @@ public class MessageAggregator implements LCMSubscriber {
 }
 ----
 
-Note that the _getNextMessage_ method expects a user settable timeout argument. In general it is important for blocking Java methods to have a timeout in order to prevent the main thread from getting stuck permanently. Being in a Java call prohibits users from aborting the execution (ctrl-c), so timeouts should be reasonably short, i.e., in the low seconds. Otherwise this could cause the UI to become unresponsive and users may be forced to close MATLAB without being able to save their workspace.
-
-Passing in a timeout of zero serves as a non-blocking interface that immediately returns empty if no messages are available. This is often useful for working with multiple aggregators or for integrating asynchronous messages with unknown timing, such as user input.
+Note that the _getNextMessage_ method requires a timeout argument. In general it is important for blocking Java methods to have a timeout in order to prevent the main thread from getting stuck permanently. Being in a Java call prohibits users from aborting the execution (ctrl-c), so timeouts should be reasonably short, i.e., in the low seconds. Otherwise this could cause the UI to become unresponsive and users may be forced to close MATLAB without being able to save their workspace. Passing in a timeout of zero serves as a non-blocking interface that immediately returns empty if no messages are available. This is often useful for working with multiple aggregators or for integrating asynchronous messages with unknown timing, such as user input.
 
 Overall, we thought that this was a well thought out API and a great example for a minimum viable interface that works well in practice. By receiving messages on a background thread and by moving the encoding and decoding steps to the Java language, the main thread was able to spend most of its time on actually working with the data. Its minimalistic implementation is comparatively simple and we would recommend it as a starting point for developing similar interfaces.
 
@@ -192,7 +190,7 @@ Some minor points for improvement that we found were:
 
 http://www.ros.org[ROS] is by far the most widespread messaging framework in the robotics research community and has been officially supported by Mathworks' https://www.mathworks.com/products/robotics.html[Robotics System Toolbox] since 2014. While the Simulink code generation uses ROS C++, the MATLAB implementation is built on the less common RosJava.
 
-The API was designed such that each topic requires dedicated publishers and subscribers, which is different from LCM where each subscriber may listen to multiple channels (topics). This results in potentially more subscribers, but allowing to specify the type on initialization removes much of the boiler plate code necessary for dealing with message types.
+The API was designed such that each topic requires dedicated publishers and subscribers, which is different from LCM where each subscriber may listen to multiple channels/topics. While this may result in potentially more subscribers, the specification of the expected type at initialization removes much of the boiler plate code necessary for dealing with message types.
 
 [source,matlab]
 ----
