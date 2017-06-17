@@ -3,7 +3,8 @@
     "username": "ennerf",
     "repositoryName": "ennerf.github.io",
     "branch": "master",
-    "delay": ""
+    "delay": "",
+    "cname": ""
   },
   "site": {
     "title": "Software for Robots",
@@ -12,11 +13,20 @@
     "cover": "https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg",
     "postsPerPage": "10",
     "googleAnalytics": "UA-83018359-1",
-    "disqus": "ennerf"
+    "disqus": "ennerf",
+    "delay": ""
   },
   "socialnetwork": {
     "linkedin": "https://www.linkedin.com/in/florian-enner-59b81466",
-    "github": "https://github.com/ennerf"
+    "github": "https://github.com/ennerf",
+    "email": "florian@enner.org",
+    "twitter": "",
+    "facebook": "",
+    "googleplus": "",
+    "instagram": "",
+    "pinterest": "",
+    "flickr": "",
+    "stackoverflow": ""
   },
   "theme": {
     "name": "ichi"
