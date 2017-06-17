@@ -14,7 +14,7 @@
 
 MATLAB(C) is a programming language and environment designed for scientific computing. It is one of the best languages for developing robot control algorithms and is extremely widespread in the research community. While it is generally thought of as an offline programming language, there are several ways to include hardware in the loop. As part of the development of our own interfaces, we looked at several different projects and compared the approaches they took. This post focuses on projects that leverage message passing frameworks such as ROS (Robot Operating System) or LCM (lightweight communication and marshalling).
 
-The main motivation for prototyping directly on real hardware is to significantly speed-up the development cycle by reducing the time it takes from considering an idea to finding out whether an algorithm can withstand real world physics. A workflow that requires researchers to port prototype code to another language before being able to test on real hardware can lead to multiple weeks or months being lost in chasing down rabbit holes. Additionally, programming in a language like C++ can pose a significant barrier to controls engineers who often don't have a computer science background.
+The main motivation for prototyping directly on real hardware is to significantly speed-up the development cycle by reducing the time it takes from considering an idea to finding out whether an algorithm can withstand real world physics. A workflow that requires researchers to port prototype code to another language before being able to test on real hardware can lead to multiple weeks or months being lost in chasing down rabbit holes. Additionally, programming in a language like C++ can pose a significant barrier to controls engineers who often do not have a computer science background.
 
 We noticed that over the past few years several groups seem to have identified this as a problem and started to develop ways to control hardware directly from MATLAB.
 
@@ -30,7 +30,7 @@ A second hurdle is that while MATLAB is very efficient in the execution of math 
 .Communications overhead in the main MATLAB thread
 image::matlab/comms-single-threaded.png[link="{imagesdir}/matlab/comms-single-threaded.png", width="100%"]
 
-Pure MATLAB implementations can work for simple applications, such as interfacing with an Arduino to gather temperature data or blink an LED, but it isn't feasible control complex robotic systems at high rates. Fortunately, MATLAB does have the ability to interface with other programming languages that allow users to create background threads that can offload the communications aspect from the main thread. This frees MATLAB to focus on the calculations that it has been optimized for.
+Pure MATLAB implementations can work for simple applications, such as interfacing with an Arduino to gather temperature data or blink an LED, but it is not feasible control complex robotic systems at high rates. Fortunately, MATLAB does have the ability to interface with other programming languages that allow users to create background threads that can offload the communications aspect from the main thread. This frees MATLAB to focus on the calculations that it has been optimized for.
 
 [.text-center]
 .Communications overhead offloaded to other threads
@@ -77,7 +77,7 @@ cmd.velocity = [1 2 3];
 lc.publish('COMMAND_CHANNEL', cmd);
 ----
 
-Interestingly, the backing implementation of these bindings was done in pure Java and didn't contain any actual MATLAB code. The exposed interface consisted of two Java classes as well as auto-generated message types.
+Interestingly, the backing implementation of these bindings was done in pure Java and did not contain any actual MATLAB code. The exposed interface consisted of two Java classes as well as auto-generated message types.
 
 * The https://github.com/lcm-proj/lcm/blob/master/lcm-java/lcm/lcm/LCM.java[LCM] class provided a way to publish messages and subscribe to channels
 * The generated Java messages handled the binary encoding and exposed fields that MATLAB can access
@@ -173,7 +173,7 @@ public class MessageAggregator implements LCMSubscriber {
 }
 ----
 
-Note that the _getNextMessage_ method expects a user settable timeout argument. In general it's important for blocking Java methods to have a timeout in order to prevent the main thread from getting permanently stuck inside Java. Otherwise this could cause the UI to become unresponsive and users may be forced to close MATLAB without being able to save their workspace. Being in a Java call also prohibits users from aborting the execution (ctrl-c), so timeouts should be reasonably short, i.e., in the low seconds.
+Note that the _getNextMessage_ method expects a user settable timeout argument. In general it is important for blocking Java methods to have a timeout in order to prevent the main thread from getting permanently stuck inside Java. Otherwise this could cause the UI to become unresponsive and users may be forced to close MATLAB without being able to save their workspace. Being in a Java call also prohibits users from aborting the execution (ctrl-c), so timeouts should be reasonably short, i.e., in the low seconds.
 
 Passing in a timeout of zero serves as a non-blocking interface that immediately returns empty if no messages are available. This is often useful for working with multiple aggregators or for integrating asynchronous messages with unknown timing, such as user input.
 
@@ -181,9 +181,9 @@ Overall, we thought that this was a well thought out API and a great example for
 
 Some minor points for improvement that we found were:
 
-* The decoding step _fbk = types.feedback(msg.data)_ forced two unnecessary translations due to _msg.data_ being a _byte[]_, which automatically gets converted to and from _int8_. This could result in a noticeable performance hit when receiving larger messages (e.g. images) and could be avoided by adding an overload that accepts a non-primitive type that doesn't get translated, e.g., _fbk = types.feedback(msg)_.
-* The Java classes didn't implement https://mathworks.com/help/matlab/matlab_external/save-and-load-java-objects-to-mat-files.html[Serializable], which could become bothersome when trying to save the workspace. 
-* We'd prefer to select the decoding type during the subscription step, e.g., _lc.subscribe('FEEDBACK_CHANNEL', aggregator, 'types.feedback')_, rather than requiring users to instantiate the type manually. This would clean up the parsing code a bit and allow for a less confusing error message if types are missing.
+* The decoding step _fbk = types.feedback(msg.data)_ forced two unnecessary translations due to _msg.data_ being a _byte[]_, which automatically gets converted to and from _int8_. This could result in a noticeable performance hit when receiving larger messages (e.g. images) and could be avoided by adding an overload that accepts a non-primitive type that does not get translated, e.g., _fbk = types.feedback(msg)_.
+* The Java classes did not implement https://mathworks.com/help/matlab/matlab_external/save-and-load-java-objects-to-mat-files.html[Serializable], which could become bothersome when trying to save the workspace. 
+* We would prefer to select the decoding type during the subscription step, e.g., _lc.subscribe('FEEDBACK_CHANNEL', aggregator, 'types.feedback')_, rather than requiring users to instantiate the type manually. This would clean up the parsing code a bit and allow for a less confusing error message if types are missing.
 
 === Robot Operating System (ROS)
 
@@ -266,7 +266,7 @@ The implementation is unfortunately closed-source, but be were able to get an id
 
 Overall, we found that the ROS support toolbox looked very nice and was a great example of how seamless external languages could be integrated with MATLAB. We also really liked that they offered a way to load log files (rosbags).
 
-One concern we had was that there didn't seem to be a simple non-blocking way to check for new messages, e.g., a _hasNewMessage()_ method or functionality equivalent to LCM's _getNextMessage(0)_. We often found this useful for applications that combined data from multiple topics that arrived at different rates (e.g. sensor feedback and joystick input events). We checked whether this behavior could be emulated by specifying a very small timeout in the _receive_ method (shown in the snippet below), but any value below 0.1s seemed to never successfully return.
+One concern we had was that there did not seem to be a simple non-blocking way to check for new messages, e.g., a _hasNewMessage()_ method or functionality equivalent to LCM's _getNextMessage(0)_. We often found this useful for applications that combined data from multiple topics that arrived at different rates (e.g. sensor feedback and joystick input events). We checked whether this behavior could be emulated by specifying a very small timeout in the _receive_ method (shown in the snippet below), but any value below 0.1s seemed to never successfully return.
 
 [source,matlab]
 ----
@@ -282,7 +282,7 @@ end
 === Data Distribution Service (DDS)
 
 In 2014 Mathworks also added a https://www.mathworks.com/hardware-support/rti-dds.html[support package for DDS], which is the messaging middleware that ROS 2.0 is based on. It supports MATLAB and Simulink, as 
-well as code generation. Unfortunately, we didn't have all the requirements to get it setup, and we couldn't find much information about the underlying implementation. After looking at some of the intro videos, we believe that the resulting code should look as follows.
+well as code generation. Unfortunately, we did not have all the requirements to get it setup, and we could not find much information about the underlying implementation. After looking at some of the intro videos, we believe that the resulting code should look as follows.
 
 [source,matlab]
 ----
@@ -307,7 +307,7 @@ readTopic = dp.read();
 
 === ZeroMQ
 
-ZeroMQ is another asynchonous messaging library that is popular for building distributed systems. It only handles the messaging aspect, so users need to supply their own wire format. https://github.com/smcgill3/zeromq-matlab[ZeroMQ-matlab] is a MATLAB interface to ZeroMQ that was developed at UPenn between 2013-2015. We weren't able to find much documentation, but as far as we could tell the resulting code should look similar to following snippet.
+ZeroMQ is another asynchonous messaging library that is popular for building distributed systems. It only handles the messaging aspect, so users need to supply their own wire format. https://github.com/smcgill3/zeromq-matlab[ZeroMQ-matlab] is a MATLAB interface to ZeroMQ that was developed at UPenn between 2013-2015. We were not able to find much documentation, but as far as we could tell the resulting code should look similar to following snippet.
 
 [source,matlab]
 ----
@@ -357,7 +357,7 @@ if (strcasecmp(command, "send") == 0){
 
 === Interfaces to other Frameworks
 
-Below is a list of APIs to other frameworks that we looked at but couldn't cover in more detail.
+Below is a list of APIs to other frameworks that we looked at but could not cover in more detail.
 
 [width="100%",options="header",cols="1a,3a"]
 |====================
@@ -375,9 +375,9 @@ Below is a list of APIs to other frameworks that we looked at but couldn't cover
 
 Contrary to the situation a few years ago, nowadays there exist interfaces for most of the common message passing frameworks that allow researchers to do at least basic hardware-in-the-loop prototyping directly from MATLAB. If for some reason you need to write a custom interface, we would recommend to start with an LCM-like implementation and to add complexity as needed.
 
-If you don't already have a clear preference between C++ and Java, we would recommend to start with a Java implementation. MEX interfaces require a lot of conversion code that MATLAB would automatically handle for Java calls.
+If you do not already have a clear preference between C++ and Java, we would recommend to start with a Java implementation. MEX interfaces require a lot of conversion code that MATLAB would automatically handle for Java calls.
 
 While interfaces that only expose MATLAB code can provide a much better and more consistent user experience (e.g. help documentation), there is a significant cost associated with maintaing all of the involved layers.
 
-Finally, even though message passing systems are very widespread in the robotics community, they do have drawbacks and aren't appropriate for every application. Future posts in this series will focus on some of the alternatives.
+Finally, even though message passing systems are very widespread in the robotics community, they do have drawbacks and are not appropriate for every application. Future posts in this series will focus on some of the alternatives.
 
