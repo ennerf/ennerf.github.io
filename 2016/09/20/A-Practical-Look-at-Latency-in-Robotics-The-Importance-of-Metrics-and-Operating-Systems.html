@@ -12,27 +12,28 @@
 
     <link rel="shortcut icon" href="https://ennerf.github.io/favicon.ico">
 
-    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/vendor/fastclick.js?v=1474506656021"></script>
-    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/vendor/modernizr.js?v=1474506656021"></script>
+    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/vendor/fastclick.js?v=1497718680365"></script>
+    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/vendor/modernizr.js?v=1497718680365"></script>
 
 
-    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/normalize.css?v=1474506656021" />
-    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/foundation.min.css?v=1474506656021" />
+    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/normalize.css?v=1497718680365" />
+    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/foundation.min.css?v=1497718680365" />
     <!--[if lte IE 8]>
-        <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/outdatedBrowser.min.css?v=1474506656021">
+        <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/outdatedBrowser.min.css?v=1497718680365">
     <![endif]-->
-    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/fonts/foundation-icons/foundation-icons.css?v=1474506656021" />
-    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/styles.css?v=1474506656021" />
+    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/fonts/foundation-icons/foundation-icons.css?v=1497718680365" />
+    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/styles.css?v=1497718680365" />
     <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Open+Sans:300,700,400|Source+Sans+Pro:300,400,600,700,900,300italic,400italic,600italic,700italic,900italic" />
 
     <link rel="canonical" href="https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html" />
     <meta name="referrer" content="origin" />
     
     <meta property="og:site_name" content="Software for Robots" />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content="article" />
     <meta property="og:title" content="A Practical Look at Latency in Robotics : The Importance of Metrics and Operating Systems" />
     <meta property="og:description" content="This is the first in a series of blog posts where I will try to share some of my own impressions and findings that have stemmed from several years of creating tools for robotics research. Latency is an important practical concern in the robotics world that is often poorly understood." />
     <meta property="og:url" content="https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html" />
+    <meta property="article:published_time" content="2016-09-20T00:00:00.000Z" />
     <meta property="article:tag" content="Latency" />
     <meta property="article:tag" content=" Operating System" />
     <meta property="article:tag" content=" Windows" />
@@ -49,11 +50,29 @@
     <meta name="twitter:url" content="https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html" />
     
     <script type="application/ld+json">
-null
+{
+    "@context": "http://schema.org",
+    "@type": "Article",
+    "publisher": "Software for Robots",
+    "author": {
+        "@type": "Person",
+        "name": "Florian Enner",
+        "image": "https://avatars.githubusercontent.com/u/5491587?v=3",
+        "url": "https://ennerf.github.io/author/ennerf/",
+        "sameAs": "https://ennerf.github.io/",
+        "description": "Principal Software Engineer at the Robotics Institute at Carnegie Mellon University and Co-Founder of HEBI Robotics."
+    },
+    "headline": "A Practical Look at Latency in Robotics : The Importance of Metrics and Operating Systems",
+    "url": "https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html",
+    "datePublished": "2016-09-20T00:00:00.000Z",
+    "keywords": "Latency,  Operating System,  Windows,  OSX,  Ubuntu,  Scientific Linux,  Sleep,  Real-Time,  HdrHistogram",
+    "description": "This is the first in a series of blog posts where I will try to share some of my own impressions and findings that have stemmed from several years of creating tools for robotics research. Latency is an important practical concern in the robotics world that is often poorly understood."
+}
     </script>
 
     <meta name="generator" content="HubPress" />
     <link rel="alternate" type="application/rss+xml" title="Software for Robots" href="https://ennerf.github.io/rss/" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.10.0/styles/atom-one-dark.min.css">
 </head>
 <body class="post-template tag-Latency tag-Operating-System tag-Windows tag-OSX tag-Ubuntu tag-Scientific-Linux tag-Sleep tag-Real-Time tag-Hdr-Histogram">
 
@@ -444,13 +463,13 @@ sudo chrt -p 98 $pid</code></pre>
 
                 <section class="share">
                     <h4>Liked this post ? Share it.</h4>
-                    <a class="fi-social-facebook" href="https://www.facebook.com/sharer/sharer.php?u=https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html"
+                    <a class="fi-social-facebook" href="https://www.facebook.com/sharer/sharer.php?u=https://ennerf.github.io/"
                         onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
                     </a>
-                    <a class="fi-social-twitter" href="https://twitter.com/share?text=A%20Practical%20Look%20at%20Latency%20in%20Robotics%20%3A%20The%20Importance%20of%20Metrics%20and%20Operating%20Systems&amp;url=https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html"
+                    <a class="fi-social-twitter" href="https://twitter.com/share?text=A%20Practical%20Look%20at%20Latency%20in%20Robotics%20%3A%20The%20Importance%20of%20Metrics%20and%20Operating%20Systems&amp;url=https://ennerf.github.io/"
                         onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
                     </a>
-                    <a class="fi-social-google-plus" href="https://plus.google.com/share?url=https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html"
+                    <a class="fi-social-google-plus" href="https://plus.google.com/share?url=https://ennerf.github.io/"
                        onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
                     </a>
                 </section>
@@ -504,7 +523,7 @@ sudo chrt -p 98 $pid</code></pre>
 
 </div>
 
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment-with-locales.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js?v="></script> 
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment-with-locales.min.js?v="></script> <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.10.0/highlight.min.js?v="></script> 
       <script type="text/javascript">
         jQuery( document ).ready(function() {
           // change date with ago
@@ -516,11 +535,13 @@ sudo chrt -p 98 $pid</code></pre>
 
         hljs.initHighlightingOnLoad();
       </script>
+       
+    <script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
     <!--[if lte IE 8]>
-        <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/outdatedBrowser.min.js?v=1474506656021"></script>
+        <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/outdatedBrowser.min.js?v=1497718680365"></script>
     <![endif]-->
-    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/min/built.js?v=1474506656021"></script>
+    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/min/built.js?v=1497718680365"></script>
 
     <script>
       $(document).foundation();
