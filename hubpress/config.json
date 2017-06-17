@@ -20,5 +20,21 @@
   },
   "theme": {
     "name": "ichi"
+  },
+  "urls": {
+    "site": "https://ennerf.github.io",
+    "hubpress": "https://ennerf.github.io",
+    "theme": "//ennerf.github.io/themes/ichi",
+    "images": "https://ennerf.github.io/images"
+  },
+  "initialisationConfigComponent": {
+    "name": "initialise-configuration",
+    "computed": {},
+    "methods": {},
+    "staticRenderFns": [
+      null,
+      null,
+      null
+    ]
   }
 }
