@@ -30,17 +30,17 @@ A second hurdle is that while MATLAB is very efficient in the execution of math 
 .Communications overhead in the main MATLAB thread
 image::matlab/comms-single-threaded.png[link="{imagesdir}/matlab/comms-single-threaded.png", width="100%"]
 
-Pure MATLAB implementations can work for simple applications, such as interfacing with an Arduino to gather temperature data or blink an LED, but it is not feasible control complex robotic systems at high rates. Fortunately, MATLAB does have the ability to interface with other programming languages that allow users to create background threads that can offload the communications aspect from the main thread.
+Pure MATLAB implementations can work for simple applications, such as interfacing with an Arduino to gather temperature data or blink an LED, but it is not feasible control complex robotic systems (e.g. a humanoid) at high rates (e.g. 100Hz-1KHz). Fortunately, MATLAB does have the ability to interface with other programming languages that allow users to create background threads that can offload the communications aspect from the main thread.
 
 [.text-center]
 .Communications overhead offloaded to other threads
 image::matlab/comms-multi-threaded.png[link="{imagesdir}/matlab/comms-multi-threaded.png", width="100%"]
 
-Out of the box MATLAB provides two interfaces to other languages:  https://www.mathworks.com/help/matlab/matlab_external/introducing-mex-files.html[MEX] for calling C++ code, and the https://www.mathworks.com/help/matlab/matlab_external/product-overview.html[Java Interface] for calling Java code. There are some differences between the two, but at the end of the day the choice effectively comes down to personal preference. Both provide enough capabilities for developing sophisticated interfaces and have orders of magnitude better performance than required.  There are additional interfaces to https://www.mathworks.com/help/matlab/calling-external-functions.html[other languages], but those require additional setup steps.
+Out of the box MATLAB provides two interfaces to other languages:  https://www.mathworks.com/help/matlab/matlab_external/introducing-mex-files.html[MEX] for calling C/C++ code, and the https://www.mathworks.com/help/matlab/matlab_external/product-overview.html[Java Interface] for calling Java code. There are some differences between the two, but at the end of the day the choice effectively comes down to personal preference. Both provide enough capabilities for developing sophisticated interfaces and have orders of magnitude better performance than required.  There are additional interfaces to https://www.mathworks.com/help/matlab/calling-external-functions.html[other languages], but those require additional setup steps.
 
 == Message Passing Frameworks
 
-https://en.wikipedia.org/wiki/Message_passing[Message passing] frameworks such as http://www.ros.org/[Robot Operating System (ROS)] and https://lcm-proj.github.io/[Lightweight Communication and Marshalling (LCM)] have been widely adopted in the robotics research community. At the core they typically consist of two parts: a way to exchange data between processes (e.g. UDP or TCP), as well as a defined messaging format for encoding and decoding the data. They allow systems to be built with distributed components (e.g. processes) that run on different computers, different operating systems, and different programming languages.
+https://en.wikipedia.org/wiki/Message_passing[Message passing] frameworks such as http://www.ros.org/[Robot Operating System (ROS)] and https://lcm-proj.github.io/[Lightweight Communication and Marshalling (LCM)] have been widely adopted in the robotics research community. At the core they typically consist of two parts: a way to exchange data between processes (e.g. UDP/TCP), as well as a defined binary format for encoding and decoding the messages. They allow systems to be built with distributed components (e.g. processes) that run on different computers, different operating systems, and different programming languages.
 
 The resulting systems are very extensible and provide convenient ways for prototyping. For example, a component communicating with a physical robot can be exchanged with a simulator without affecting the rest of the system. Similarly, a new walking controller could be implemented in MATLAB and communicate with external processes (e.g. robot comms) through the exchange of messages.
 
@@ -58,7 +58,7 @@ In the systems we looked at we found two general approaches to integrate MATLAB 
 
 === Lightweight Communication and Marshalling (LCM)
 
-https://lcm-proj.github.io/tut_matlab.html[LCM] was developed at http://www.mit.edu/[MIT] in 2006 for their entry to DARPA's Urban Challenge. In recent years it has become a popular alternative to ROS-messaging, and it was as far as we know the first message passing framework for robotics that supported MATLAB as a core language.
+https://lcm-proj.github.io/tut_matlab.html[LCM] was developed in 2006 at http://www.mit.edu/[MIT] for their entry to DARPA's Urban Challenge. In recent years it has become a popular alternative to ROS-messaging, and it was as far as we know the first message passing framework for robotics that supported MATLAB as a core language.
 
 The snippet below shows how the MATLAB code for sending a command message could look like. The code creates a struct-like _message_, sets desired values, and publishes it on an appropriate channel.
 
