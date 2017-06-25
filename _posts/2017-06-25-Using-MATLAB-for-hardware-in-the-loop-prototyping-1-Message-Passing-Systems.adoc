@@ -376,8 +376,7 @@ Finally, even though message passing systems are very widespread in the robotics
 
 ++++
 <link rel="stylesheet" href="https://cdn.rawgit.com/ennerf/ennerf.github.io/master/resources/highlight.js/9.9.0/styles/matlab.css">
-<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
 <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/languages/matlab.min.js"></script>
-<script>hljs.initHighlightingOnLoad()</script>-->
-<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/languages/matlab.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
 ++++
