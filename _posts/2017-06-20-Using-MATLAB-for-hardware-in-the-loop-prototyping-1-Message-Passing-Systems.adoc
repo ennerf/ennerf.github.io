@@ -12,17 +12,15 @@
 <script>hljs.initHighlightingOnLoad()</script>
 ++++
 
-MATLAB(C) is a programming language and environment designed for scientific computing. It is one of the best languages for developing robot control algorithms and is extremely widespread in the research community. While it is often thought of as an offline programming language, there are several ways to include hardware in the loop. As part of our own development we surveyed many different projects and compared the approaches they took. This post focuses on bindings for message passing frameworks including LCM, ROS, DDS, and ZeroMQ.
+MATLAB(C) is a programming language and environment designed for scientific computing. It is one of the best languages for developing robot control algorithms and is widely used in the research community. While it is often thought of as an offline programming language, there are several ways to interface with it to control robotic hardware 'in the loop'. As part of our own development we surveyed many different projects that accomplish this by using a message passing system and we compared the approaches they took. This post focuses on bindings for the following message passing frameworks: LCM, ROS, DDS, and ZeroMQ.
 
-The main motivation for prototyping directly on real hardware is to significantly speed-up the development cycle by reducing the time it takes from considering an idea to finding out whether an algorithm can withstand real world physics. A workflow that requires researchers to port prototype code to another language before being able to test on real hardware can lead to multiple weeks or months being lost in chasing down rabbit holes. Additionally, programming in a language like C++ can pose a significant barrier to controls engineers who often do not have a computer science background.
+The main motivation for using MATLAB to prototype directly on real hardware is to dramatically accelerate the development cycle by reducing the time it takes to find out out whether an algorithm can withstand ubiquitous real-world problems like noisy and poorly-calibrated sensors, imperfect actuator controls, and unmodeled robot dynamics. Additionally, a workflow that requires researchers to port prototype code to another language before being able to test on real hardware can often lead to weeks or months being lost in chasing down new technical bugs introduceed by the port. Finally, programming in a language like C++ can pose a significant barrier to controls engineers who often have a strong electo-mechanical background but are not as strong in computer science or software engineering.
 
-We noticed that over the past few years several groups seem to have identified this as a problem and started to develop ways to control hardware directly from MATLAB.
+We have also noticed that over the past few years several other groups in the robotics community also experience these problems and have started to develop ways to control hardware directly from MATLAB.  
 
 == The Need for External Languages
 
-The main limitation when trying to use MATLAB to interface with hardware stems from the fact that its scripting language is fundamentally single threaded. It has been designed to allow non-programmers to do complex math operations without needing to worry about programming concepts like multi-threading or synchronization.
-
-This poses a problem for real-time control of hardware because all communication is forced to happen synchronously in the main thread. For example, if a control loop runs at 100Hz and it takes a message ~8ms for a round-trip, the main thread ends up wasting 80% of the available time budget waiting for a response without doing any actual work.
+The main limitation when trying to use MATLAB to interface with hardware stems from the fact that its scripting language is fundamentally single threaded. It has been designed to allow non-programmers to do complex math operations without needing to worry about programming concepts like multi-threading or synchronization.  However, this poses a problem for real-time control of hardware because all communication is forced to happen synchronously in the main thread. For example, if a control loop runs at 100Hz and it takes a message ~8ms for a round-trip, the main thread ends up wasting 80% of the available time budget waiting for a response without doing any actual work.
 
 A second hurdle is that while MATLAB is very efficient in the execution of math operations, it is not particularly well suited for byte manipulation. This makes it difficult to develop code that can efficiently create and parse binary message formats that the target hardware can understand. Thus, after having the main thread spend its time waiting for and parsing the incoming data, there may not be any time left for performing interesting math operations.
 
@@ -42,11 +40,11 @@ Out of the box MATLAB provides two interfaces to other languages:  https://www.m
 
 https://en.wikipedia.org/wiki/Message_passing[Message passing] frameworks such as http://www.ros.org/[Robot Operating System (ROS)] and https://lcm-proj.github.io/[Lightweight Communication and Marshalling (LCM)] have been widely adopted in the robotics research community. At the core they typically consist of two parts: a way to exchange data between processes (e.g. UDP/TCP), as well as a defined binary format for encoding and decoding the messages. They allow systems to be built with distributed components (e.g. processes) that run on different computers, different operating systems, and different programming languages.
 
-The resulting systems are very extensible and provide convenient ways for prototyping. For example, a component communicating with a physical robot can be exchanged with a simulator without affecting the rest of the system. Similarly, a new walking controller could be implemented in MATLAB and communicate with external processes (e.g. robot comms) through the exchange of messages.
+The resulting systems are very extensible and provide convenient ways for prototyping. For example, a component communicating with a physical robot can be exchanged with a simulator without affecting the rest of the system. Similarly, a new walking controller could be implemented in MATLAB and communicate with external processes (e.g. robot comms) through the exchange of messages.  With ROS and LCM in particular, their flexibility, wide-spread adoption, and support for different languages make them a nice starting point for a MATLAB-hardware interface.
 
 // TODO: Should there be a system diagram and an example video of a snake robot being controlled through LCM?
 
-The flexibility, wide-spread adoption, and support for different languages make them a nice starting point for a MATLAB-hardware interface.
+
 
 //// 
 // deprecated
@@ -377,11 +375,11 @@ Below is a list of APIs to other frameworks that we looked at but could not cove
 
 == Final Notes
 
-Contrary to the situation a few years ago, nowadays there exist interfaces for most of the common message passing frameworks that allow researchers to do at least basic hardware-in-the-loop prototyping directly from MATLAB. If none of the available options work for you and you are planning on developing your own, we recommend the following:
+Contrary to the situation a few years ago, nowadays there exist interfaces for most of the common message passing frameworks that allow researchers to do at least basic hardware-in-the-loop prototyping directly from MATLAB. However, if none of the available options work for you and you are planning on developing your own, we recommend the following:
 
 * If there is no clear pre-existing preference between C++ and Java, we recommend to start with a Java implementation. MEX interfaces require a lot of conversion code that Java interfaces would handle automatically.
-* We would recommend to start with a minimalstic LCM-like implementation and to add complexity when necessary.
-* While interfaces that only expose MATLAB code can provide a better and more consistent user experience (e.g. help documentation), there is a significant cost associated with maintaing all of the involved layers. We would recommend to not create wrappers before the API is stable.
+* We would recommend starting with a minimalstic LCM-like implementation and then add complexity when necessary.
+* While interfaces that only expose MATLAB code can provide a better and more consistent user experience (e.g. help documentation), there is a significant cost associated with maintaing all of the involved layers. We would recommend holding off on creating MATLAB wrappers until the API is relatively stable.
 
 Finally, even though message passing systems are very widespread in the robotics community, they do have drawbacks and are not appropriate for every application. Future posts in this series will focus on some of the alternatives.
 
