@@ -3,7 +3,7 @@
 :hp-tags: MATLAB, ROS, LCM, DDS, ZeroMQ, MEX, Java
 :imagesdir: ../images
 //:imagesdir: https://github.com/ennerf/ennerf.github.io/raw/master/images/
-:source-highlighter: none
+:source-highlighter: highlight
 
 MATLAB(C) is a programming language and environment designed for scientific computing. It is one of the best languages for developing robot control algorithms and is widely used in the research community. While it is often thought of as an offline programming language, there are several ways to interface with it to control robotic hardware 'in the loop'. As part of our own development we surveyed a number of different projects that accomplish this by using a https://en.wikipedia.org/wiki/Message_passing[message passing] system and we compared the approaches they took. This post focuses on bindings for the following message passing frameworks: LCM, ROS, DDS, and ZeroMQ.
 
