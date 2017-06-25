@@ -5,13 +5,6 @@
 //:imagesdir: https://github.com/ennerf/ennerf.github.io/raw/master/images/
 :source-highlighter: none
 
-++++
-<link rel="stylesheet" href="https://cdn.rawgit.com/ennerf/ennerf.github.io/master/resources/highlight.js/9.9.0/styles/matlab.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
-<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/languages/matlab.min.js"></script>
-<script>hljs.initHighlightingOnLoad()</script>
-++++
-
 MATLAB(C) is a programming language and environment designed for scientific computing. It is one of the best languages for developing robot control algorithms and is widely used in the research community. While it is often thought of as an offline programming language, there are several ways to interface with it to control robotic hardware 'in the loop'. As part of our own development we surveyed a number of different projects that accomplish this by using a https://en.wikipedia.org/wiki/Message_passing[message passing] system and we compared the approaches they took. This post focuses on bindings for the following message passing frameworks: LCM, ROS, DDS, and ZeroMQ.
 
 The main motivation for using MATLAB to prototype directly on real hardware is to dramatically accelerate the development cycle by reducing the time it takes to find out out whether an algorithm can withstand ubiquitous real-world problems like noisy and poorly-calibrated sensors, imperfect actuator controls, and unmodeled robot dynamics. Additionally, a workflow that requires researchers to port prototype code to another language before being able to test on real hardware can often lead to weeks or months being lost in chasing down new technical bugs introduceed by the port. Finally, programming in a language like C++ can pose a significant barrier to controls engineers who often have a strong electro-mechanical background but are not as strong in computer science or software engineering.
@@ -43,8 +36,6 @@ https://en.wikipedia.org/wiki/Message_passing[Message passing] frameworks such a
 The resulting systems are very extensible and provide convenient ways for prototyping. For example, a component communicating with a physical robot can be exchanged with a simulator without affecting the rest of the system. Similarly, a new walking controller could be implemented in MATLAB and communicate with external processes (e.g. robot comms) through the exchange of messages.  With ROS and LCM in particular, their flexibility, wide-spread adoption, and support for different languages make them a nice starting point for a MATLAB-hardware interface.
 
 // TODO: Should there be a system diagram and an example video of a snake robot being controlled through LCM?
-
-
 
 //// 
 // deprecated
@@ -383,3 +374,9 @@ Contrary to the situation a few years ago, nowadays there exist interfaces for m
 
 Finally, even though message passing systems are very widespread in the robotics community, they do have drawbacks and are not appropriate for every application. Future posts in this series will focus on some of the alternatives.
 
+++++
+<link rel="stylesheet" href="https://cdn.rawgit.com/ennerf/ennerf.github.io/master/resources/highlight.js/9.9.0/styles/matlab.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/languages/matlab.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+++++
