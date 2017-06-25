@@ -12,7 +12,7 @@
 <script>hljs.initHighlightingOnLoad()</script>
 ++++
 
-MATLAB(C) is a programming language and environment designed for scientific computing. It is one of the best languages for developing robot control algorithms and is widely used in the research community. While it is often thought of as an offline programming language, there are several ways to interface with it to control robotic hardware 'in the loop'. As part of our own development we surveyed many different projects that accomplish this by using a message passing system and we compared the approaches they took. This post focuses on bindings for the following message passing frameworks: LCM, ROS, DDS, and ZeroMQ.
+MATLAB(C) is a programming language and environment designed for scientific computing. It is one of the best languages for developing robot control algorithms and is widely used in the research community. While it is often thought of as an offline programming language, there are several ways to interface with it to control robotic hardware 'in the loop'. As part of our own development we surveyed a number of different projects that accomplish this by using a https://en.wikipedia.org/wiki/Message_passing[message passing] system and we compared the approaches they took. This post focuses on bindings for the following message passing frameworks: LCM, ROS, DDS, and ZeroMQ.
 
 The main motivation for using MATLAB to prototype directly on real hardware is to dramatically accelerate the development cycle by reducing the time it takes to find out out whether an algorithm can withstand ubiquitous real-world problems like noisy and poorly-calibrated sensors, imperfect actuator controls, and unmodeled robot dynamics. Additionally, a workflow that requires researchers to port prototype code to another language before being able to test on real hardware can often lead to weeks or months being lost in chasing down new technical bugs introduceed by the port. Finally, programming in a language like C++ can pose a significant barrier to controls engineers who often have a strong electo-mechanical background but are not as strong in computer science or software engineering.
 
@@ -28,7 +28,7 @@ A second hurdle is that while MATLAB is very efficient in the execution of math 
 .Communications overhead in the main MATLAB thread
 image::matlab/comms-single-threaded.png[link="{imagesdir}/matlab/comms-single-threaded.png", width="100%"]
 
-Pure MATLAB implementations can work for simple applications, such as interfacing with an Arduino to gather temperature data or blink an LED, but it is not feasible control complex robotic systems (e.g. a humanoid) at high rates (e.g. 100Hz-1KHz). Fortunately, MATLAB does have the ability to interface with other programming languages that allow users to create background threads that can offload the communications aspect from the main thread.
+Pure MATLAB implementations can work for simple applications, such as https://www.mathworks.com/hardware-support/arduino-matlab.html[ interfacing with an Arduino] to gather temperature data or blink an LED, but it is not feasible control complex robotic systems (e.g. a humanoid) at high rates (e.g. 100Hz-1KHz). Fortunately, MATLAB does have the ability to interface with other programming languages that allow users to create background threads that can offload the communications aspect from the main thread.
 
 [.text-center]
 .Communications overhead offloaded to other threads
