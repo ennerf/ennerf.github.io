@@ -14,7 +14,7 @@
 
 MATLAB(C) is a programming language and environment designed for scientific computing. It is one of the best languages for developing robot control algorithms and is widely used in the research community. While it is often thought of as an offline programming language, there are several ways to interface with it to control robotic hardware 'in the loop'. As part of our own development we surveyed a number of different projects that accomplish this by using a https://en.wikipedia.org/wiki/Message_passing[message passing] system and we compared the approaches they took. This post focuses on bindings for the following message passing frameworks: LCM, ROS, DDS, and ZeroMQ.
 
-The main motivation for using MATLAB to prototype directly on real hardware is to dramatically accelerate the development cycle by reducing the time it takes to find out out whether an algorithm can withstand ubiquitous real-world problems like noisy and poorly-calibrated sensors, imperfect actuator controls, and unmodeled robot dynamics. Additionally, a workflow that requires researchers to port prototype code to another language before being able to test on real hardware can often lead to weeks or months being lost in chasing down new technical bugs introduceed by the port. Finally, programming in a language like C++ can pose a significant barrier to controls engineers who often have a strong electo-mechanical background but are not as strong in computer science or software engineering.
+The main motivation for using MATLAB to prototype directly on real hardware is to dramatically accelerate the development cycle by reducing the time it takes to find out out whether an algorithm can withstand ubiquitous real-world problems like noisy and poorly-calibrated sensors, imperfect actuator controls, and unmodeled robot dynamics. Additionally, a workflow that requires researchers to port prototype code to another language before being able to test on real hardware can often lead to weeks or months being lost in chasing down new technical bugs introduceed by the port. Finally, programming in a language like C++ can pose a significant barrier to controls engineers who often have a strong electro-mechanical background but are not as strong in computer science or software engineering.
 
 We have also noticed that over the past few years several other groups in the robotics community also experience these problems and have started to develop ways to control hardware directly from MATLAB.  
 
@@ -28,7 +28,7 @@ A second hurdle is that while MATLAB is very efficient in the execution of math 
 .Communications overhead in the main MATLAB thread
 image::matlab/comms-single-threaded.png[link="{imagesdir}/matlab/comms-single-threaded.png", width="100%"]
 
-Pure MATLAB implementations can work for simple applications, such as https://www.mathworks.com/hardware-support/arduino-matlab.html[ interfacing with an Arduino] to gather temperature data or blink an LED, but it is not feasible control complex robotic systems (e.g. a humanoid) at high rates (e.g. 100Hz-1KHz). Fortunately, MATLAB does have the ability to interface with other programming languages that allow users to create background threads that can offload the communications aspect from the main thread.
+Pure MATLAB implementations can work for simple applications, such as interfacing with an Arduino to gather temperature data or blink an LED, but it is not feasible to control complex robotic systems (e.g. a humanoid) at high rates (e.g. 100Hz-1KHz). Fortunately, MATLAB does have the ability to interface with other programming languages that allow users to create background threads that can offload the communications aspect from the main thread.
 
 [.text-center]
 .Communications overhead offloaded to other threads
@@ -80,9 +80,9 @@ lc.publish('COMMAND_CHANNEL', cmd);
 
 Interestingly, the backing implementation of these bindings was done in pure Java and did not contain any actual MATLAB code. The exposed interface consisted of two Java classes as well as auto-generated message types.
 
-* The https://github.com/lcm-proj/lcm/blob/master/lcm-java/lcm/lcm/LCM.java[LCM] class provided a way to publish messages and subscribe to channels
-* The generated Java messages handled the binary encoding and exposed fields that MATLAB can access
-* The https://github.com/lcm-proj/lcm/blob/master/lcm-java/lcm/lcm/MessageAggregator.java[MessageAggregator] class provided a way to receive messages on a background thread and queue them for MATLAB.
+* The https://github.com/lcm-proj/lcm/blob/master/lcm-java/lcm/lcm/LCM.java[LCM] class provides a way to publish messages and subscribe to channels
+* The generated Java messages handle the binary encoding and exposed fields that MATLAB can access
+* The https://github.com/lcm-proj/lcm/blob/master/lcm-java/lcm/lcm/MessageAggregator.java[MessageAggregator] class provides a way to receive messages on a background thread and queue them for MATLAB.
 
 Thus, even though the snippet looks similar to MATLAB code, all variables are actually Java objects. For example, the struct-like _command_ type is a Java object that exposes public fields as shown in the snippet below. Users can access them the same way as fields of a standard MATLAB struct (or class properties) resulting in nice syntax. The types are automatically converted according to the https://mathworks.com/help/matlab/matlab_external/passing-data-to-java-methods.html[type mapping].
 
@@ -179,11 +179,11 @@ public class MessageAggregator implements LCMSubscriber {
 
 Note that the _getNextMessage_ method requires a timeout argument. In general it is important for blocking Java methods to have a timeout in order to prevent the main thread from getting stuck permanently. Being in a Java call prohibits users from aborting the execution (ctrl-c), so timeouts should be reasonably short, i.e., in the low seconds. Otherwise this could cause the UI to become unresponsive and users may be forced to close MATLAB without being able to save their workspace. Passing in a timeout of zero serves as a non-blocking interface that immediately returns empty if no messages are available. This is often useful for working with multiple aggregators or for integrating asynchronous messages with unknown timing, such as user input.
 
-Overall, we thought that this was a well thought out API and a great example for a minimum viable interface that works well in practice. By receiving messages on a background thread and by moving the encoding and decoding steps to the Java language, the main thread was able to spend most of its time on actually working with the data. Its minimalistic implementation is comparatively simple and we would recommend it as a starting point for developing similar interfaces.
+Overall, we thought that this was a well thought out API and a great example for a minimum viable interface that works well in practice. By receiving messages on a background thread and by moving the encoding and decoding steps to the Java language, the main thread is able to spend most of its time on actually working with the data. Its minimalistic implementation is comparatively simple and we would recommend it as a starting point for developing similar interfaces.
 
 Some minor points for improvement that we found were:
 
-* The decoding step _fbk = types.feedback(msg.data)_ forced two unnecessary translations due to _msg.data_ being a _byte[]_, which automatically gets converted to and from _int8_. This could result in a noticeable performance hit when receiving larger messages (e.g. images) and could be avoided by adding an overload that accepts a non-primitive type that does not get translated, e.g., _fbk = types.feedback(msg)_.
+* The decoding step _fbk = types.feedback(msg.data)_ forces two unnecessary translations due to _msg.data_ being a _byte[]_, which automatically gets converted to and from _int8_. This could result in a noticeable performance hit when receiving larger messages (e.g. images) and could be avoided by adding an overload that accepts a non-primitive type that does not get translated, e.g., _fbk = types.feedback(msg)_.
 * The Java classes did not implement https://mathworks.com/help/matlab/matlab_external/save-and-load-java-objects-to-mat-files.html[Serializable], which could become bothersome when trying to save the workspace. 
 * We would prefer to select the decoding type during the subscription step, e.g., _lc.subscribe('FEEDBACK_CHANNEL', aggregator, 'types.feedback')_, rather than requiring users to instantiate the type manually. This would clean up the parsing code a bit and allow for a less confusing error message if types are missing.
 
@@ -264,7 +264,7 @@ classdef WrappedMessage
 end
 ----
 
-Due to the implementation being closed-source, we were only able to look at the public toolbox files as well as the compiled Java bytecode. As far as we could tell they built a small Java library that wrapped RosJava functionality in order to provide an interface that was easier to call from MATLAB. Most of the actual logic seemed to be implemented in MATLAB code, but we also found several calls to various Java libraries for problems that would have been difficult to implement in pure MATLAB, e.g., listing networking interfaces or doing in-memory decompression of images.
+Due to the implementation being closed-source, we were only able to look at the public toolbox files as well as the compiled Java bytecode. As far as we could tell they built a small Java library that wrapped RosJava functionality in order to provide an interface that is easier to call from MATLAB. Most of the actual logic seemed to be implemented in MATLAB code, but we also found several calls to various Java libraries for problems that would have been difficult to implement in pure MATLAB, e.g., listing networking interfaces or doing in-memory decompression of images.
 
 Overall, we found that the ROS support toolbox looked very nice and was a great example of how seamless external languages could be integrated with MATLAB. We also really liked that they offered a way to load log files (rosbags).
 
