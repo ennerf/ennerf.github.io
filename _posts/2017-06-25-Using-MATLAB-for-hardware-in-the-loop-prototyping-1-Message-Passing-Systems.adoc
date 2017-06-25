@@ -376,7 +376,8 @@ Finally, even though message passing systems are very widespread in the robotics
 
 ++++
 <link rel="stylesheet" href="https://cdn.rawgit.com/ennerf/ennerf.github.io/master/resources/highlight.js/9.9.0/styles/matlab.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
-<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/languages/matlab.min.js"></script>
-<script type="text/javascript">hljs.initHighlightingOnLoad()</script>
+<!-- TODO: figure out how to keep Hubpress from adding the default code highlighter to make this work -->
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>-->
+<!--<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/languages/matlab.min.js"></script>-->
+<!--<script type="text/javascript">hljs.initHighlightingOnLoad()</script>-->
 ++++
