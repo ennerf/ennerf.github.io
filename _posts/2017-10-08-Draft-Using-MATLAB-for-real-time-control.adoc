@@ -1,0 +1,62 @@
+= Draft - Using MATLAB for real time control
+:published_at: 2017-10-08
+:hp-tags: MATLAB, Java
+:imagesdir: ../images
+//:imagesdir: https://github.com/ennerf/ennerf.github.io/raw/master/images/
+:source-highlighter: none
+
+++++
+<link rel="stylesheet" href="https://cdn.rawgit.com/ennerf/ennerf.github.io/master/resources/highlight.js/9.9.0/styles/matlab.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/languages/matlab.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+++++
+
+IROS 2017: Saying we built IGOR II in 2 weeks and it runs entirely from MATLAB sounds like snake oil salesman. Thus, post detailing how it's possible.
+
+== Typical System
+
+* Message passing
+* multiple processes for various stuff (trajectories / robot comms / kinematics / IK / Jacobians / etc.)
+* MATLAB hooked in via message passing
+
+=== Issues
+
+* Slow to develop
+* Significant cognitive overhead
+* Hard to follow exact control flow
+* Hard to make sure timings are correct
+* Most CPU is used for messaging, not doing actual work
+
+== Rethinking the system
+
+* The main arguments for distributed pub-sub systems are component reuse and the ability to use different languages.
+** What if we don't care about that? Most of our demos shouldn't take longer than 2 weeks, and then get thrown out.
+** If we care only about speed of development, what can we gain by doing everything in a single process?
+
+== Communications
+
+* MATLAB->Java can already send messages - why not move entire robot comms into a background thread?
+
+== Logging
+
+* Drawbacks using MATLAB's built-in logging capabilities. Either continuous expansion, or fixed number of entries. Overhead in main thread
+* Solve using background thread. Go into details on async logging & conversion
+
+== Math Libraries
+
+* Most core functionality is essentially free when implemented in Java. Can run in same thread without any issue.
+** FK 6 dof arm in 680ns. Numerical Jacobian in 5us. Calling a single Java function w/ return arguments 10 us.
+* Java is completely sufficient.
+
+== Putting it all together
+
+* Igor II in 2 weeks
+* Wheeled cart in 6 minutes
+* Possible to combine multiple instances
+
+
+
+
+
+
