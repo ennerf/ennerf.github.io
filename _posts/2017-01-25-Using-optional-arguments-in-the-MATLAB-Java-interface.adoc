@@ -49,6 +49,7 @@ At the end of the day, none of these options are particularly satisfying. It'd b
 
 [source,matlab]
 ----
+% various ways to call plot
 plot(x,y);
 plot(x,y,'--rs');
 plot(x,y,'--rs', ...
@@ -65,7 +66,7 @@ The problem stated earlier could be solved in the same way, e.g.,
 % common use case
 sendMessage(cmd);
 
-% expert use case
+% advanced use case
 sendMessage(cmd, 'led', led, 'gains', gains);
 ----
 
@@ -81,7 +82,7 @@ The simplest way to do parse arguments would be to use MATLAB's built-in https:/
 * *Optional* arguments are expected after all required arguments are satisfied. An optional argument is set if its validator returns true. If the validator returns false, the parser will try the validator of the next optional argument.
 * *Parameters* are parsed last and consist of a string-key and a single corresponding value argument. They can be set in any order.
 
-Creating a parser looks as shown in the code below.
+Creating an inputparser looks as shown in the code below.
 
 [source,matlab]
 ----
@@ -91,24 +92,25 @@ defaultUnits = 'inches';
 defaultShape = 'rectangle';
 expectedShapes = {'square','rectangle','parallelogram'};
 
-% parse inputs
+% add possible arguments
 p = inputParser;
 p.addRequired('width',@isnumeric);
 p.addOptional('height',defaultHeight,@isnumeric);
 p.addParameter('units',defaultUnits);
 p.addParameter('shape',defaultShape, @(x) any(validatestring(x,expectedShapes)));
 
+% parse user input
 p.parse(varargin{:});
 a = p.Results.width .* p.Results.height;
 ----
 
-Once the argument is parsed, the result can be forwarded to an internal method that is implemented with fixed arguments.
+Once the arguments are parsed, the result can be forwarded to an internal method that is implemented with fixed arguments.
 
 [source,matlab]
 ----
 function [out] = myMethod(this, varargin)
-    % parse user inputs
-    p = inputParser;
+    % parse user input
+    p = createInputParser();
     p.parse(varargin{:});
     
     % call backing implementation
@@ -125,9 +127,9 @@ Overall this worked well for some cases, but we quickly ran into some limitation
 * Error messages become less useful for cases with non-trivial validation
 * There are methods with >20 parameters, at which point this approach becomes unmaintainable and actually degrades performance.
 
-Thus, we ended up implementing our own input parser equivalent entirely behind the language barrier.
-
 == Custom InputParser
+
+Instead of doing the parsing on the MATLAB side of the API, we decided to implement equivalent parsing functionality that lives entirely behind the Java barrier. 
 
 === varargin
 
