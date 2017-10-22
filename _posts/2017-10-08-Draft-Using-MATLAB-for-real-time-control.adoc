@@ -5,6 +5,36 @@
 //:imagesdir: https://github.com/ennerf/ennerf.github.io/raw/master/images/
 :source-highlighter: none
 
+////
+What do we want to tell?
+(?) Distributed systems have quite a bit of overhead and complexity. Performance wise they often matter less than expected. There is more overhead in sharing the work than in doing the work. Lots of stuff is sequential in nature anyways.
+(*) Distributed systems work well for long running projects that have a variety of people working on it in potentially different languages. It's also nice for simulation.
+(*) Distributed systems get in the way if it's a single person hacking on a new problem. Libraries are much faster to develop with.
+(*) MATLAB is fast enough. Common calls can be packaged into super-fast Java libraries.
+(*) All of the comms and calculations etc. can be done within the MATLAB process.
+(*) Logging is important. MATLAB plotting is great for debugging.
+(*) Dynamic languages like MATLAB or Python are better for hacking things together
+(*) C++ is not a prerequisite for good performance. The language choice doesn't matter as much as people think it does.
+(*) Modular systems require a fundamentally different approach to System development.
+(*) Two weeks development means 4 days programming and assembling the robot, and the rest of the time tuning gains to make it stable.
+(*) Having reliable hardware that allows working without simulation helps.
+
+
+Possible Storylines:
+(*) How we built a complex robot (Igor) in 2 weeks: Don't bash distributed systems, focus on figuring out low level primitives (forward, left, right, etc.) as quickly as possible so it can be integrated with targets etc. later.
+-- Should discuss hardware/simulation etc. as well?
+-- How do math libraries like FK/Trajectories fit in?
+(*) Last post discussed distributed systems. What are the alternatives?
+-- Should probably include a list of other projects
+(*) Saying we built this robot in 2 weeks and it's entirely controlled by a single MATLAB instance sounds like snake-oil salesmanship. Below is the background story.
+-- 
+(*) The internal structure of the HEBI MATLAB API. Software for rapid prototyping.
+
+
+
+////
+
+
 ++++
 <link rel="stylesheet" href="https://cdn.rawgit.com/ennerf/ennerf.github.io/master/resources/highlight.js/9.9.0/styles/matlab.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
@@ -14,19 +44,43 @@
 
 IROS 2017: Saying we built IGOR II in 2 weeks and it runs entirely from MATLAB sounds like snake oil salesman. Thus, post detailing how it's possible.
 
-== Typical System
+== Common System Architecture
+
+As we've discussed in a previous blog post, a very common way to speed up the research process is to integrate MATLAB with a robot system using one of the various off the shelf message passing frameworks.
+
+When we used to work on snake robots, the software we used looked a follows. Judging by our experience this design is relatively typical for research systems.
 
 * Message passing
 * multiple processes for various stuff (trajectories / robot comms / kinematics / IK / Jacobians / etc.)
 * MATLAB hooked in via message passing
 
+First, let's discuss some of the benefits and reasons why we chose this structure:
+
+* We were able to switch between a simulator and a real robot without changing code
+* The core processes were shared with a user interface that was used during deployments, so they were very reliable and stable
+* Users could prototype in whichever language they preferred
+* Users only needed to run the particular parts of the system that they required
+* Every part of the system could be exchange with a prototyping node
+* Logging was done by a separate node that logged all messages
+* In theory, research code can be ported back pretty easily
+
+Overall, the distributed structure turned out to be extremely flexible and the software is actually still working after 8 years.
+
+However, all this comes at a price. Below are a few of the things we ran into over the years.
+
 === Issues
 
 * Slow to develop
-* Significant cognitive overhead
+* Significant cognitive overhead - it takes a while for people to get familiar with the system
 * Hard to follow exact control flow
 * Hard to make sure timings are correct
 * Most CPU is used for messaging, not doing actual work
+* Requires some amount of networking knowledge
+** Why do things stop working when I connect to wireless?
+** Why are my commands going to multiple robots in the room and causing spasms?
+** It was often easier to use messaging to talk to the robot, but maintain a secondary implementation of e.g. kinematics in MATLAB
+* Much of the research code wasn't applicable to the field software and never got ported
+* If we change the configuration of a snake robot to e.g. a hexapod, all assumptions are thrown out of the window and we need to develop an entirely new set of software
 
 == Rethinking the system
 
@@ -46,7 +100,7 @@ IROS 2017: Saying we built IGOR II in 2 weeks and it runs entirely from MATLAB s
 == Math Libraries
 
 * Most core functionality is essentially free when implemented in Java. Can run in same thread without any issue.
-** FK 6 dof arm in 680ns. Numerical Jacobian in 5us. Calling a single Java function w/ return arguments 10 us.
+** FK 6 dof arm in 240ns. Numerical Jacobian in 4us. Calling a single Java function w/ return arguments 10-20 us.
 * Java is completely sufficient.
 
 == Putting it all together
