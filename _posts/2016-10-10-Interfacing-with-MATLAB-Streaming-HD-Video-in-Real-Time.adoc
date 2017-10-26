@@ -3,9 +3,11 @@
 //:hp-tags: 
 :imagesdir: ../images
 
-Video acquisition is computationally intensive enough that is has to be done on a background thread. In MATLAB we can easily do this by using interfaces to other languages. However, once the data becomes significantly large, translating the acquired data back into a MATLAB format can quickly become a bottleneck. Below we show a generally applicable approach that we developed for getting 1080p h264 streaming video into MATLAB with very low overhead.
+The acquisition and decoding of a video stream can be very computationally expensive. Typical image processing applications thus split the work across multiple threads, one acquiring the images, and another one running the actual algorithms. In MATLAB we can get multi-threading by interfacing with other languages, but there is a significant cost associated to exchanging data across the resulting language barrier. For large images the standard ways for converting data can be prohibitively expensive. Below we show a generally applicable workaround that enables streaming 1080p h264 video into MATLAB in real-time and with very low overhead. 
 
-To work around limitations due to MATLAB's single threaded nature, we often have to resort to use interfaces to other languages, such as MEX or the Java interface, in order to do data acquisition on a background thread. However, in some cases, such as when trying to stream 1080p h264 video, there is so much data that the translation layer to other languages becomes a bottleneck. Below we show how techniques originally developed for inter-process communication can be used to get large amounts of data into MATLAB with very low overhead.
+//Video acquisition is computationally intensive enough that is has to be done on a background thread. In MATLAB we can easily do this by using interfaces to other languages. However, once the data becomes significantly large, translating the acquired data back into a MATLAB format can quickly become a bottleneck. Below we show a generally applicable approach that we developed for getting 1080p h264 streaming video into MATLAB with very low overhead.
+
+//To work around limitations due to MATLAB's single threaded nature, we often have to resort to use interfaces to other languages, such as MEX or the Java interface, in order to do data acquisition on a background thread. However, in some cases, such as when trying to stream 1080p h264 video, there is so much data that the translation layer to other languages becomes a bottleneck. Below we show how techniques originally developed for inter-process communication can be used to get large amounts of data into MATLAB with very low overhead.
 
 == The Need / Problem statement
 
@@ -30,6 +32,9 @@ Several problems, e.g.,
 * User can ctrl+c at any time. There is no guarantee to always call unlock.
 ** User needs to be able to lock multiple times
 ** Background thread needs to have a timeout to not break acquisition, e.g., min 1 frame per 5 sec
+
+* try onCleanup(@()f): https://se.mathworks.com/help/matlab/ref/oncleanup.html
+** could call unlock() that has bool to know whether it's locked.
 
 == ------ DEPRECATED ------
 
