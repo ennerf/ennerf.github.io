@@ -6,6 +6,7 @@
 :source-highlighter: none
 
 ////
+
 What do we want to tell?
 (?) Distributed systems have quite a bit of overhead and complexity. Performance wise they often matter less than expected. There is more overhead in sharing the work than in doing the work. Lots of stuff is sequential in nature anyways.
 (*) Distributed systems work well for long running projects that have a variety of people working on it in potentially different languages. It's also nice for simulation.
@@ -18,7 +19,8 @@ What do we want to tell?
 (*) Modular systems require a fundamentally different approach to System development.
 (*) Two weeks development means 4 days programming and assembling the robot, and the rest of the time tuning gains to make it stable.
 (*) Having reliable hardware that allows working without simulation helps.
-
+(*) A lot of the work we (and many of our customers) focus on is related to figuring out basic behaviors (e.g. left, right, forward, down, etc.), which is a prerequisite for any higher-level autonomy. Distributed systems are tough because systems can be so different (show pictures of robots with different limbs and totally different configurations) and e.g. kinematics messages differ wildly. Maybe decouple "forward" from e.g. "SLAM"? (Opening the loop!?)
+(*) 
 
 Possible Storylines:
 (*) How we built a complex robot (Igor) in 2 weeks: Don't bash distributed systems, focus on figuring out low level primitives (forward, left, right, etc.) as quickly as possible so it can be integrated with targets etc. later.
@@ -29,7 +31,19 @@ Possible Storylines:
 (*) Saying we built this robot in 2 weeks and it's entirely controlled by a single MATLAB instance sounds like snake-oil salesmanship. Below is the background story.
 -- 
 (*) The internal structure of the HEBI MATLAB API. Software for rapid prototyping.
+(*) Real-time control from MATLAB #2: The HEBI Robotics MATLAB API || Using MATLAB for hardware-in-the-loop prototyping #2: Full Integration
+-- Discuss about the individual parts of the API and design decisions. Performance? What does this enable? High-level overview -> details come in the next post. (pictures of completely different robots that don't use same messages)
+e MATLAB instance sounds like snake-oil salesmanship. Below is the background story.
+-- 
+(*) The internal structure of the HEBI MATLAB API. Software for rapid prototyping.
+-- High-level API overview. High-level concept. Separate post will go into details like method calls and args parsing.
+(*) 
 
+Main Storylines:
+(*) The making of Igor: From Igor I to II and how the SW & HW works. Maybe combine with video.
+(*) Real-time control from MATLAB #2: Fully Integrated: What's possible in a single process? What should be in a background thread and what shouldn't be?
+-- Write a separate post on Igor II with how it works and what the individual components are. Go through script.
+(*) Software for Rapid Development: Why did we use MATLAB and why did we go through so much trouble? Why do typical systems not make sense for modular robots (dev < 2 weeks)?
 
 
 ////
