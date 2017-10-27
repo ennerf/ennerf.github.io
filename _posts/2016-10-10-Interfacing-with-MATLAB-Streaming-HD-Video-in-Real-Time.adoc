@@ -15,16 +15,47 @@ Why didn't built-in solutions work?
 
 Getting images in has to happen within max a few ms, otherwise it's impossible to do any actual work on the images. Since decoding can take an entire thread by itself, background threading is required. However, there is too much data to transfer through the standard language barriers.
 
-== Common approaches / Failures / What didn't work
+== Copy Approaches & Benchmarks
 
-byte[][][] is a non-starter. Doing standard workarounds like 1D arrays with reshaping works better, but moves too much data processing into the MATLAB thread. Compression doesnt work.
+We care mostly about reducing the translation part that has to happen on the main MATLAB thread, so in general it is better to do as much of the work before crossing the barrier.
 
-== The Solution
+* Default conversion (byte[][][]) allocates a 3 element byte array for every pixel. RGB conversion is a non starter. Greyscale translates to byte[][], which works somewhat better.
 
-Shared Memory w/ pre-layed out data that can be memcpy'd.
+* Message passing systems (e.g. ROS) often compress images as e.g. Jpeg before sending it to other nodes. We could do something similar here, but MATLAB doesn't have methods for decompressing memory. Going through a file is pretty expensive. Cheaper for RGB, but more expensive for grayscale.
 
-== Solving the synchronization issue
+* Accessing the backing byte[] array of a BufferedImage and then reshaping works better, but needs quite a bit of memory shuffling.
 
+* Matching the memory layout before transporting as a byte[] array is significantly better.
+
+* Using the same data, but transporting via shared memory is even better. There is some minor overhead for locking as well as a single memcopy in MATLAB.
+
+Create table with benchmark data. Highlight colors depending on ratio of max processing time (i.e. 30 FPS -> 33.3ms processing budget). 
+
+* below 10% (3.3ms)
+* below 50% (16.5ms)
+* below 100% (33.3ms)
+* above 100%
+
+== Reshaping memory layout
+
+Transposed column Major, i.e., [R R R R ...] [G G G G ...] etc. instead of [RGB][RGB][RGB], and height x width instead of width x height.
+
+* Inside MATLAB using reshape
+* Using Java loop
+* Using OpenCV calls
+
+== Synchronizing shared memory
+
+* Synchronize using Java locks
+** MATLAB doesn't provide locking mechanisms
+** Difficult to lock raw memory anyways
+
+* Unlock must be called. no try{}finally{} in MATLAB, but ctrl-c shouldn't end up in bad states
+** Work around the issue with extra logic
+** use onCleanup()
+** use custom handle class with destructor
+
+////
 Several problems, e.g.,
 
 * Data needs to be locked properly
@@ -35,6 +66,11 @@ Several problems, e.g.,
 
 * try onCleanup(@()f): https://se.mathworks.com/help/matlab/ref/oncleanup.html
 ** could call unlock() that has bool to know whether it's locked.
+////
+
+== Final Notes
+
+It's definitely possible to transfer large amounts of data across the Java barrier. Shared memory works quite well.
 
 == ------ DEPRECATED ------
 
