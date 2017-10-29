@@ -169,23 +169,20 @@ However, even if the `unlock` call is in a destructor that is guaranteed to run 
 
 All benchmarks were run in MATLAB 2017b on an link:https://www.intel.com/content/www/us/en/products/boards-kits/nuc/kits/nuc6i7kyk.html[Intel NUC6I7KYK]. The performance was measured using MATLAB's link:https://mathworks.com/help/matlab/ref/timeit.html[timeit] function. The full benchmark code is available link:https://github.com/HebiRobotics/HebiCam/tree/benchmark[here]. All measurements are in units of milliseconds.
 
-The colors represent the overhead on the main MATLAB thread as a ratio of the total available processing budget for a frame rate of 30 fps, i.e., 33.3 ms.
+The two tables below show the results for converting color (RGB) images as well as grayscale images. The background color represents the rough overhead on the main MATLAB thread as a ratio of the total available processing budget for a frame rate of 30 fps, i.e., 33.3 ms.
 
 * Green: below 10% or 3.3ms
 * Yellow: below 50% or 16.5ms
 * Orange: below 100% or 33.3ms
 * Red: above 100%
 
-*RGB Images*
+image:{imagesdir}/streaming/table_performance.svg[]
 
-image:{imagesdir}/streaming/table_rgb.svg[]
+We can see that the default translation from a 3D array is completely inadequate, even for very low resolution images. Even the wasteful option of compressing the data is orders of magnitude better, although it is still far from being useful. Copying the pixel data from a Java image is significantly faster, but there is still a significant cost associated to converting the memory layout. We can also see that the conversions are significantly faster for grayscale images. This is due to the fact that the layout conversion becomes a single transpose operation.
 
-*Grayscale Images*
-
-image:{imagesdir}/streaming/table_gray.svg[]
+However, the by far best option is to convert the layout outside of MATLAB and if possible move the data via shared memory. This approach scales very well and can even transfer 4K images in real-time.
 
 == Final Notes
-
 
 
 ////
