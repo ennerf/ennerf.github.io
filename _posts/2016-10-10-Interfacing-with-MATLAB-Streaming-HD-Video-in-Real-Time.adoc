@@ -9,7 +9,9 @@ The acquisition and decoding of a video stream can be very computationally expen
 
 //To work around limitations due to MATLAB's single threaded nature, we often have to resort to use interfaces to other languages, such as MEX or the Java interface, in order to do data acquisition on a background thread. However, in some cases, such as when trying to stream 1080p h264 video, there is so much data that the translation layer to other languages becomes a bottleneck. Below we show how techniques originally developed for inter-process communication can be used to get large amounts of data into MATLAB with very low overhead.
 
-== Motivation
+== Background
+
+In 2013 we wanted to put together a demo system using MATLAB that used stereo vision with two IP cameras (h264 over RTSP) for tracking bean bags. While the tracking and robot control were comparatively simple, it proved to be a challenge to get streaming video data from both cameras into MATLAB fast enough to be useful. Since we didn't want to port the code to another language, we instead wrote a small library that enabled us to acquire video data in an efficient manner. The project was later open sourced as link:http://www.github.com/HebiRobotics/HebiCam[HebiCam].
 
 We typically create new robot systems or demo applications for every ICRA or IROS conference we go to. For our ICRA 2014 demo we had two IP cameras in the office and decided to do a demo based on stereo vision, i.e., a robot arm that can pick bean bags. While the robot control and the stereo vision part were fairly simple to do in MATLAB, it proved to be more difficult than we anticipated to get streaming h264 video from two cameras in real time.
 
