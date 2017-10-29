@@ -3,13 +3,42 @@
 //:hp-tags: 
 :imagesdir: ../images
 
-The acquisition and decoding of a video stream can be very computationally expensive. Typical image processing applications thus split the work across multiple threads, one acquiring the images, and another one running the actual algorithms. In MATLAB we can get multi-threading by interfacing with other languages, but there is a significant cost associated to exchanging data across the resulting language barrier. For large images the standard ways for converting data can be prohibitively expensive. Below we show a generally applicable workaround that enables streaming 1080p h264 video into MATLAB in real-time and with very low overhead. 
+The acquisition and decoding of a video stream can be very computationally expensive. Typical image processing applications split the work across multiple threads, one acquiring the images, and another one running the actual algorithms. In MATLAB we can get multi-threading by interfacing with other languages, but there is a significant cost associated to exchanging data across the resulting language barrier. The default ways for data conversion can quickly become prohibitively expensive. In this blog post we compare different approaches for getting data from MATLAB's Java interface, and we show how to stream 1080p h264 video into MATLAB in real-time and with very low overhead.
 
 //Video acquisition is computationally intensive enough that is has to be done on a background thread. In MATLAB we can easily do this by using interfaces to other languages. However, once the data becomes significantly large, translating the acquired data back into a MATLAB format can quickly become a bottleneck. Below we show a generally applicable approach that we developed for getting 1080p h264 streaming video into MATLAB with very low overhead.
 
 //To work around limitations due to MATLAB's single threaded nature, we often have to resort to use interfaces to other languages, such as MEX or the Java interface, in order to do data acquisition on a background thread. However, in some cases, such as when trying to stream 1080p h264 video, there is so much data that the translation layer to other languages becomes a bottleneck. Below we show how techniques originally developed for inter-process communication can be used to get large amounts of data into MATLAB with very low overhead.
 
-== The Need / Problem statement
+== Motivation
+
+We typically create new robot systems or demo applications for every ICRA or IROS conference we go to. For our ICRA 2014 demo we had two IP cameras in the office and decided to do a demo based on stereo vision, i.e., a robot arm that can pick bean bags. While the robot control and the stereo vision part were fairly simple to do in MATLAB, it proved to be more difficult than we anticipated to get streaming h264 video from two cameras in real time.
+
+The link:http://www.mathworks.com/hardware-support/ip-camera.html[IP Camera Support] package is limited to MJPEG over HTTP (and didn't exist at the time), the link:http://www.mathworks.com/hardware-support/matlab-webcam.html[USB Webcam Support] package only supports USB cameras, and  link:http://www.mathworks.com/help/matlab/ref/imread.html[imread] as well as link:http://www.mathworks.com/help/matlab/ref/webread.html[webread] are limited to HTTP and are too slow for real-time.
+
+Since we didn't want to port code to another language, we instead wrote a small library that can stream video from various sources with low overhead. We open sourced the project as link:http://www.github.com/HebiRobotics/HebiCam[HebiCam].
+
+== Technical Background
+
+Out of the box MATLAB provides two interfaces to other languages:  https://www.mathworks.com/help/matlab/matlab_external/introducing-mex-files.html[MEX] for calling C/C++ code, and the https://www.mathworks.com/help/matlab/matlab_external/product-overview.html[Java Interface] for calling Java code. In our case we chose the Java interface to simplify development and deployment. 
+
+the choice came down to a trade-off between ease of development versus translation cost.
+
+
+MATLAB comes with two built-in interfaces to other languages, the 
+
+TODO: Image explaining the various steps.
+
+* Acquiring video on a background thread
+* Transferring data across the language barrier
+* Converting to a MATLAB readable format
+* Using the image in MATLAB
+
+
+For this project we chose to do it using the Java interface. 
+
+
+Assuming a frame rate of 30 fps, the total time budget in the MATLAB thread is 33 ms per image. In order to be able to actually do useful operations on the images, the acquisition part shouldn't take more than 5-10 ms.
+
 
 Why didn't built-in solutions work?
 
