@@ -182,12 +182,30 @@ The two tables below show the results for converting color (RGB) images as well 
 .Conversion overhead on the MATLAB thread in [ms]
 image::{imagesdir}/streaming/table_performance.svg[width=100%]
 
-We can see that the default translation from a 3D array is completely inadequate, even for very low resolution images. Even the wasteful option of compressing the data is orders of magnitude better, although it is still far from being useful. Copying the pixel data from a Java image is significantly faster, but there is still a significant cost associated to converting the memory layout. We can also see that the conversions are significantly faster for grayscale images. This is due to the fact that the layout conversion becomes a single transpose operation.
+The results show that the default conversion as well as jpeg compression are essentially non-starters for color images. The default approach works much better for grayscale due the conversion from a 2D array (`byte[height][width]`) being significantly cheaper, but it still is not a great option.
 
-However, the by far best option is to convert the layout outside of MATLAB and if possible move the data via shared memory. This approach scales very well and can even transfer 4K images in real-time.
+Copying the raw pixels from a Java image is significantly faster, but there is still too much overhead caused by the need to change the memory layout.
+
+The by far best option is to convert the layout outside of MATLAB and if possible bypass the Java translation layer entirely by using shared memory. This approach scales very well and can even transfer 4K images in real-time.
+
+[Note]
+Note that we typically use lower resolution images (e.g. 480p) to speed up the processing. We only use higher resolution images (e.g. 1080p) when we use MATLAB as a live video display.
 
 == Final Notes
 
+After developing link:https://github.com/HebiRobotics/HebiCam[HebiCam] we were able to develop and run the entire stereo vision + controls demo entirely in MATLAB. However, we decided to never develop a custom stereo vision setup for an exhibit again. The colors and lines on the carpet caused the camera calibration to fail repeatedly and we ended up spending more time to get the cameras calibrated than we spent on the entire initial development of HebiCam.
+
+The biggest takeaway for us was that MATLAB supports shared memory. We had used shared memory before for inter-process communication in Java and C++, but we somehow assumed that MATLAB wouldn't support it. We eventually looked into this and found that MATLAB does have support, and that the implementation is actually quite nice. The data definition can even map the memory to an array of structs with multiple variables.
+
+Using shared memory we can bypass the Java translation layer entirely and even include meta data such as timestamps or frame sequence numbers. However, for us the most interesting application is its use for inter process communication. For example, we can have two MATLAB instances exchange almost arbitrary aounts of data by simply defining a common shared struct.
+
+This enables us to run one instance that tracks a target at a low rate (e.g. 30 Hz), and another instance for calculating and executing trajectories at a higher rate (e.g. >100 Hz), without needing to setup an inter-process communication framework like LCM, or the need to define any marshalling.
+
+We frequently run into cases where we would like to run two MATLAB instances, one for tracking a target at a low rate (e.g. 30 Hz), and another for calculating and executing trajectories at a higher rate (e.g. 200 Hz). Using shared memory we can update the goal target in real-time without needing to setup an inter-process-communication framework like ROS, or the need to define any messages or custom binary formats.
+
+We will publish more details about inter-process communication as well as synchronization between multiple instances in a future blog post.
+
+// Using Java's `Unsafe` we can even implement synchronization mechanisms in shared memory that enable safe inter process communication. This means that we can exchange large amounts of data between MATLAB instances extremely efficiently, without the need for any complex frameworks. The data format can be changed at runtime, without worrying about recompiling and generating message definitions.
 
 ////
 
