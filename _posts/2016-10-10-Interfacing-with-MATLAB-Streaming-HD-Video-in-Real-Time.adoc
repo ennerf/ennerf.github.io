@@ -36,7 +36,9 @@ Note that Intel has added hardware support for encoding and decoding to their CP
 
 Due to MATLAB's single threaded nature, we need to resort to external languages for getting background threads. Out of the box MATLAB provides two interfaces to other languages:  https://www.mathworks.com/help/matlab/matlab_external/introducing-mex-files.html[MEX] for calling C/C++ code, and the https://www.mathworks.com/help/matlab/matlab_external/product-overview.html[Java Interface] for calling Java code. For a variety of reasons, e.g., simplified development and cross-platform deployment, we decided to use the Java interface. The diagram below shows a simplified overview.
 
-image:{imagesdir}/streaming/stereocam-matlab.svg[]
+[.text-center]
+.System overview using stereo vision
+image::{imagesdir}/streaming/stereocam-matlab.svg[width=100%]
 
 Starting background threads and getting the video data into Java was comparatively straight forward. We used the excellent link:https://github.com/bytedeco/javacv[JavaCV] library, which is a Java wrapper around link:https://opencv.org/[OpenCV] and link:https://www.ffmpeg.org/[FFMpeg] that comes with pre-compiled native binaries for all major operating systems. The main challenge was to get the image data across the translation layer back into MATLAB.
 
@@ -176,7 +178,9 @@ The two tables below show the results for converting color (RGB) images as well 
 * Orange: below 100% or 33.3ms
 * Red: above 100%
 
-image:{imagesdir}/streaming/table_performance.svg[]
+[.text-center]
+.Conversion overhead on the MATLAB thread in [ms]
+image::{imagesdir}/streaming/table_performance.svg[width=100%]
 
 We can see that the default translation from a 3D array is completely inadequate, even for very low resolution images. Even the wasteful option of compressing the data is orders of magnitude better, although it is still far from being useful. Copying the pixel data from a Java image is significantly faster, but there is still a significant cost associated to converting the memory layout. We can also see that the conversions are significantly faster for grayscale images. This is due to the fact that the layout conversion becomes a single transpose operation.
 
