@@ -46,7 +46,7 @@ Starting background threads and getting the video data into Java was comparative
 
 In order to process images at a frame rate of 30 fps in real-time, the total time budget of the main MATLAB thread is 33ms per cycle. Thus, the overhead incurred on the main thread caused by the acquisition needs to be sufficiently low, i.e., a low number of milliseconds, to leave enough time for actual processing.
 
-While the automated translation from and to Java types tends to be sufficient for most applications, it is very inefficient for large and multi dimensional matrices. For example, a `1080x1920x3` MATLAB image matrix gets translated to a `byte[1080][1920][3]` Java array. This results in separate array objects for every single pixel in the image.  Even for very low resolution images this default conversion is unfortunately nowhere close to being fast enough.
+While the automated translation from and to Java types tends to be sufficient for most applications, it is very inefficient for large and multi dimensional matrices. For example, a `1080x1920x3` MATLAB image matrix gets translated to a `byte[1080][1920][3]` Java array. This means that there is a separate array object for every single pixel in the image.
 
 As an additional complication, Java uses a different memory layout than MATLAB. While Java stores image data in row-major order, MATLAB stores images transposed and in column-major order. For example, if the pixel data for a Java image would be laid out as `[RGB][RGB][RGB]...`, the same image would be laid out as `[RRR...][GGG...][BBB...]` in MATLAB.  (`R`, `G`, `B` correspond to red, green, and blue values for one pixel)
 
@@ -109,7 +109,7 @@ image = imread('tmp.jpg');
 
 *3. Java Layout as 1D Pixel Array*
 
-The most common approach for getting image data is to copy the backing array of Java's `BufferedImage` class and to reshape the memory using MATLAB (compare this link:https://mathworks.com/matlabcentral/answers/100155-how-can-i-convert-a-java-image-object-into-a-matlab-image-matrix#answer_109503[answer]).
+The likely most common approach (and the accepted link:https://mathworks.com/matlabcentral/answers/100155-how-can-i-convert-a-java-image-object-into-a-matlab-image-matrix#answer_109503[answer] for converting Java images to MATLAB matrices) is to copy the pixel array of Java's `BufferedImage` and to reshape the memory using MATLAB routines.
 
 [source,matlab]
 ----
@@ -147,7 +147,7 @@ image = reshape(vector,h,w,c);
 
 *5. MATLAB Layout as Shared Memory*
 
-This approach is the same as 4. with the difference being that the data is read from shared memory using link:https://mathworks.com/help/matlab/ref/memmapfile.html[memmapfile], thus bypassing the Java translation layer entirely. Shared memory is typically used for inter-process communication, but it can also be used within a single process. Running it in the same process also simplifies synchronization since we can use standard Java locks.
+This approach is the same as 4. with the difference being that the data is exchanged through shared memory using link:https://mathworks.com/help/matlab/ref/memmapfile.html[memmapfile], thus bypassing the Java translation layer entirely. Shared memory is typically used for inter-process communication, but it can also be used within a single process. Running it in the same process also simplifies synchronization since we can use standard Java locks.
 
 [source,matlab]
 ----
@@ -188,7 +188,7 @@ The results show that the default conversion as well as jpeg compression are ess
 
 Copying the raw pixels from a Java image is significantly faster, but there is still too much overhead caused by the need to change the memory layout.
 
-The by far best option is to convert the layout outside of MATLAB and if possible bypass the Java translation layer entirely by using shared memory. This approach scales very well and can transfer even 4K images in real-time.
+The by far best option is to convert the layout outside of MATLAB and, if possible, to bypass the Java translation layer by using shared memory. This approach scales very well and can transfer even 4K images in real-time.
 
 [NOTE]
 Note that we typically use lower resolution images (e.g. 480p) to speed up the processing. We only use higher resolution images when we use MATLAB as a live video display.
@@ -199,11 +199,11 @@ After creating link:https://github.com/HebiRobotics/HebiCam[HebiCam] we were abl
 
 The biggest takeaway for us was that MATLAB supports shared memory. We had used shared memory before for inter-process communication in Java and C++, but we somehow assumed that MATLAB wouldn't support it. We eventually looked into this and found that MATLAB does have support, and that the implementation is actually quite nice. The data definition can even map the memory to an array of structs with multiple variables.
 
-Using shared memory allows us to bypass the Java translation layer entirely and to even include meta data such as timestamps or frame sequence numbers. However, for us the most interesting application is still its use for inter process communication. For example, we can have two MATLAB instances exchange almost arbitrary aounts of data by simply defining a common shared struct.
+Using shared memory allows us to transfer data very efficiently and to include meta data such as timestamps or frame sequence numbers. However, for us the most interesting application is still its use for inter process communication. For example, we can have two MATLAB instances exchange almost arbitrary aounts of data by simply defining a common shared struct.
 
-This enables us to run one instance that tracks a target at a low rate (e.g. 30 Hz), and another instance for calculating and executing trajectories at a higher rate (e.g. >100 Hz), without needing to setup an inter-process communication framework like LCM, or the need to define any marshalling or custom binary formats.
+For example, this enables us to run one MATLAB instance that tracks a target at a low rate (e.g. 30 Hz), and another instance for calculating and executing trajectories at a higher rate (e.g. >100 Hz), without needing to setup an inter-process communication framework like link:https://lcm-proj.github.io/[LCM], or the need to define any marshalling or custom binary formats.
 
-We will publish more details about inter-process communication as well as synchronization between multiple instances in a future blog post.
+We will publish more details about inter-process communication as well as synchronization between multiple MATLAB instances in a future blog post.
 
 // Using Java's `Unsafe` we can even implement synchronization mechanisms in shared memory that enable safe inter process communication. This means that we can exchange large amounts of data between MATLAB instances extremely efficiently, without the need for any complex frameworks. The data format can be changed at runtime, without worrying about recompiling and generating message definitions.
 
