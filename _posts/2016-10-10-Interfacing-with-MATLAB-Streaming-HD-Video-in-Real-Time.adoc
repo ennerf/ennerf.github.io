@@ -44,7 +44,7 @@ image::{imagesdir}/streaming/stereocam-matlab.svg[width=100%]
 
 Starting background threads and getting the video data into Java was comparatively straight forward. We used the excellent link:https://github.com/bytedeco/javacv[JavaCV] library, which is a Java wrapper around link:https://opencv.org/[OpenCV] and link:https://www.ffmpeg.org/[FFMpeg] that includes pre-compiled native binaries for all major operating systems. The main challenge was to get the image data across the translation layer back into MATLAB.
 
-In order to process images at a frame rate of 30 fps in real-time, the total time budget of the main MATLAB thread is 33ms per cycle. Thus, the overhead incurred on the main thread caused by the acquisition needs to be sufficiently low, i.e., a low number of milliseconds, to leave enough time for actual processing.
+In order to process images at a frame rate of 30 fps in real-time, the total time budget of the main MATLAB thread is 33ms per cycle. Thus, the aquisition overhead imposed on the main thread needs to be sufficiently low, i.e., a low number of milliseconds, to leave enough time for actual processing.
 
 While the automated translation from and to Java types tends to be sufficient for most applications, it is very inefficient for large and multi dimensional matrices. For example, a `1080x1920x3` MATLAB image matrix gets translated to a `byte[1080][1920][3]` Java array. This means that there is a separate array object for every single pixel in the image.
 
@@ -61,11 +61,11 @@ Getting images in has to happen within max a few ms, otherwise it's impossible t
 
 == Data Translation
 
-We compared five different ways to get image data from Java into MATLAB. Note that the benchmarks in this section measure only the overhead on the MATLAB main thread. The reason for this is that while additional overhead in a background thread may increase overall latency, it doesn't impact the time budget for actual processing. The full benchmark code is available link:https://github.com/HebiRobotics/HebiCam/tree/benchmark[here].
+We compared five different ways to get image data from Java into MATLAB. Note that the benchmarks in this section measure only the overhead on the MATLAB main thread. The reason for this is that while additional overhead in a background thread may increase overall latency, it doesn't impact the time budget available for the processing. The full benchmark code is available link:https://github.com/HebiRobotics/HebiCam/tree/benchmark[here].
 
 *1. Default 3D Array*
 
-By default MATLAB image matrices convert to and from `byte[height][width][channels]` arrays. However, while the dimensions match, there are some additional problems:
+By default MATLAB image matrices convert to `byte[height][width][channels]` Java arrays. However, when converting back to MATLAB there are some additional problems:
 
 * `byte` gets converted to `int8` instead of `uint8`, resulting in an invalid image matrix
 * a standard cast calling `uint8(matrix)` doesn't work because it sets all negative values to zero
@@ -147,7 +147,7 @@ image = reshape(vector,h,w,c);
 
 *5. MATLAB Layout as Shared Memory*
 
-This approach is the same as 4. with the difference being that the data is exchanged through shared memory using link:https://mathworks.com/help/matlab/ref/memmapfile.html[memmapfile], thus bypassing the Java translation layer entirely. Shared memory is typically used for inter-process communication, but it can also be used within a single process. Running it in the same process also simplifies synchronization since we can use standard Java locks.
+This approach is the same as 4. with the difference that the Java translation layer is bypassed entirely by using shared memory via link:https://mathworks.com/help/matlab/ref/memmapfile.html[memmapfile]. Shared memory is typically used for inter-process communication, but it can also be used within a single process. Running within the same process also simplifies synchronization since MATLAB can access Java locks.
 
 [source,matlab]
 ----
@@ -161,13 +161,19 @@ image = this.memFile.Data.pixels * 1;
 unlock(this.javaObj);
 ----
 
-Note that `memmapfile` assumes that the data doesn't change and internally only returns a pointer to the underlying data. Thus, we need to force a copy, e.g., by multiplying by one. Also, the simplified code snippet above does not guarantee correct behavior as users could interrupt the execution (ctrl+c) between the `lock` and `unlock` operations. We can solve this by doing one of the following
+Note that the code could be interrupted (ctrl+c) at any line, so we would need to use a custom locking mechanism that can handle bad states, or guarantee unlocking via a destructor or link:https://mathworks.com/help/matlab/ref/oncleanup.html[onCleanup].
+
+The multiplication by one forces a copy of the data. This is necessary because under-the-hood `memmapfile` only returns a pointer to the underlying memory.
+
+////
+We can solve this by doing one of the following
 
 * Make the internal logic smart enough to handle cases where users didn't call `unlock`
 * Use link:https://mathworks.com/help/matlab/ref/oncleanup.html[onCleanup] to guarantee unlocking, e.g., `c = onCleanup(@()unlock(this.javaObj))`
 * Create a custom class that locks in the constructor and unlocks in the destructor
 
 However, even if the `unlock` call is in a destructor (guaranteed to run when exiting scope), the Java logic still needs to handle cases where the code gets interrupted before the `lock` call.
+////
 
 == Results
 
