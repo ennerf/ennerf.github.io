@@ -31,12 +31,12 @@ Since we didn't want to port the code to another language, we instead wrote a sm
 
 == Technical Background
 
-Most video streams that are sent over the network get compressed in order to save bandwidth (exceptions include GigE cameras). While the cameras often include specialized hardware (link:https://en.wikipedia.org/wiki/Application-specific_integrated_circuit[ASIC]) to do the encoding, the decoding on the computer side tends to happen in Software. Since this can take a significant amount of time, the acquisition needs to happen in a different thread than the image processing.
+Most video streams that are sent over the network get compressed in order to save bandwidth (exceptions include GigE cameras). While the cameras often include specialized hardware (link:https://en.wikipedia.org/wiki/Application-specific_integrated_circuit[ASIC]) to do the encoding, the decoding on the computer side tends to happen in Software. Since this can take a significant amount of time, it is common practice to move the acquisition to a separate thread in order to reduce the load on the main processing thread.
 
 [NOTE]
 Note that Intel has added hardware support for encoding and decoding H.264 to their CPUs starting in 2011 (link:https://en.wikipedia.org/wiki/Intel_Quick_Sync_Video[QuickSync]), but there is unfortunately a lack of library support.
 
-Due to MATLAB's single threaded nature, we needed to resort to external languages for getting background threads. Out of the box MATLAB provided two interfaces to other languages:  https://www.mathworks.com/help/matlab/matlab_external/introducing-mex-files.html[MEX] for calling C/C++ code, and the https://www.mathworks.com/help/matlab/matlab_external/product-overview.html[Java Interface] for calling Java code. For a variety of reasons, e.g., simplified development and cross-platform deployment, we decided to use the Java interface. The diagram below shows a simplified overview.
+Due to MATLAB's single threaded nature, we needed to resort to external languages for getting background threads. Out of the box MATLAB provided two interfaces to other languages:  https://www.mathworks.com/help/matlab/matlab_external/introducing-mex-files.html[MEX] for calling C/C++ code, and the https://www.mathworks.com/help/matlab/matlab_external/product-overview.html[Java Interface] for calling Java code. For a variety of reasons, such as simplified development and cross-platform deployment, we decided to use the Java interface. The diagram below shows a simplified overview of the resulting system.
 
 [.text-center]
 .System overview for a stereo vision setup
@@ -44,9 +44,9 @@ image::{imagesdir}/streaming/stereocam-matlab.svg[width=100%]
 
 Starting background threads and getting the video data into Java was comparatively straight forward. We used the excellent link:https://github.com/bytedeco/javacv[JavaCV] library, which is a Java wrapper around link:https://opencv.org/[OpenCV] and link:https://www.ffmpeg.org/[FFMpeg] that includes pre-compiled native binaries for all major operating systems. The main challenge was to get the image data across the translation layer back into MATLAB.
 
-In order to process images at a frame rate of 30 fps in real-time, the total time budget of the main MATLAB thread is 33ms per cycle. Thus, the aquisition overhead imposed on the main thread needs to be sufficiently low, i.e., a low number of milliseconds, to leave enough time for actual processing.
+In order to process images at a frame rate of 30 fps in real-time, the total time budget of the main MATLAB thread is 33ms per cycle. Thus, the aquisition overhead imposed on the main thread needs to be sufficiently low, i.e., a low number of milliseconds, to leave enough time for the actual processing.
 
-While the automated translation from and to Java types tends to be sufficient for most applications, it is very inefficient for large and multi dimensional matrices. For example, a `1080x1920x3` MATLAB image matrix gets translated to a `byte[1080][1920][3]` Java array. This means that there is a separate array object for every single pixel in the image.
+While the automated translation from and to Java types tends to be sufficient for most applications, it is very inefficient for large and multi dimensional matrices. For example, a `1080x1920x3` MATLAB image matrix gets translated to a `byte[1080][1920][3]` Java array, which means that every single pixel in the image gets stored in a separate array object.
 
 As an additional complication, Java uses a different memory layout than MATLAB. While Java stores image data in row-major order, MATLAB stores images transposed and in column-major order. For example, if the pixel data for a Java image would be laid out as `[RGB][RGB][RGB]...`, the same image would be laid out as `[RRR...][GGG...][BBB...]` in MATLAB.  (`R`, `G`, `B` correspond to red, green, and blue values for one pixel)
 
@@ -68,8 +68,7 @@ We compared five different ways to get image data from Java into MATLAB. Note th
 By default MATLAB image matrices convert to `byte[height][width][channels]` Java arrays. However, when converting back to MATLAB there are some additional problems:
 
 * `byte` gets converted to `int8` instead of `uint8`, resulting in an invalid image matrix
-* a standard cast calling `uint8(matrix)` doesn't work because it sets all negative values to zero
-* casting via `typecast(matrix, 'uint8')` only works on single dimension vectors
+* changing the type back to `uint8` is a bit messy because the `uint8(matrix)` cast would set all negative values to zero, and the alternative `typecast(matrix, 'uint8')` only works on vectors
 
 Thus, in order to get a valid MATLAB image, we still need to do several operations.
 
@@ -130,9 +129,7 @@ image = cat(3, ...
 
 *4. MATLAB Layout as 1D Pixel Array*
 
-This approach is the same as 3. with the difference being that the changes to the memory layout happen prior to copying into MATLAB.
-
-The most efficient way we found to do the conversion was to use OpenCV's `split` and `transpose` functions. The code can be found in link:https://github.com/HebiRobotics/HebiCam/blob/master/src/main/java/us/hebi/matlab/streaming/MatlabImageConverterBGR.java[MatlabImageConverterBGR] and link:https://github.com/HebiRobotics/HebiCam/blob/master/src/main/java/us/hebi/matlab/streaming/MatlabImageConverterGrayscale.java[MatlabImageConverterGrayscale].
+This approach also copies a pixel array, but this time the pixels are already stored as in the MATLAB convention.
 
 [source,matlab]
 ----
@@ -144,6 +141,8 @@ vector = typecast(data, 'uint8');
 % (2) Interpret pre-laid out memory as matrix
 image = reshape(vector,h,w,c);
 ----
+
+The most efficient way we found to convert the memory layout on the Java side was to use OpenCV's `split` and `transpose` functions. The code can be found in link:https://github.com/HebiRobotics/HebiCam/blob/master/src/main/java/us/hebi/matlab/streaming/MatlabImageConverterBGR.java[MatlabImageConverterBGR] and link:https://github.com/HebiRobotics/HebiCam/blob/master/src/main/java/us/hebi/matlab/streaming/MatlabImageConverterGrayscale.java[MatlabImageConverterGrayscale].
 
 *5. MATLAB Layout as Shared Memory*
 
@@ -201,8 +200,11 @@ Note that we typically use lower resolution images (e.g. 480p) to speed up the p
 
 == Final Notes
 
-After creating link:https://github.com/HebiRobotics/HebiCam[HebiCam] we were able to develop and run the entire stereo vision + controls demo entirely in MATLAB. However, we still decided to never develop a custom stereo vision setup solely for an exhibit demo again. The colors and lines on the carpet caused the camera calibration to fail repeatedly and we ended up spending more time on getting the cameras calibrated than we spent on the entire initial development of HebiCam.
+After creating link:https://github.com/HebiRobotics/HebiCam[HebiCam] we were able to develop and reliably run the whole demo entirely in MATLAB. However, during the setup at the conference site we ran into the issue that the colors and lines on the carpet caused the camera calibration to fail repeatedly, and we ended up spending more time on getting the cameras calibrated than we spent on the entire initial development of HebiCam. We've since shied away from developing custom stereo vision setups solely for exhibit demos.
 
+For us, the biggest lesson learned was that shared memory can be used to efficiently transfer large amounts of data into MATLAB. We also found that shared memory can serve as a convenient way to exchange data between multiple MATLAB instances. For example, one instance could track a target at a lower rate, while another instance could use its output for robot control at a higher rate.
+
+////
 The biggest takeaway for us was that MATLAB supports shared memory. We had used shared memory before for inter-process communication in Java and C++, but we somehow assumed that MATLAB wouldn't support it. We eventually looked into this and found that MATLAB does have support, and that the implementation is actually quite nice. The data definition can even map the memory to an array of structs with multiple variables.
 
 Using shared memory allows us to transfer data very efficiently and to include meta data such as timestamps or frame sequence numbers. However, for us the most interesting application is still its use for inter process communication. For example, we can have two MATLAB instances exchange almost arbitrary aounts of data by simply defining a common shared struct.
@@ -210,6 +212,7 @@ Using shared memory allows us to transfer data very efficiently and to include m
 For example, this enables us to run one MATLAB instance that tracks a target at a low rate (e.g. 30 Hz), and another instance for calculating and executing trajectories at a higher rate (e.g. >100 Hz), without needing to setup an inter-process communication framework like link:https://lcm-proj.github.io/[LCM], or the need to define any marshalling or custom binary formats.
 
 We will publish more details about inter-process communication as well as synchronization between multiple MATLAB instances in a future blog post.
+////
 
 // Using Java's `Unsafe` we can even implement synchronization mechanisms in shared memory that enable safe inter process communication. This means that we can exchange large amounts of data between MATLAB instances extremely efficiently, without the need for any complex frameworks. The data format can be changed at runtime, without worrying about recompiling and generating message definitions.
 
