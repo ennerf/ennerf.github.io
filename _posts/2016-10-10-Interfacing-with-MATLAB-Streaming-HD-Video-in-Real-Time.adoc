@@ -162,7 +162,7 @@ unlock(this.javaObj);
 
 Note that the code could be interrupted (ctrl+c) at any line, so we would need to use a custom locking mechanism that can handle bad states, or guarantee unlocking via a destructor or link:https://mathworks.com/help/matlab/ref/oncleanup.html[onCleanup].
 
-The multiplication by one forces a copy of the data. This is necessary because under-the-hood `memmapfile` only returns a pointer to the underlying memory.
+The multiplication by one forces a copy of the data. This is necessary because under-the-hood `memmapfile` only returns a reference to the underlying memory.
 
 ////
 We can solve this by doing one of the following
@@ -200,9 +200,9 @@ Note that we typically use lower resolution images (e.g. 480p) to speed up the p
 
 == Final Notes
 
-For us, the biggest lesson learned was that shared memory can be used to efficiently transfer large amounts of data into MATLAB. We also found that shared memory can serve as a convenient way to exchange data between multiple MATLAB instances. For example, one instance can track a target at a lower rate, while another instance can use its output for robot control at a higher rate.
+For us, the biggest lesson learned was that shared memory can be used to efficiently transfer large amounts of data into MATLAB. We also ended up using it quite a bit for inter-process communication, e.g., to exchange data between multiple MATLAB instances. For example, one instance can track a target at a lower rate, while another instance can use its output for robot control at a higher rate.
 
-As for our initial motiation, after creating link:https://github.com/HebiRobotics/HebiCam[HebiCam] we were able to develop and reliably run the whole demo entirely in MATLAB. However, during the setup at the conference site we ran into the issue that the colors and lines on the carpet caused the camera calibration to fail repeatedly, and we ended up spending more time on getting the cameras calibrated than we spent on the entire initial development of HebiCam. We've since shied away from developing custom stereo vision setups solely for exhibit demos.
+As for our initial motiation, after creating link:https://github.com/HebiRobotics/HebiCam[HebiCam] we were able to develop and reliably run the whole demo entirely in MATLAB. However, during the setup at the conference site we ran into the issue that the colors and lines on the carpet caused the camera calibration to fail repeatedly. We ended up spending more time on getting the cameras calibrated than we spent on the entire initial development of HebiCam. We've since shied away from developing custom stereo vision setups solely for exhibit demos.
 
 ////
 The biggest takeaway for us was that MATLAB supports shared memory. We had used shared memory before for inter-process communication in Java and C++, but we somehow assumed that MATLAB wouldn't support it. We eventually looked into this and found that MATLAB does have support, and that the implementation is actually quite nice. The data definition can even map the memory to an array of structs with multiple variables.
