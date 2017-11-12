@@ -77,9 +77,9 @@ The full benchmark code is available link:https://github.com/HebiRobotics/HebiCa
 By default MATLAB image matrices convert to `byte[height][width][channels]` Java arrays. However, when converting back to MATLAB there are some additional problems:
 
 * `byte` gets converted to `int8` instead of `uint8`, resulting in an invalid image matrix
-* changing the type back to `uint8` gets somewhat messy because the `uint8(matrix)` cast would set all negative values to zero, and the alternative `typecast(matrix, 'uint8')` only works on vectors
+* changing the type back to `uint8` is somewhat messy because the `uint8(matrix)` cast sets all negative values to zero, and the alternative `typecast(matrix, 'uint8')` only works on vectors
 
-Thus, converting the data to a valid image matrix still required several operations.
+Thus, converting the data to a valid image matrix still requires several operations.
 
 [source,matlab]
 ----
@@ -138,7 +138,7 @@ image = cat(3, ...
 
 *4. MATLAB Layout as 1D Pixel Array*
 
-This approach also copies a pixel array, but this time the pixels are already stored as in the MATLAB convention.
+The fourth approach also copies a pixel array, but this time the pixels are already stored as in the MATLAB convention.
 
 [source,matlab]
 ----
@@ -155,7 +155,7 @@ Note that the most efficient way we found for converting the memory layout on th
 
 *5. MATLAB Layout as Shared Memory*
 
-This approach is the same as (4) with the difference that the Java translation layer is bypassed entirely by using shared memory via link:https://mathworks.com/help/matlab/ref/memmapfile.html[memmapfile]. Shared memory is typically used for inter-process communication, but it can also be used within a single process. Running within the same process also simplifies synchronization since MATLAB can access Java locks.
+The fifth approach is the same as the fourth with the difference that the Java translation layer is bypassed entirely by using shared memory via link:https://mathworks.com/help/matlab/ref/memmapfile.html[memmapfile]. Shared memory is typically used for inter-process communication, but it can also be used within a single process. Running within the same process also simplifies synchronization since MATLAB can access Java locks.
 
 [source,matlab]
 ----
@@ -187,15 +187,20 @@ However, even if the `unlock` call is in a destructor (guaranteed to run when ex
 
 All benchmarks were run in MATLAB 2017b on an link:https://www.intel.com/content/www/us/en/products/boards-kits/nuc/kits/nuc6i7kyk.html[Intel NUC6I7KYK]. The performance was measured using MATLAB's link:https://mathworks.com/help/matlab/ref/timeit.html[timeit] function. The background color of each cell in the result tables represents a rough classification of the overhead on the main MATLAB thread.
 
+{set:cellbgcolor:white}
+
+[.text-center]
 .Color classification
 [width="50%",options="header",cols="^a,^a,^a"]
 |====================
-| Color |  Overhead | 30 Frames / Sec
-| Green |  <10% | <3.3 ms
-| Yellow | <50% | <16.5 ms
-| Orange | <100% | <33.3 ms
-| Red |  >100% | >33.3 ms
+| Color |  Overhead | 30 Frames / Sec |
+Green |  <10% | <3.3 ms | 
+Yellow | <50% | <16.5 ms |
+Orange | <100% | <33.3 ms | 
+Red |  >100% | >33.3 ms  |
 |====================
+
+{set:cellbgcolor!}
 
 The two tables below show the results for converting color (RGB) images as well as grayscale images. All measurements are in milliseconds.
 
@@ -213,11 +218,11 @@ image::{imagesdir}/streaming/table_performance.svg[width=100%]
 The results show that the default conversion as well as jpeg compression are essentially non-starters for color images. For grayscale images the default conversion works significantly better due to the fact that the data is stored in a much more efficient 2D array (`byte[height][width]`), and that there is no need to re-order pixels by color.
 
 [NOTE]
-Note that we currently don't have a good explanation for the ~10x cost increase (rather than ~4x) between 1080p and 4K grayscale. The behavior was the same across computers and different memory settings.
+Unfortunately, we currently don't have a good explanation for the ~10x cost increase (rather than ~4x) between 1080p and 4K grayscale. The behavior was the same across computers and different memory settings.
 
 When copying the pixels of a Java image we can see another significant performance increase due to the data being stored in a single contiguous array. At this point much of the overhead comes from re-ordering pixels, so by doing the conversion beforehand we can get another 2-3x improvement.
 
-Lastly, although accessing shared memory in combination with the locking overhead results in a slightly higher fixed cost, the copying itself is significantly cheaper, resulting in another 2-3x speedup for high resolution images. Overall, the approach scales very well and would even allow streaming of 4K color images from two cameras simultaneously.
+Lastly, although accessing shared memory in combination with the locking overhead results in a slightly higher fixed cost, the copying itself is significantly cheaper, resulting in another 2-3x speedup for high resolution images. Overall, going through shared memory scales very well and would even allow streaming of 4K color images from two cameras simultaneously.
 
 == Final Notes
 
