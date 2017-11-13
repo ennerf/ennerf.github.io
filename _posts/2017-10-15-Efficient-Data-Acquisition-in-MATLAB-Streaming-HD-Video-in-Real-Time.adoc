@@ -1,5 +1,5 @@
-= Interfacing with MATLAB : Streaming HD Video in Real-Time
-:published_at: 2016-10-10
+= Efficient Data Acquisition in MATLAB: Streaming HD Video in Real-Time
+:published_at: 2017-10-15
 //:hp-tags: 
 //:imagesdir: ../images
 //:imagesdir: https://rawgit.com/ennerf/ennerf.github.io/tree/master/images
@@ -227,6 +227,8 @@ Lastly, although accessing shared memory in combination with the locking overhea
 == Final Notes
 
 As for our initial motiation, after creating link:https://github.com/HebiRobotics/HebiCam[HebiCam] we were able to develop and reliably run the whole demo entirely in MATLAB.
+
+video::R0nQSxt8uic?rel=0[youtube]
 
 Our main takeaway was that although MATLAB's Java interface can be inefficient for certain cases, there are simple workarounds that can remove most bottlenecks. The most important rule is to avoid converting to and from large multi-dimensional matrices whenever possible.
 
