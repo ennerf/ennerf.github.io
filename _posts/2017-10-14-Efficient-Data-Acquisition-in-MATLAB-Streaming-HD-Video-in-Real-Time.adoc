@@ -4,14 +4,16 @@
 //:imagesdir: ../images
 //:imagesdir: https://rawgit.com/ennerf/ennerf.github.io/tree/master/images
 :imagesdir: https://cdn.rawgit.com/ennerf/ennerf.github.io/8f6a41c7/images
-:source-highlighter: none
 
+////
+:source-highlighter: none
 ++++
 <link rel="stylesheet" href="https://cdn.rawgit.com/ennerf/ennerf.github.io/master/resources/highlight.js/9.9.0/styles/matlab.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
 <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/languages/matlab.min.js"></script>
 <script>hljs.initHighlightingOnLoad()</script>
 ++++
+////
 
 The acquisition and processing of a video stream can be very computationally expensive. Typical image processing applications split the work across multiple threads, one acquiring the images, and another one running the actual algorithms. In MATLAB we can get multi-threading by interfacing with other languages, but there is a significant cost associated with exchanging data across the resulting language barrier. In this blog post, we compare different approaches for getting data through MATLAB's Java interface, and we show how to acquire high-resolution video streams in real-time and with low overhead.
 
