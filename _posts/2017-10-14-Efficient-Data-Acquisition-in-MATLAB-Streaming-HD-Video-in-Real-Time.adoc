@@ -164,11 +164,11 @@ All benchmarks were run in MATLAB 2017b on an link:https://www.intel.com/content
 .Color classification
 [width="30%",options="header",cols="a,a,a"]
 |====
-| Color |  Overhead | At 30 FPS |
-Green |  <10% | <3.3 ms | 
-Yellow | <50% | <16.5 ms |
-Orange | <100% | <33.3 ms | 
-Red |  >100% | >33.3 ms  |
+|Color|Overhead|At 30 FPS 
+|Green|<10%|<3.3 ms
+|Yellow|<50%|<16.5 ms
+|Orange|<100%|<33.3 ms
+|Red |>100% |>33.3 ms|
 |====
 
 //{set:cellbgcolor!}
