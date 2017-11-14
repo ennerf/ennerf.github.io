@@ -4,16 +4,7 @@
 //:imagesdir: ../images
 //:imagesdir: https://rawgit.com/ennerf/ennerf.github.io/tree/master/images
 :imagesdir: https://cdn.rawgit.com/ennerf/ennerf.github.io/8f6a41c7/images
-
-////
-:source-highlighter: none
-++++
-<link rel="stylesheet" href="https://cdn.rawgit.com/ennerf/ennerf.github.io/master/resources/highlight.js/9.9.0/styles/matlab.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
-<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/languages/matlab.min.js"></script>
-<script>hljs.initHighlightingOnLoad()</script>
-++++
-////
+//:source-highlighter: none
 
 The acquisition and processing of a video stream can be very computationally expensive. Typical image processing applications split the work across multiple threads, one acquiring the images, and another one running the actual algorithms. In MATLAB we can get multi-threading by interfacing with other languages, but there is a significant cost associated with exchanging data across the resulting language barrier. In this blog post, we compare different approaches for getting data through MATLAB's Java interface, and we show how to acquire high-resolution video streams in real-time and with low overhead.
 
@@ -197,3 +188,11 @@ Another insight was that shared-memory provides a very efficient way to transfer
 As for our initial motivation, after creating link:https://github.com/HebiRobotics/HebiCam[HebiCam] we were able to develop and reliably run the entire demo in MATLAB. The video below shows the setup using old-generation S-Series actuators.
 
 video::R0nQSxt8uic?rel=0[youtube]
+
+++++
+<link rel="stylesheet" href="https://cdn.rawgit.com/ennerf/ennerf.github.io/master/resources/highlight.js/9.9.0/styles/matlab.css">
+<!-- TODO: figure out how to keep Hubpress from adding the default code highlighter to make this work -->
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>-->
+<!--<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/languages/matlab.min.js"></script>-->
+<!--<script type="text/javascript">hljs.initHighlightingOnLoad()</script>-->
+++++
