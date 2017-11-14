@@ -12,17 +12,17 @@
 
     <link rel="shortcut icon" href="https://ennerf.github.io/favicon.ico">
 
-    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/vendor/fastclick.js?v=1510660636733"></script>
-    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/vendor/modernizr.js?v=1510660636733"></script>
+    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/vendor/fastclick.js?v=1510660814806"></script>
+    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/vendor/modernizr.js?v=1510660814806"></script>
 
 
-    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/normalize.css?v=1510660636733" />
-    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/foundation.min.css?v=1510660636733" />
+    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/normalize.css?v=1510660814806" />
+    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/foundation.min.css?v=1510660814806" />
     <!--[if lte IE 8]>
-        <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/outdatedBrowser.min.css?v=1510660636733">
+        <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/outdatedBrowser.min.css?v=1510660814806">
     <![endif]-->
-    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/fonts/foundation-icons/foundation-icons.css?v=1510660636733" />
-    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/styles.css?v=1510660636733" />
+    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/fonts/foundation-icons/foundation-icons.css?v=1510660814806" />
+    <link rel="stylesheet" type="text/css" href="//ennerf.github.io/themes/ichi/assets/css/styles.css?v=1510660814806" />
     <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Open+Sans:300,700,400|Source+Sans+Pro:300,400,600,700,900,300italic,400italic,600italic,700italic,900italic" />
 
     <link rel="canonical" href="https://ennerf.github.io/2017/10/14/Efficient-Data-Acquisition-in-MATLAB-Streaming-HD-Video-in-Real-Time.html" />
@@ -333,9 +333,6 @@ unlock(this.javaObj);</code></pre>
 <div class="paragraph">
 <p>All benchmarks were run in MATLAB 2017b on an <a href="https://www.intel.com/content/www/us/en/products/boards-kits/nuc/kits/nuc6i7kyk.html">Intel NUC6I7KYK</a>. The performance was measured using MATLAB&#8217;s <code><a href="https://mathworks.com/help/matlab/ref/timeit.html">timeit</a></code> function. The background color of each cell in the result tables represents a rough classification of the overhead on the main MATLAB thread.</p>
 </div>
-<div class="paragraph">
-<p></p>
-</div>
 <table class="tableblock frame-topbot grid-all text-center" style="width: 50%;">
 <caption class="title">Table 1. Color classification</caption>
 <colgroup>
@@ -345,61 +342,58 @@ unlock(this.javaObj);</code></pre>
 </colgroup>
 <thead>
 <tr>
-<th class="tableblock halign-center valign-top" style="background-color: white;">Color</th>
-<th class="tableblock halign-center valign-top" style="background-color: white;">Overhead</th>
-<th class="tableblock halign-center valign-top" style="background-color: white;">At 30 FPS</th>
+<th class="tableblock halign-center valign-top">Color</th>
+<th class="tableblock halign-center valign-top">Overhead</th>
+<th class="tableblock halign-center valign-top">At 30 FPS</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-center valign-top" style="background-color: white;"><div><div class="paragraph">
+<td class="tableblock halign-center valign-top"><div><div class="paragraph">
 <p>Green</p>
 </div></div></td>
-<td class="tableblock halign-center valign-top" style="background-color: white;"><div><div class="paragraph">
+<td class="tableblock halign-center valign-top"><div><div class="paragraph">
 <p>&lt;10%</p>
 </div></div></td>
-<td class="tableblock halign-center valign-top" style="background-color: white;"><div><div class="paragraph">
+<td class="tableblock halign-center valign-top"><div><div class="paragraph">
 <p>&lt;3.3 ms</p>
 </div></div></td>
 </tr>
 <tr>
-<td class="tableblock halign-center valign-top" style="background-color: white;"><div><div class="paragraph">
+<td class="tableblock halign-center valign-top"><div><div class="paragraph">
 <p>Yellow</p>
 </div></div></td>
-<td class="tableblock halign-center valign-top" style="background-color: white;"><div><div class="paragraph">
+<td class="tableblock halign-center valign-top"><div><div class="paragraph">
 <p>&lt;50%</p>
 </div></div></td>
-<td class="tableblock halign-center valign-top" style="background-color: white;"><div><div class="paragraph">
+<td class="tableblock halign-center valign-top"><div><div class="paragraph">
 <p>&lt;16.5 ms</p>
 </div></div></td>
 </tr>
 <tr>
-<td class="tableblock halign-center valign-top" style="background-color: white;"><div><div class="paragraph">
+<td class="tableblock halign-center valign-top"><div><div class="paragraph">
 <p>Orange</p>
 </div></div></td>
-<td class="tableblock halign-center valign-top" style="background-color: white;"><div><div class="paragraph">
+<td class="tableblock halign-center valign-top"><div><div class="paragraph">
 <p>&lt;100%</p>
 </div></div></td>
-<td class="tableblock halign-center valign-top" style="background-color: white;"><div><div class="paragraph">
+<td class="tableblock halign-center valign-top"><div><div class="paragraph">
 <p>&lt;33.3 ms</p>
 </div></div></td>
 </tr>
 <tr>
-<td class="tableblock halign-center valign-top" style="background-color: white;"><div><div class="paragraph">
+<td class="tableblock halign-center valign-top"><div><div class="paragraph">
 <p>Red</p>
 </div></div></td>
-<td class="tableblock halign-center valign-top" style="background-color: white;"><div><div class="paragraph">
+<td class="tableblock halign-center valign-top"><div><div class="paragraph">
 <p>&gt;100%</p>
 </div></div></td>
-<td class="tableblock halign-center valign-top" style="background-color: white;"><div><div class="paragraph">
+<td class="tableblock halign-center valign-top"><div><div class="paragraph">
 <p>&gt;33.3 ms</p>
 </div></div></td>
 </tr>
 </tbody>
 </table>
-<div class="paragraph">
-<p></p>
-</div>
 <div class="paragraph">
 <p>The two tables below show the results for converting color (RGB) images as well as grayscale images. All measurements are in milliseconds.</p>
 </div>
@@ -435,7 +429,7 @@ unlock(this.javaObj);</code></pre>
 </div>
 <div class="videoblock">
 <div class="content">
-<iframe width="50%" src="https://www.youtube.com/embed/R0nQSxt8uic?rel=0?rel=0" frameborder="0" allowfullscreen></iframe>
+<iframe src="https://www.youtube.com/embed/R0nQSxt8uic?rel=0?rel=0" frameborder="0" allowfullscreen></iframe>
 </div>
 </div>
 </div>
@@ -521,9 +515,9 @@ unlock(this.javaObj);</code></pre>
       </script>
 
     <!--[if lte IE 8]>
-        <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/outdatedBrowser.min.js?v=1510660636733"></script>
+        <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/outdatedBrowser.min.js?v=1510660814806"></script>
     <![endif]-->
-    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/min/built.js?v=1510660636733"></script>
+    <script type="text/javascript" src="//ennerf.github.io/themes/ichi/assets/js/min/built.js?v=1510660814806"></script>
 
     <script>
       $(document).foundation();
