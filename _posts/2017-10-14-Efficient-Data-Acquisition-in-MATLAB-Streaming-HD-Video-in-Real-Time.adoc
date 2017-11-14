@@ -158,20 +158,20 @@ The multiplication by one forces a copy of the data. This is necessary because u
 
 All benchmarks were run in MATLAB 2017b on an link:https://www.intel.com/content/www/us/en/products/boards-kits/nuc/kits/nuc6i7kyk.html[Intel NUC6I7KYK]. The performance was measured using MATLAB's `link:https://mathworks.com/help/matlab/ref/timeit.html[timeit]` function. The background color of each cell in the result tables represents a rough classification of the overhead on the main MATLAB thread.
 
-{set:cellbgcolor:white}
+//{set:cellbgcolor:white}
 
 [.text-center]
 .Color classification
-[width="30%",frame="topbot",options="header",cols="<a,<a,<a"]
-|====================
+[width="30%",options="header",cols="a,a,a"]
+|====
 | Color |  Overhead | At 30 FPS |
 Green |  <10% | <3.3 ms | 
 Yellow | <50% | <16.5 ms |
 Orange | <100% | <33.3 ms | 
 Red |  >100% | >33.3 ms  |
-|====================
+|====
 
-{set:cellbgcolor!}
+//{set:cellbgcolor!}
 
 The two tables below show the results for converting color (RGB) images as well as grayscale images. All measurements are in milliseconds.
 
