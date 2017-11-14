@@ -31,7 +31,7 @@ In order to save bandwidth most IP cameras compress video before sending it over
 
 Unfortunately, doing this in MATLAB requires some workarounds due to the language's single threaded nature, i.e., background threads need to run in another language. Out of the box, there are two supported interfaces: https://www.mathworks.com/help/matlab/matlab_external/introducing-mex-files.html[MEX] for calling C/C++ code, and the https://www.mathworks.com/help/matlab/matlab_external/product-overview.html[Java Interface] for calling Java code.
 
-While both interfaces have strengths and weaknesses, practically all use cases can be solved using either one. For this project, we chose to use the Java interface mainly because we needed to support multiple platforms. Using Java simplified cross-platform development as well as the deployment of binaries. The diagram below shows an overview of the resulting system.
+While both interfaces have strengths and weaknesses, practically all use cases can be solved using either one. For this project, we chose the Java interface in order to simplify cross-platform development and the deployment of binaries. The diagram below shows an overview of the resulting system.
 
 [.text-center]
 .System overview for a stereo vision setup
@@ -188,7 +188,7 @@ Lastly, although accessing shared memory in combination with the locking overhea
 
 == Final Notes
 
-As for our initial motivation, after creating link:https://github.com/HebiRobotics/HebiCam[HebiCam] we were able to develop and reliably run the whole demo entirely in MATLAB.
+As for our initial motivation, after creating link:https://github.com/HebiRobotics/HebiCam[HebiCam] we were able to develop and reliably run the entire demo in MATLAB. The video below shows the setup using old-generation S-Series actuators.
 
 video::R0nQSxt8uic?rel=0[youtube]
 
