@@ -13,11 +13,11 @@
 <script>hljs.initHighlightingOnLoad()</script>
 ++++
 
-The acquisition and processing of a video stream can be very computationally expensive. Typical image processing applications split the work across multiple threads, one acquiring the images, and another one running the actual algorithms. In MATLAB we can get multi-threading by interfacing with other languages, but there is a significant cost associated to exchanging data across the resulting language barrier. In this blog post we compare different approaches for getting data through MATLAB's Java interface, and we show how to acquire high resolution video streams in real-time and with low overhead.
+The acquisition and processing of a video stream can be very computationally expensive. Typical image processing applications split the work across multiple threads, one acquiring the images, and another one running the actual algorithms. In MATLAB we can get multi-threading by interfacing with other languages, but there is a significant cost associated with exchanging data across the resulting language barrier. In this blog post, we compare different approaches for getting data through MATLAB's Java interface, and we show how to acquire high-resolution video streams in real-time and with low overhead.
 
 == Motivation
 
-For our booth at ICRA 2014 we put together a demo system in MATLAB that used stereo vision for tracking colored bean bags, and a robot arm to pick them up. We used two IP cameras that streamed link:https://de.wikipedia.org/wiki/H.264[H.264] video over link:https://en.wikipedia.org/wiki/Real_Time_Streaming_Protocol[RTSP]. While developing the image processing and robot control parts worked as expected, it proved to be a challenge to acquire images from both video streams fast enough to be useful.
+For our booth at ICRA 2014, we put together a demo system in MATLAB that used stereo vision for tracking colored bean bags, and a robot arm to pick them up. We used two IP cameras that streamed link:https://de.wikipedia.org/wiki/H.264[H.264] video over link:https://en.wikipedia.org/wiki/Real_Time_Streaming_Protocol[RTSP]. While developing the image processing and robot control parts worked as expected, it proved to be a challenge to acquire images from both video streams fast enough to be useful.
 
 * link:http://www.mathworks.com/hardware-support/ip-camera.html[IP Camera Support] only supports link:https://en.wikipedia.org/wiki/Motion_JPEG[MJPEG] over link:https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol[HTTP] and didn't exist at the time
 * link:http://www.mathworks.com/hardware-support/matlab-webcam.html[USB Webcam Support] only supports USB cameras
@@ -29,21 +29,21 @@ Since we did not want to switch to another language, we decided to develop a sma
 
 In order to save bandwidth most IP cameras compress video before sending it over the network. Since the resulting decoding step can be computationally expensive, it is common practice to move the acquisition to a separate thread in order to reduce the load on the main processing thread.
 
-Doing this in MATLAB unfortunately requires some workarounds due to the language's single threaded nature, i.e., background threads need to run in another language. Out of the box there are two supported interfaces: https://www.mathworks.com/help/matlab/matlab_external/introducing-mex-files.html[MEX] for calling C/C++ code, and the https://www.mathworks.com/help/matlab/matlab_external/product-overview.html[Java Interface] for calling Java code.
+Unfortunately, doing this in MATLAB requires some workarounds due to the language's single threaded nature, i.e., background threads need to run in another language. Out of the box, there are two supported interfaces: https://www.mathworks.com/help/matlab/matlab_external/introducing-mex-files.html[MEX] for calling C/C++ code, and the https://www.mathworks.com/help/matlab/matlab_external/product-overview.html[Java Interface] for calling Java code.
 
-While both interfaces have strengths and weaknesses, practically all use cases can be solved using either one. For this project we chose to use the Java interface because we needed to support all major operating systems, and using Java greatly simplified cross-platform development as well as the deployment of binaries. The diagram below shows an overview of the resulting system.
+While both interfaces have strengths and weaknesses, practically all use cases can be solved using either one. For this project, we chose to use the Java interface mainly because we needed to support multiple platforms. Using Java simplified cross-platform development as well as the deployment of binaries. The diagram below shows an overview of the resulting system.
 
 [.text-center]
 .System overview for a stereo vision setup
 image::{imagesdir}/streaming/stereocam-matlab.svg[width=100%]
 
-Starting background threads and getting the video stream into Java was relatively straight forward. We used the link:https://github.com/bytedeco/javacv[JavaCV] library, which is a Java wrapper around link:https://opencv.org/[OpenCV] and link:https://www.ffmpeg.org/[FFMpeg] that includes pre-compiled native binaries for all major platforms. However, passing the acquired image data from Java into MATLAB turned out to be more challenging.
+Starting background threads and getting the video stream into Java was relatively straightforward. We used the link:https://github.com/bytedeco/javacv[JavaCV] library, which is a Java wrapper around link:https://opencv.org/[OpenCV] and link:https://www.ffmpeg.org/[FFMpeg] that includes pre-compiled native binaries for all major platforms. However, passing the acquired image data from Java into MATLAB turned out to be more challenging.
 
 The Java interface automatically converts between Java and MATLAB types by following a set of link:https://www.mathworks.com/help/matlab/matlab_external/handling-data-returned-from-java-methods.html[rules]. This makes it much simpler to develop for than the MEX interface, but it does cause additional overhead when calling Java functions. Most of the time this overhead is negligible. However, for certain types of data, such as large and multi-dimensional matrices, the default rules are very inefficient and can become prohibitively expensive. For example, a `1080x1920x3` MATLAB image matrix gets translated to a `byte[1080][1920][3]` in Java, which means that there is a separate array object for every single pixel in the image.
 
 As an additional complication, MATLAB stores image data in a different memory layout than most other libraries (e.g. OpenCV's `Mat` or Java's `BufferedImage`). While pixels are commonly stored in row-major order (`[width][height][channels]`), MATLAB stores images transposed and in column-major order (`[channels][width][height]`). For example, if the Red-Green-Blue pixels of a `BufferedImage` would be laid out as `[RGB][RGB][RGB]...`, the same image would be laid out as `[RRR...][GGG...][BBB...]` in MATLAB. Depending on the resolution this conversion can become fairly expensive.
 
-In order to process images at a frame rate of 30 fps in real-time, the total time budget of the main MATLAB thread is 33ms per cycle. Thus, the aquisition overhead imposed on the main thread needs to be sufficiently low, i.e., a low number of milliseconds, to leave enough time for the actual processing.
+In order to process images at a frame rate of 30 fps in real-time, the total time budget of the main MATLAB thread is 33ms per cycle. Thus, the acquisition overhead imposed on the main thread needs to be sufficiently low, i.e., a low number of milliseconds, to leave enough time for the actual processing.
 
 == Data Translation
 
@@ -96,7 +96,7 @@ image = imread('tmp.jpg');
 
 *3. Java Layout as 1D Pixel Array*
 
-Another approach is to copy the pixel array of Java's `BufferedImage` and to reshape the memory using MATLAB. This is also the acepted answer for link:https://mathworks.com/matlabcentral/answers/100155-how-can-i-convert-a-java-image-object-into-a-matlab-image-matrix#answer_109503[How can I convert a Java Image object to a MATLAB image matrix?].
+Another approach is to copy the pixel array of Java's `BufferedImage` and to reshape the memory using MATLAB. This is also the accepted answer for link:https://mathworks.com/matlabcentral/answers/100155-how-can-i-convert-a-java-image-object-into-a-matlab-image-matrix#answer_109503[How can I convert a Java Image object to a MATLAB image matrix?].
 
 [source,matlab]
 ----
@@ -134,7 +134,7 @@ Note that the most efficient way we found for converting the memory layout on th
 
 *5. MATLAB Layout as Shared Memory*
 
-The fifth approach is the same as the fourth with the difference that the Java translation layer is bypassed entirely by using shared memory via link:https://mathworks.com/help/matlab/ref/memmapfile.html[memmapfile]. Shared memory is typically used for inter-process communication, but it can also be used within a single process. Running within the same process also simplifies synchronization since MATLAB can access Java locks.
+The fifth approach is the same as the fourth with the difference that the Java translation layer is bypassed entirely by using shared memory via `link:https://mathworks.com/help/matlab/ref/memmapfile.html[memmapfile]`. Shared memory is typically used for inter-process communication, but it can also be used within a single process. Running within the same process also simplifies synchronization since MATLAB can access Java locks.
 
 [source,matlab]
 ----
@@ -152,19 +152,9 @@ Note that the code could be interrupted (ctrl+c) at any line, so the locking mec
 
 The multiplication by one forces a copy of the data. This is necessary because under-the-hood `memmapfile` only returns a reference to the underlying memory.
 
-////
-We can solve this by doing one of the following
-
-* Make the internal logic smart enough to handle cases where users didn't call `unlock`
-* Use link:https://mathworks.com/help/matlab/ref/oncleanup.html[onCleanup] to guarantee unlocking, e.g., `c = onCleanup(@()unlock(this.javaObj))`
-* Create a custom class that locks in the constructor and unlocks in the destructor
-
-However, even if the `unlock` call is in a destructor (guaranteed to run when exiting scope), the Java logic still needs to handle cases where the code gets interrupted before the `lock` call.
-////
-
 == Results
 
-All benchmarks were run in MATLAB 2017b on an link:https://www.intel.com/content/www/us/en/products/boards-kits/nuc/kits/nuc6i7kyk.html[Intel NUC6I7KYK]. The performance was measured using MATLAB's link:https://mathworks.com/help/matlab/ref/timeit.html[timeit] function. The background color of each cell in the result tables represents a rough classification of the overhead on the main MATLAB thread.
+All benchmarks were run in MATLAB 2017b on an link:https://www.intel.com/content/www/us/en/products/boards-kits/nuc/kits/nuc6i7kyk.html[Intel NUC6I7KYK]. The performance was measured using MATLAB's `link:https://mathworks.com/help/matlab/ref/timeit.html[timeit]` function. The background color of each cell in the result tables represents a rough classification of the overhead on the main MATLAB thread.
 
 {set:cellbgcolor:white}
 
@@ -183,33 +173,26 @@ Red |  >100% | >33.3 ms  |
 
 The two tables below show the results for converting color (RGB) images as well as grayscale images. All measurements are in milliseconds.
 
-////
-* Green: below 10% or 3.3ms at 30 fps
-* Yellow: below 50% or 16.5ms at 30 fps
-* Orange: below 100% or 33.3ms at 30 fps
-* Red: above 100%
-////
-
 [.text-center]
 .Conversion overhead on the MATLAB thread in [ms]
 image::{imagesdir}/streaming/table_performance.svg[width=100%]
 
-The results show that the default conversion as well as jpeg compression are essentially non-starters for color images. For grayscale images the default conversion works significantly better due to the fact that the data is stored in a much more efficient 2D array (`byte[height][width]`), and that there is no need to re-order pixels by color.
+The results show that the default conversion, as well as jpeg compression, are essentially non-starters for color images. For grayscale images, the default conversion works significantly better due to the fact that the data is stored in a much more efficient 2D array (`byte[height][width]`), and that there is no need to re-order pixels by color.
 
 [NOTE]
 Unfortunately, we currently don't have a good explanation for the ~10x cost increase (rather than ~4x) between 1080p and 4K grayscale. The behavior was the same across computers and different memory settings.
 
-When copying the backing array of a `BufferedImage` we can see another significant performance increase due to the data being stored in a single contiguous array. At this point much of the overhead comes from re-ordering pixels, so by doing the conversion beforehand we can get another 2-3x improvement.
+When copying the backing array of a `BufferedImage` we can see another significant performance increase due to the data being stored in a single contiguous array. At this point much of the overhead comes from re-ordering pixels, so by doing the conversion beforehand, we can get another 2-3x improvement.
 
-Lastly, although accessing shared memory in combination with the locking overhead results in a slightly higher fixed cost, the copying itself is significantly cheaper, resulting in another 2-3x speedup for high resolution images. Overall, going through shared memory scales very well and would even allow streaming of 4K color images from two cameras simultaneously.
+Lastly, although accessing shared memory in combination with the locking overhead results in a slightly higher fixed cost, the copying itself is significantly cheaper, resulting in another 2-3x speedup for high-resolution images. Overall, going through shared memory scales very well and would even allow streaming of 4K color images from two cameras simultaneously.
 
 == Final Notes
 
-As for our initial motiation, after creating link:https://github.com/HebiRobotics/HebiCam[HebiCam] we were able to develop and reliably run the whole demo entirely in MATLAB.
+As for our initial motivation, after creating link:https://github.com/HebiRobotics/HebiCam[HebiCam] we were able to develop and reliably run the whole demo entirely in MATLAB.
 
 video::R0nQSxt8uic?rel=0[youtube]
 
 Our main takeaway was that although MATLAB's Java interface can be inefficient for certain cases, there are simple workarounds that can remove most bottlenecks. The most important rule is to avoid converting to and from large multi-dimensional matrices whenever possible.
 
-Another insight was that shared memory provides a very efficient way to transfer large amounts of data to and from MATLAB. We also found it useful for inter-process communication between multiple MATLAB instances. For example, one instance can track a target while another instance can use its output for real-time control. This is useful for avoiding coupling a fast control loop to the (usually lower) frame rate of a camera or sensor.
+Another insight was that shared-memory provides a very efficient way to transfer large amounts of data to and from MATLAB. We also found it useful for inter-process communication between multiple MATLAB instances. For example, one instance can track a target while another instance can use its output for real-time control. This is useful for avoiding coupling a fast control loop to the (usually lower) frame rate of a camera or sensor.
 
