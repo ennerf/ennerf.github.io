@@ -1,6 +1,6 @@
 = Efficient Data Acquisition in MATLAB: Streaming HD Video in Real-Time
-:published_at: 2017-10-15
-//:hp-tags: 
+:published_at: 2017-10-14
+:hp-tags: MATLAB, MATLAB-Java Interface, shared memory, computer vision, OpenCV, JavaCV, FFMpeg
 //:imagesdir: ../images
 //:imagesdir: https://rawgit.com/ennerf/ennerf.github.io/tree/master/images
 :imagesdir: https://cdn.rawgit.com/ennerf/ennerf.github.io/8f6a41c7/images
