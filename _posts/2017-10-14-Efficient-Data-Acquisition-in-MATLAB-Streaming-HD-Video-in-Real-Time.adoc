@@ -158,7 +158,7 @@ The multiplication by one forces a copy of the data. This is necessary because u
 
 All benchmarks were run in MATLAB 2017b on an link:https://www.intel.com/content/www/us/en/products/boards-kits/nuc/kits/nuc6i7kyk.html[Intel NUC6I7KYK]. The performance was measured using MATLAB's `link:https://mathworks.com/help/matlab/ref/timeit.html[timeit]` function. The background color of each cell in the result tables represents a rough classification of the overhead on the main MATLAB thread.
 
-{set:cellbgcolor:white}
+//{set:cellbgcolor:white}
 
 [.text-center]
 .Color classification
@@ -171,7 +171,7 @@ Orange | <100% | <33.3 ms |
 Red |  >100% | >33.3 ms  |
 |====================
 
-{set:cellbgcolor!}
+//{set:cellbgcolor!}
 
 The two tables below show the results for converting color (RGB) images as well as grayscale images. All measurements are in milliseconds.
 
@@ -197,4 +197,4 @@ Another insight was that shared-memory provides a very efficient way to transfer
 
 As for our initial motivation, after creating link:https://github.com/HebiRobotics/HebiCam[HebiCam] we were able to develop and reliably run the entire demo in MATLAB. The video below shows the setup using old-generation S-Series actuators.
 
-video::R0nQSxt8uic?rel=0[youtube,width=50%]
+video::R0nQSxt8uic?rel=0[youtube]
