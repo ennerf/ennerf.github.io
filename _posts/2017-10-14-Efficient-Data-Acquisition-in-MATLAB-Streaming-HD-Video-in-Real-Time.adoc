@@ -160,7 +160,7 @@ All benchmarks were run in MATLAB 2017b on an link:https://www.intel.com/content
 
 {set:cellbgcolor:white}
 
-//.Color classification
+.Color classification
 [width="100%",frame="topbot",options="header",cols="a,a,a"]
 |====
 |Color|Overhead|At 30 FPS 
