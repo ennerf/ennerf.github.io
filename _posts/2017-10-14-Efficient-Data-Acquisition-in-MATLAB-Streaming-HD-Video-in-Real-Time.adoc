@@ -37,7 +37,7 @@ While both interfaces have strengths and weaknesses, practically all use cases c
 
 [.text-center]
 .System overview for a stereo vision setup
-image::{imagesdir}/streaming/stereocam-matlab.svg[width=100%]
+image::{imagesdir}/streaming/stereocam-matlab.svg[width=80%]
 
 Starting background threads and getting the video stream into Java was relatively straightforward. We used the link:https://github.com/bytedeco/javacv[JavaCV] library, which is a Java wrapper around link:https://opencv.org/[OpenCV] and link:https://www.ffmpeg.org/[FFMpeg] that includes pre-compiled native binaries for all major platforms. However, passing the acquired image data from Java into MATLAB turned out to be more challenging.
 
@@ -158,11 +158,11 @@ The multiplication by one forces a copy of the data. This is necessary because u
 
 All benchmarks were run in MATLAB 2017b on an link:https://www.intel.com/content/www/us/en/products/boards-kits/nuc/kits/nuc6i7kyk.html[Intel NUC6I7KYK]. The performance was measured using MATLAB's `link:https://mathworks.com/help/matlab/ref/timeit.html[timeit]` function. The background color of each cell in the result tables represents a rough classification of the overhead on the main MATLAB thread.
 
-//{set:cellbgcolor:white}
+{set:cellbgcolor:white}
 
 [.text-center]
 .Color classification
-[width="50%",frame="topbot",options="header",cols="^a,^a,^a"]
+[width="50%",frame="topbot",options="header",cols="a,a,a"]
 |====================
 | Color |  Overhead | At 30 FPS |
 Green |  <10% | <3.3 ms | 
@@ -171,7 +171,7 @@ Orange | <100% | <33.3 ms |
 Red |  >100% | >33.3 ms  |
 |====================
 
-//{set:cellbgcolor!}
+{set:cellbgcolor!}
 
 The two tables below show the results for converting color (RGB) images as well as grayscale images. All measurements are in milliseconds.
 
