@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Tue, 14 Nov 2017 11:47:41 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Efficient Data Acquisition in MATLAB: Streaming HD Video in Real-Time]]></title><description><![CDATA[<div id="preamble">
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Tue, 14 Nov 2017 11:57:16 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Efficient Data Acquisition in MATLAB: Streaming HD Video in Real-Time]]></title><description><![CDATA[<div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
 <p>The acquisition and processing of a video stream can be very computationally expensive. Typical image processing applications split the work across multiple threads, one acquiring the images, and another one running the actual algorithms. In MATLAB we can get multi-threading by interfacing with other languages, but there is a significant cost associated with exchanging data across the resulting language barrier. In this blog post, we compare different approaches for getting data through MATLAB&#8217;s Java interface, and we show how to acquire high-resolution video streams in real-time and with low overhead.</p>
@@ -203,7 +203,7 @@ unlock(this.javaObj);</code></pre>
 <div class="paragraph">
 <p></p>
 </div>
-<table class="tableblock frame-all grid-all text-center" style="width: 50%;">
+<table class="tableblock frame-topbot grid-all text-center" style="width: 50%;">
 <caption class="title">Table 1. Color classification</caption>
 <colgroup>
 <col style="width: 33.3333%;">
@@ -214,7 +214,7 @@ unlock(this.javaObj);</code></pre>
 <tr>
 <th class="tableblock halign-center valign-top" style="background-color: white;">Color</th>
 <th class="tableblock halign-center valign-top" style="background-color: white;">Overhead</th>
-<th class="tableblock halign-center valign-top" style="background-color: white;">30 Frames / Sec</th>
+<th class="tableblock halign-center valign-top" style="background-color: white;">At 30 FPS</th>
 </tr>
 </thead>
 <tbody>
@@ -276,20 +276,9 @@ unlock(this.javaObj);</code></pre>
 </div>
 <div class="title">Figure 2. Conversion overhead on the MATLAB thread in [ms]</div>
 </div>
+<br>
 <div class="paragraph">
-<p>The results show that the default conversion, as well as jpeg compression, are essentially non-starters for color images. For grayscale images, the default conversion works significantly better due to the fact that the data is stored in a much more efficient 2D array (<code>byte[height][width]</code>), and that there is no need to re-order pixels by color.</p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-Unfortunately, we currently don&#8217;t have a good explanation for the ~10x cost increase (rather than ~4x) between 1080p and 4K grayscale. The behavior was the same across computers and different memory settings.
-</td>
-</tr>
-</table>
+<p>The results show that the default conversion, as well as jpeg compression, are essentially non-starters for color images. For grayscale images, the default conversion works significantly better due to the fact that the data is stored in a much more efficient 2D array (<code>byte[height][width]</code>), and that there is no need to re-order pixels by color. Unfortunately, we currently don&#8217;t have a good explanation for the ~10x cost increase (rather than ~4x) between 1080p and 4K grayscale. The behavior was the same across computers and various different memory settings.</p>
 </div>
 <div class="paragraph">
 <p>When copying the backing array of a <code>BufferedImage</code> we can see another significant performance increase due to the data being stored in a single contiguous array. At this point much of the overhead comes from re-ordering pixels, so by doing the conversion beforehand, we can get another 2-3x improvement.</p>
@@ -313,7 +302,7 @@ Unfortunately, we currently don&#8217;t have a good explanation for the ~10x cos
 </div>
 <div class="videoblock">
 <div class="content">
-<iframe src="https://www.youtube.com/embed/R0nQSxt8uic?rel=0?rel=0" frameborder="0" allowfullscreen></iframe>
+<iframe width="50%" src="https://www.youtube.com/embed/R0nQSxt8uic?rel=0?rel=0" frameborder="0" allowfullscreen></iframe>
 </div>
 </div>
 </div>
