@@ -190,11 +190,10 @@ Lastly, although accessing shared memory in combination with the locking overhea
 
 == Final Notes
 
-As for our initial motivation, after creating link:https://github.com/HebiRobotics/HebiCam[HebiCam] we were able to develop and reliably run the entire demo in MATLAB. The video below shows the setup using old-generation S-Series actuators.
-
-video::R0nQSxt8uic?rel=0[youtube]
-
 Our main takeaway was that although MATLAB's Java interface can be inefficient for certain cases, there are simple workarounds that can remove most bottlenecks. The most important rule is to avoid converting to and from large multi-dimensional matrices whenever possible.
 
 Another insight was that shared-memory provides a very efficient way to transfer large amounts of data to and from MATLAB. We also found it useful for inter-process communication between multiple MATLAB instances. For example, one instance can track a target while another instance can use its output for real-time control. This is useful for avoiding coupling a fast control loop to the (usually lower) frame rate of a camera or sensor.
 
+As for our initial motivation, after creating link:https://github.com/HebiRobotics/HebiCam[HebiCam] we were able to develop and reliably run the entire demo in MATLAB. The video below shows the setup using old-generation S-Series actuators.
+
+video::R0nQSxt8uic?rel=0[youtube]
