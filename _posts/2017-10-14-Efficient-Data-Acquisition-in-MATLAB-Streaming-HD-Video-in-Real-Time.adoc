@@ -162,9 +162,9 @@ All benchmarks were run in MATLAB 2017b on an link:https://www.intel.com/content
 
 [.text-center]
 .Color classification
-[width="50%",options="header",cols="^a,^a,^a"]
+[width="50%",frame="topbot",options="header",cols="^a,^a,^a"]
 |====================
-| Color |  Overhead | 30 Frames / Sec |
+| Color |  Overhead | At 30 FPS |
 Green |  <10% | <3.3 ms | 
 Yellow | <50% | <16.5 ms |
 Orange | <100% | <33.3 ms | 
@@ -179,10 +179,11 @@ The two tables below show the results for converting color (RGB) images as well 
 .Conversion overhead on the MATLAB thread in [ms]
 image::{imagesdir}/streaming/table_performance.svg[width=100%]
 
-The results show that the default conversion, as well as jpeg compression, are essentially non-starters for color images. For grayscale images, the default conversion works significantly better due to the fact that the data is stored in a much more efficient 2D array (`byte[height][width]`), and that there is no need to re-order pixels by color.
+++++
+<br>
+++++
 
-[NOTE]
-Unfortunately, we currently don't have a good explanation for the ~10x cost increase (rather than ~4x) between 1080p and 4K grayscale. The behavior was the same across computers and different memory settings.
+The results show that the default conversion, as well as jpeg compression, are essentially non-starters for color images. For grayscale images, the default conversion works significantly better due to the fact that the data is stored in a much more efficient 2D array (`byte[height][width]`), and that there is no need to re-order pixels by color. Unfortunately, we currently don't have a good explanation for the ~10x cost increase (rather than ~4x) between 1080p and 4K grayscale. The behavior was the same across computers and various different memory settings.
 
 When copying the backing array of a `BufferedImage` we can see another significant performance increase due to the data being stored in a single contiguous array. At this point much of the overhead comes from re-ordering pixels, so by doing the conversion beforehand, we can get another 2-3x improvement.
 
@@ -196,4 +197,4 @@ Another insight was that shared-memory provides a very efficient way to transfer
 
 As for our initial motivation, after creating link:https://github.com/HebiRobotics/HebiCam[HebiCam] we were able to develop and reliably run the entire demo in MATLAB. The video below shows the setup using old-generation S-Series actuators.
 
-video::R0nQSxt8uic?rel=0[youtube]
+video::R0nQSxt8uic?rel=0[youtube,width=50%]
