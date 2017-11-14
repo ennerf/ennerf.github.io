@@ -158,15 +158,10 @@ The multiplication by one forces a copy of the data. This is necessary because u
 
 All benchmarks were run in MATLAB 2017b on an link:https://www.intel.com/content/www/us/en/products/boards-kits/nuc/kits/nuc6i7kyk.html[Intel NUC6I7KYK]. The performance was measured using MATLAB's `link:https://mathworks.com/help/matlab/ref/timeit.html[timeit]` function. The background color of each cell in the result tables represents a rough classification of the overhead on the main MATLAB thread.
 
-:frame: sides
-:grid: rows
-:halign: center
-:valign: middle
-
 {set:cellbgcolor:white}
 
 //.Color classification
-[width="30%",frame="topbot",options="header",cols="^a,^a,^a"]
+[width="30%",frame="topbot",grid="rows",options="header",cols="^a,^a,^a"]
 |====
 |Color|Overhead|At 30 FPS 
 |Green|<10%|<3.3 ms
