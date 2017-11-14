@@ -162,7 +162,7 @@ All benchmarks were run in MATLAB 2017b on an link:https://www.intel.com/content
 
 [.text-center]
 .Color classification
-[width="50%",frame="topbot",options="header",cols="a,a,a"]
+[width="30%",frame="topbot",options="header",cols="<a,<a,<a"]
 |====================
 | Color |  Overhead | At 30 FPS |
 Green |  <10% | <3.3 ms | 
