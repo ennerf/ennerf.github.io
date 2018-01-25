@@ -1,26 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Thu, 25 Jan 2018 14:16:18 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Test Post]]></title><description><![CDATA[<script type="text/javascript"
-  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-</script>
-<div class="paragraph">
-<p>equation below:</p>
-</div>
-<div class="paragraph">
-<p>\(x^2 - y^2 = (x + y)(x - y)\)</p>
-</div>
-<div class="paragraph">
-<div class="title">Block macro</div>
-<p>latexmath::[$C = \alpha + \beta Y^{\gamma} + \epsilon$]</p>
-</div>
-<div class="stemblock">
-<div class="title">Delimited block</div>
-<div class="content">
-\[C = \alpha + \beta Y^{\gamma} + \epsilon\]
-</div>
-</div>
-<div class="paragraph">
-<div class="title">Inline macro</div>
-<p>\($C = \alpha + \beta Y^{\gamma} + \epsilon$\)</p>
-</div>]]></description><link>https://ennerf.github.io/2018/01/01/Test-Post.html</link><guid isPermaLink="true">https://ennerf.github.io/2018/01/01/Test-Post.html</guid><category><![CDATA[tests]]></category><dc:creator><![CDATA[Florian Enner]]></dc:creator><pubDate>Mon, 01 Jan 2018 00:00:00 GMT</pubDate></item><item><title><![CDATA[Efficient Data Acquisition in MATLAB: Streaming HD Video in Real-Time]]></title><description><![CDATA[<div id="preamble">
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Software for Robots]]></title><description><![CDATA[Real-Time Control, Networking, Operating Systems, Languages]]></description><link>https://ennerf.github.io</link><image><url>https://raw.githubusercontent.com/ennerf/ennerf.github.io/master/images/cover-image.jpg</url><title>Software for Robots</title><link>https://ennerf.github.io</link></image><generator>RSS for Node</generator><lastBuildDate>Thu, 25 Jan 2018 14:17:15 GMT</lastBuildDate><atom:link href="https://ennerf.github.io/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title><![CDATA[Efficient Data Acquisition in MATLAB: Streaming HD Video in Real-Time]]></title><description><![CDATA[<div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
 <p>The acquisition and processing of a video stream can be very computationally expensive. Typical image processing applications split the work across multiple threads, one acquiring the images, and another one running the actual algorithms. In MATLAB we can get multi-threading by interfacing with other languages, but there is a significant cost associated with exchanging data across the resulting language barrier. In this blog post, we compare different approaches for getting data through MATLAB&#8217;s Java interface, and we show how to acquire high-resolution video streams in real-time and with low overhead.</p>
