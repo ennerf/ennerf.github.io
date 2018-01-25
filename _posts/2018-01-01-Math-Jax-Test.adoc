@@ -1,4 +1,4 @@
-= Test Post
+= MathJax Test
 :published_at: 2018-01-01
 :hp-tags: tests
 :imagesdir: ../images
