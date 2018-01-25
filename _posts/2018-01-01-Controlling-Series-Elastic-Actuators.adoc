@@ -1,16 +1,10 @@
-= MathJax Test
+= Controlling Series Elastic Actuators
 :published_at: 2018-01-01
-:hp-tags: tests
+:hp-tags: Series Elastic Actuation, PID
 :imagesdir: ../images
 //:imagesdir: https://github.com/ennerf/ennerf.github.io/raw/master/images/
 :source-highlighter: none
 :stem: latexmath
-
-++++
-<script type="text/javascript"
-  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-</script>
-++++
 
 equation below: 
 
@@ -28,3 +22,13 @@ latexmath::[$C = \alpha + \beta Y^{\gamma} + \epsilon$]
 .Inline macro
 latexmath:[$C = \alpha + \beta Y^{\gamma} + \epsilon$]
 
+++++
+<script type="text/javascript"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<link rel="stylesheet" href="https://cdn.rawgit.com/ennerf/ennerf.github.io/master/resources/highlight.js/9.9.0/styles/matlab.css">
+<!-- TODO: figure out how to keep Hubpress from adding the default code highlighter to make this work -->
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>-->
+<!--<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/languages/matlab.min.js"></script>-->
+<!--<script type="text/javascript">hljs.initHighlightingOnLoad()</script>-->
+++++
