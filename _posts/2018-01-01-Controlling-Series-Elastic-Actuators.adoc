@@ -27,23 +27,36 @@ really quick overview of the standard graph, standard equations, and maybe some 
 
 == Series Elastic Actuators
 
-* What are they?
-* Compliance and Torque Control
-* Spring introduces oscillations quickly -> considered difficult to control
-* D-controller / Damping is very important!
-* I-controller has lots of issues and introduces oscillations quickly
+* Mechanical setup, what are SEAs?
+* Benefits of compliance and torque control
 
-== Treating Position-D as Velocity-P controller
+* Spring introduces oscillations -> considered difficult to control
+** Kp is limited
+** I-controller has practical issues (windup etc.) and increases instability
+** D-Controller adds damping and is very important. Unfortunately deriving noisy sensors with small dts introduces a lot of noise, so Kd is limited as well.
 
-* Motion controller already knows velocity anyways. We don't need to derive it
-* D controller on position `Kd * diff(cmdPos - fbkPos)` is mathematically equivalent to P controller on velocity `Kp * (cmdVel - fbkVel)`
-* Provides us with
-** Better velocity input - zero lag as value doesn't need to be derived numerically
-** Potentially better velocity feedback (kalman filter w/ sensor fusion instead of simple diff)
-** More resilient to timing and jitter. We can loose commands without the derivative going bad.
-** Ability to do feed forward (definition of motor's speed constant)
-*** Allows for better modelling
-*** Open loop systems can't introduce oscillations and are inherently stable
+== Derivative Control
+
+The D-controller works on the _derivative of the error signal_. This sounds a bit abstract and can be a bit difficult to imagine. However, we can reason about this differently:
+
+latexmath:[Kd * \frac{d error}{dt} = Kd * (\frac{d}{dt}position_{cmd} - \frac{d}{dt}position_{fbk})]
+
+In theory, a D-controller on position is mathematically the same as a P-controller on velocity.
+
+latexmath:[ Kp * ( velocity_{cmd} - velocity_{fbk})]
+
+However, while they are theoretically equivalent, there are some practical benefits for treating them separately.
+
+* The motion generator already knows the desired velocity for every point in time. Thus, we can get zero lag velocity input as the value doesn't need to be derived numerically.
+* Potentially better velocity feedback, e.g., kalman filter w/ sensor fusion instead of simple diff. (fancy models could be integrated into the D-term as well)
+* More resilient to timing and jitter. We can loose commands without the derivative going bad (is this true? is there a difference?)
+
+However, most importantly, it provides a nice way to do feed forward control. For BLDC motors there is a motor speed constant (add definition) that describes the required input voltage to reach a desired speed (spinning with no load). Using this, we can create an open-loop model that pushes the output into the right ballpark.
+
+* A better model of the world requires the P-controller to work less hard
+* Open loop systems can't introduce oscillations and are inherently stable
+* Significantly reduces noise issues coming from deriving position feedback
+* Reduces lag
 
 == What else can we model? Dynamics
 
