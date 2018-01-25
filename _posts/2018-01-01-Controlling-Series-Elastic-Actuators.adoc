@@ -1,0 +1,30 @@
+= MathJax Test
+:published_at: 2018-01-01
+:hp-tags: tests
+:imagesdir: ../images
+//:imagesdir: https://github.com/ennerf/ennerf.github.io/raw/master/images/
+:source-highlighter: none
+:stem: latexmath
+
+++++
+<script type="text/javascript"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+++++
+
+equation below: 
+
+stem:[x^2 - y^2 = (x + y)(x - y)]
+
+.Block macro
+latexmath::[$C = \alpha + \beta Y^{\gamma} + \epsilon$]
+
+.Delimited block
+[latexmath]
+++++
+\[C = \alpha + \beta Y^{\gamma} + \epsilon\]
+++++
+
+.Inline macro
+latexmath:[$C = \alpha + \beta Y^{\gamma} + \epsilon$]
+
