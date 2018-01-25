@@ -40,6 +40,7 @@ really quick overview of the standard graph, standard equations, and maybe some 
 * Provides us with
 ** Better velocity input - zero lag as value doesn't need to be derived numerically
 ** Potentially better velocity feedback (kalman filter w/ sensor fusion instead of simple diff)
+** More resilient to timing and jitter. We can loose commands without the derivative going bad.
 ** Ability to do feed forward (definition of motor's speed constant)
 *** Allows for better modelling
 *** Open loop systems can't introduce oscillations and are inherently stable
