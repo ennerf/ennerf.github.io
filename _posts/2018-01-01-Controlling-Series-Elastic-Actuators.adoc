@@ -6,21 +6,75 @@
 :source-highlighter: none
 :stem: latexmath
 
+////
 equation below: 
 
 stem:[x^2 - y^2 = (x + y)(x - y)]
 
-.Block macro
-latexmath::[$C = \alpha + \beta Y^{\gamma} + \epsilon$]
-
-.Delimited block
-[latexmath]
-++++
-\[C = \alpha + \beta Y^{\gamma} + \epsilon\]
-++++
-
 .Inline macro
 latexmath:[$C = \alpha + \beta Y^{\gamma} + \epsilon$]
+////
+
+Intro
+
+== PID Control
+
+really quick overview of the standard graph, standard equations, and maybe some short pseudo code
+
+* Simplified PID controller for position w/ motion controller input
+* Equations for P/I/D
+* MATLAB-pseudo code for P/I/D
+
+== Series Elastic Actuators
+
+* What are they?
+* Compliance and Torque Control
+* Spring introduces oscillations quickly -> considered difficult to control
+* D-controller / Damping is very important!
+* I-controller has lots of issues and introduces oscillations quickly
+
+== Treating Position-D as Velocity-P controller
+
+* Motion controller already knows velocity anyways. We don't need to derive it
+* D controller on position `Kd * diff(cmdPos - fbkPos)` is mathematically equivalent to P controller on velocity `Kp * (cmdVel - fbkVel)`
+* Provides us with
+** Better velocity input - zero lag as value doesn't need to be derived numerically
+** Potentially better velocity feedback (kalman filter w/ sensor fusion instead of simple diff)
+** Ability to do feed forward (definition of motor's speed constant)
+*** Allows for better modelling
+*** Open loop systems can't introduce oscillations and are inherently stable
+
+== What else can we model? Dynamics
+
+Important especially for fast dynamic motions
+
+=== Gravity
+
+Introduces constant acceleration in one direction. Often overcome with I controller on position. Given a model of the robot, we can calculate torques that can negate gravity. Even a poor model already helps significantly.
+
+=== Accelerations
+
+Joint accelerations due to the motion. Same as velocity. The motion controller already knows what the accelerations should be, so we are able to calculate torques using  dynamics.
+
+=== Force/Torque controller
+
+* Can also make use of feed forward term via motor torque constant. Even if there is no torque sensor.
+* sum(velocityFF + torqueFF) with a perfect model would already be what we want
+
+Model is not perfect, so we still need some amount of closed-loop control
+
+* 90% open-loop for effects we can model
+* 10% closed-loop to account for errors in the model
+
+== Combining Position/Velocity/Force
+
+We think this the right level of abstraction for an actuator
+
+* Same units as kinematics/dynamics when doing calculations for a system
+* Everything needed for ‘good tracking’ of pos/vel/force should be embedded in the actuator.
+* Making use of feedforward terms for velocity/torque when voltage-controlling motors.
+
+* Local controllers don't have to introduce lag by deriving velocity/acceleratory effects themselves
 
 ++++
 <script type="text/javascript"
