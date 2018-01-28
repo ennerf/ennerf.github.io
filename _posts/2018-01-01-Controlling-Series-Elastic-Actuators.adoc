@@ -22,8 +22,8 @@ Intro
 really quick overview of the standard graph, standard equations, and maybe some short pseudo code
 
 * Simplified PID controller for position w/ motion controller input
-* Equations for P/I/D
-* MATLAB-pseudo code for P/I/D
+* Equations for PID
+* MATLAB-pseudo code for PID
 
 == Series Elastic Actuators
 
@@ -32,31 +32,48 @@ really quick overview of the standard graph, standard equations, and maybe some 
 
 * Spring introduces oscillations -> considered difficult to control
 ** Kp is limited
-** I-controller has practical issues (windup etc.) and increases instability
-** D-Controller adds damping and is very important. Unfortunately deriving noisy sensors with small dts introduces a lot of noise, so Kd is limited as well.
+** I controller has practical issues (windup etc.) and increases instability
+** D controller adds damping and is very important. Unfortunately deriving noisy sensors with small dts introduces a lot of noise, so Kd is limited as well.
 
-== Derivative Control
+== Proportional Control / Virtual Spring
 
-The D-controller works on the _derivative of the error signal_. This sounds a bit abstract and can be a bit difficult to imagine. However, we can reason about this differently:
+A proportional controller an be thought of as a virtual spring with the stiffness _Kp_. Increasing the stiffness results in less steady state error and more accurate position control. Thus, high precision systems tend to run with very stiff gains.
 
-latexmath:[Kd * \frac{d error}{dt} = Kd * (\frac{d}{dt}position_{cmd} - \frac{d}{dt}position_{fbk})]
+Since a virtual spring can never respond as fast as a physical response, the maximum stiffness is fundamentally limited by the physical stiffness of the system. If the virtual spring is set to be stiffer than the underlying physical system, the response will oscillate and become unstable.
 
-In theory, a D-controller on position is mathematically the same as a P-controller on velocity.
+This poses a problem for series elastic actuators as they by definition contain a spring. The stiffness of the SEA's physical spring is a sliding scale between good position control and accurate force control. Typical factors when choosing the physical spring stiffness include: 
+
+* accurate position control (stiffer is better)
+* force/torque resolution (softer is better)
+* impact protection (softer is better)
+* energy storage (softer is better)
+
+One way to further increase the gain _Kp_ is by adding damping.
+
+adding a virtual damper using derivative control.
+
+
+== Derivative Control / Virtual Damper
+
+The derivative controller is often thought of as a virtual damper as it damps out the response of the proportional controller. It does this by looking at the _derivative of the error signal_. In practice, the derivative controller has two main problems: 
+
+* The derivative always lags because it has to be differentiated numerically
+* Numerical differentiation amplifies sensor noise, which limits the usable range for _Kd_
+
+It is sometimes a bit abstract to think about the _derivative of the error signal_, but we can reason about this a bit differently. A derivative controller is mathematically equivalent to a proportional controller on a matching velocity input signal.
+
+latexmath:[Kd * \frac{\Delta error}{\Delta t} = Kd * \frac{\Delta position_{cmd} - \Delta position_{fbk}}{\Delta t}]
 
 latexmath:[ Kp * ( velocity_{cmd} - velocity_{fbk})]
 
-However, while they are theoretically equivalent, there are some practical benefits for treating them separately.
+So adding a derivative term really just means that we would also like to track the velocity. However, while they may be theoretically equivalent, a separation into two controllers yields some practical benefits. First, we can reduce the lag and noise introduced by the numerical differentiation:
 
-* The motion generator already knows the desired velocity for every point in time. Thus, we can get zero lag velocity input as the value doesn't need to be derived numerically.
-* Potentially better velocity feedback, e.g., kalman filter w/ sensor fusion instead of simple diff. (fancy models could be integrated into the D-term as well)
-* More resilient to timing and jitter. We can loose commands without the derivative going bad (is this true? is there a difference?)
+* The motion generator already knows the desired velocity for any point in time, so we can reduce lag by not having to derive it in the controller.
+* It is easier to build better models for improving the velocity feedback when it is separated from commands, e.g., kalman filters and sensor fusion.
 
-However, most importantly, it provides a nice way to do feed forward control. For BLDC motors there is a motor speed constant (add definition) that describes the required input voltage to reach a desired speed (spinning with no load). Using this, we can create an open-loop model that pushes the output into the right ballpark.
+Second, there is a known relationship between the desired (no-load) spinning velocity and the required input PWM when voltage controlling an electric motor. It depends on mechanical properties (e.g. gear ratio), the motor speed constant (add definition), as well as the motor state (e.g. winding temperature).
 
-* A better model of the world requires the P-controller to work less hard
-* Open loop systems can't introduce oscillations and are inherently stable
-* Significantly reduces noise issues coming from deriving position feedback
-* Reduces lag
+Knowing these properties, we can calculate a feed forward term that results in roughly the right output. This significantly improves velocity tracking while keeping the _Kp_ gain low. With a good model, most of the controller can be calculated open-loop, which makes the controller less subsceptible to noise. Open-loop systems are also always stable and can't introduce oscillations.
 
 == What else can we model? Dynamics
 
