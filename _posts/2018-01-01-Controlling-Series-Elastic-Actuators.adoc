@@ -75,27 +75,22 @@ Second, there is a known relationship between the desired (no-load) spinning vel
 
 Knowing these properties, we can calculate a feed forward term that results in roughly the right output. This significantly improves velocity tracking while keeping the _Kp_ gain low. With a good model, most of the controller can be calculated open-loop, which makes the controller less subsceptible to noise. Open-loop systems are also always stable and can't introduce oscillations.
 
-== What else can we model? Dynamics
 
-Important especially for fast dynamic motions
+== Integral Controller
 
-=== Gravity
+Integral controllers need to be used carefully as they can easily introduce instability and are plagued by practical issues such as windup. They are sometimes used to overcome gravity on joints that have a preferred direction, e.g., the shoulder joint in an elbow-up configuration.
 
-Introduces constant acceleration in one direction. Often overcome with I controller on position. Given a model of the robot, we can calculate torques that can negate gravity. Even a poor model already helps significantly.
+However, this is again something that we can easily account for in our models. Having knowledge of the system's configuration and masses, we can calculate the joint torques required to compensate for gravity.
 
-=== Accelerations
+Similarly to the voltage-speed relationship, there is a known relationship between the voltage and the desired output torque (stall) that we can feed forward. Note that even a poor model of the system can significantly improve tracking. Additionally, we can use _Forward Dynamics_ to calculate the torques required to compensate for the joint accelerations to achieve the desired motions. 
 
-Joint accelerations due to the motion. Same as velocity. The motion controller already knows what the accelerations should be, so we are able to calculate torques using  dynamics.
-
-=== Force/Torque controller
-
-* Can also make use of feed forward term via motor torque constant. Even if there is no torque sensor.
-* sum(velocityFF + torqueFF) with a perfect model would already be what we want
-
-Model is not perfect, so we still need some amount of closed-loop control
+If we had a perfect model, the sum of the velocity feed forward term (speed without load) and the torque feed forward term (load without speed) would already achieve the desired output. The added closed-loop control parts are to account for errors in our model, e.g.,
 
 * 90% open-loop for effects we can model
 * 10% closed-loop to account for errors in the model
+
+Note that this is not specific to SEAs, but applies to all actuators that can make use of feed forward terms.
+
 
 == Combining Position/Velocity/Force
 
@@ -106,6 +101,9 @@ We think this the right level of abstraction for an actuator
 * Making use of feedforward terms for velocity/torque when voltage-controlling motors.
 
 * Local controllers don't have to introduce lag by deriving velocity/acceleratory effects themselves
+
+* Torque loop can't be summed close-loop as any inaccuracies in the model will fight the position controller. However, we can do joint-level impedance control by running a cascaded controller where the position controller feeds into the torque controller. This allows the position controller to account for modelling errors and results in programmatically compliant behavior, even if the gear train is not backdriveable.
+
 
 ++++
 <script type="text/javascript"
