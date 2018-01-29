@@ -1,8 +1,8 @@
 = Controlling Series Elastic Actuators
 :published_at: 2018-01-01
 :hp-tags: Series Elastic Actuation, PID
-:imagesdir: ../images
-//:imagesdir: https://github.com/ennerf/ennerf.github.io/raw/master/images/
+//:imagesdir: ../images
+:imagesdir: https://github.com/ennerf/ennerf.github.io/raw/master/images/
 :source-highlighter: none
 :stem: latexmath
 
@@ -24,6 +24,8 @@ really quick overview of the standard graph, standard equations, and maybe some 
 * Simplified PID controller for position w/ motion controller input
 * Equations for PID
 * MATLAB-pseudo code for PID
+
+image::controls/position-pid.png[]
 
 == Series Elastic Actuators
 
@@ -60,13 +62,19 @@ The derivative controller is often thought of as a virtual damper as it damps ou
 * The derivative always lags because it has to be differentiated numerically
 * Numerical differentiation amplifies sensor noise, which limits the usable range for _Kd_
 
-It is sometimes a bit abstract to think about the _derivative of the error signal_, but we can reason about this a bit differently. A derivative controller is mathematically equivalent to a proportional controller on a matching velocity input signal.
+It is sometimes a bit abstract to think about the _derivative of the error signal_, but we can reason about this a bit differently. A derivative controller on a position signal,
 
-latexmath:[Kd * \frac{\Delta error}{\Delta t} = Kd * \frac{\Delta position_{cmd} - \Delta position_{fbk}}{\Delta t}]
+latexmath:[Kd * \frac{d}{dt} (position_{cmd} - position_{fbk})]
+
+is mathematically equivalent to a proportional controller on a velocity signal,
 
 latexmath:[ Kp * ( velocity_{cmd} - velocity_{fbk})]
 
-So adding a derivative term really just means that we would also like to track the velocity. However, while they may be theoretically equivalent, a separation into two controllers yields some practical benefits. First, we can reduce the lag and noise introduced by the numerical differentiation:
+Thus, adding a derivative term really just means that in addition to position, we would also like to track the desired velocity. However, while they are theoretically equivalent, a separation into two controllers yields some practical benefits. 
+
+image::controls/position-pi-velocity.png[]
+
+First, we can reduce the lag and noise introduced by the numerical differentiation.
 
 * The motion generator already knows the desired velocity for any point in time, so we can reduce lag by not having to derive it in the controller.
 * It is easier to build better models for improving the velocity feedback when it is separated from commands, e.g., kalman filters and sensor fusion.
