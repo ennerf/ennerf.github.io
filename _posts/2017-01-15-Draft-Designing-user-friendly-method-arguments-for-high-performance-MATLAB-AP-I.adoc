@@ -1,0 +1,150 @@
+= Designing user-friendly method arguments for high-performance MATLAB APIs
+// Creating user-friendly MATLAB bindings for robotic systems ?
+:published_at: 2017-01-15
+:hp-tags: MATLAB, Java
+:imagesdir: ../images
+
+// PARTIALLY DEPRECATED. Maybe there should be a post on Java vs Mex interface?
+
+// What should this post be about? Why we made the decisions we did or general recommendations? General recommendations is difficult since we don't know as much about MEX. Should the title be something like "Towards better APIs for robotics research"? "A mission to develop the perfect MATLAB API"? I want to cover some basics (wrapper class integration, basic Java method with multiple Object arguments, highlight the typing mismatch between static and dynamically typed language). Does the Java specific part fit or should that be all in a separate post? I feel like stopping after discussing what an interface should look like is too open ended.
+
+// ---------
+
+After many attempts to improve the APIs we always found that users were still often confused. We eventually found most of the confusion stemming from the fact that the translation layer didn't look exactly like MATLAB and sometimes leaked some of the implementation details.
+
+We then switched to an approach where we tried to come up with a 'perfect' API without thinking about implementation details and all the effort it would take to implement.
+
+Luckily, we were part of a very large lab (>40 people) and it was reasonable to allocate a significant amount of staff engineering time for developing better APIs to speed up research.
+
+
+// ---------
+
+
+The biggest limitation to doing this is the lack of support for multi-threading. While the math gets executed very efficiently, the main thread ends up spending most or all of its available time budget waiting for hardware communication.
+
+Luckily, MATLAB offers great interfaces to various other languages that can be used to overcome practically all limitations. In this post we will cover how to create high performance interfaces for hardware-in-the-loop control that feel like native MATLAB code.
+
+== Goal
+
+* Simple interface to control complex systems from MATLAB code
+* Reason: Lots of time spent porting to C++ without seeing benefits
+
+* Great user experience that 
+** does not surprise users
+** integrates seamlessly and looks like MATLAB code (vectorization)
+** provides a consistent experience
+** simplifies the common use case
+** enables advanced use cases
+** as little overhead and cruft as possible
+** results in little overhead on the main MATLAB thread
+** requires no installation of drivers, libraries, or start of external processes
+
+== Language choice
+
+Out of the box MATLAB comes with support for calling code written in C/C++ (MEX) and Java (MATLAB-Java Interface). MATLAB could also call other languages like Python, but those require additional installation steps. Ultimately, the choice comes down to personal preference. While there are clear differences between the interfaces and capabilities, both can achieve just about anything. Below are some of the core differences:
+
+**C/C++ via MEX functions**
+
+* Strengths
+** Full featured interface that supports classes and structs as inputs
+** Support for multiple return arguments
+* Weaknesses
+** Difficult to support cross-platform libraries, especially with regards to threading, networking, and file access
+** Difficult to provide binaries for all platforms and target architectures
+** State or reference to state needs to be passed in
+** Object oriented APIs are somewhat like programming in C
+** Class definitions don't support the new syntax (old @class/myFunction)
+** Poor reflective abilities (checking types at runtime)
+
+**Java via MATLAB-Java interface**
+
+* Strengths
+** Cross-platform support out of the box
+** Simple packaging
+** Good reflective abilitites
+** Great tool support (monitoring, remote debugging, etc.)
+** Easier to create object oriented APIs and for keeping state
+* Weaknesses
+** Difficult to work around the missing support for classes and structs
+** Difficult to deal with some type conversions
+
+Note that performance is not on the list. Both languages can be made multiple orders of magnitude faster than necessary, so performance is simply not an issue.
+
+Due to our first MATLAB APIs (in ~2011) being built on top of LCM, we were already familiar with the Java interface and kept developing all subsequent iterations in Java as well. While the rest of the post will discuss the Java interface, we believe that everything should be possible to do in MEX as well.
+
+However, if you are planning on developing such an API for MATLAB, be prepared to spend a lot of time on it. Both languages require multiple levels of translation and lots of workarounds for making it work well.
+
+== Wrapper Classes
+
+Our earlier API versions were actually implemented purely in Java without any MATLAB code at all. While the performance was very good and the resulting code looked identical to native MATLAB code, we ran into fundamental limitations with help documentation, setup steps, and access to destructors. We provided help documentation through a call to a _.help()_ method, but this confused users more than we anticipated. Additionally, having to call a setup script to import the right namespaces, as well as doing manual resource management for some cases were confusing and inconvenient. In general, all elements that did not perfectly fit the standard MATLAB paradigm 
+
+In subsequent versions we created MATLAB wrapper classes that provide help documentation and automatically handle any necessary setup and dependency management. This has greatly simplified initialization and removed the most confusing parts. We now believe that users should not even be aware of the fact that there is another language underneath.
+
+[source,matlab]
+----
+classdef (Sealed) WrapperClass
+    %WrapperClass general documentation
+
+    methods(Access = public)
+    
+        function this = WrapperClass()
+            %WrapperClass short documentation
+            import namespace.JavaClass;
+            this.javaObj = JavaClass(); % corresponding Java object
+        end
+        
+        function [out] = myMethod(this, varargin)
+            %myMethod documentation
+            out = myMethod(this.obj, varargin{:}); % forwards calls
+        end
+
+    end
+    
+    properties(Access = private, Hidden = true)
+        javaObj % backing implementation
+    end
+    
+end
+----
+
+Our wrapping methods typically don't contain any logic and purely forward all calls. Note that the performance hit of this additional method call is completely negligible. This is especially true after the advancements in MATLAB's JIT compiler in 2015b.
+
+== Notes
+
+////
+Problem:
+	- MATLAB is single threaded. Even sophisticated APIs (Arduino support) are severely limited and not nearly enough for controlling robots at high rates (e.g. Hexapod) ==> requires multi-threading ==> Java or MEX with pre-compiled binaries (other languages would requires extra installation)
+		○ Primarily tackled using Simulink and code generation
+	- All APIs I'm aware of use fixed arguments (LCM, ROS, and OSRF as examples), which is not all that user friendly
+		○ Practical example: we want to make sure that commands, gains and led color arrive in the same packet. We could do 3 function calls plus a commit call (if each function sends a message, it would not be guaranteed to arrive at the same time), or a single call with 3 parameters.
+	- InputParser could parse arguments and then pass on to other language, but has a few problems
+		○ Hard to unit test all different calls. Requires integration test with MATLAB using MATLAB's test features (true?)
+		○ Many arguments result in hard to maintain code and performance degradation
+		○ Limited error messages
+		○ No good way to distinguish between default value and not-set (e.g. 'led' empty would be a valid value)
+
+Alternatives:
+	- MEX
+		○ Relatively full-featured API with support for classes and Structs
+		○ Relatively fast calls
+		○ Hard to distinguish between types
+		○ Difficult to distribute binaries for all operating systems and dealing with cross-platform differences for networking etc.
+		○ MEX functions represent functions, not objects. Multiple instances of a class require state keeping overhead, e.g., adding pointer to underlying class on every call.
+	- Java
+		○ No support for classes and Structs
+		○ Conversions rules are sometimes not intuitive
+		○ Easy to distribute
+		○ Objects map 1:1 which is nice for keeping state
+		○ Great runtime reflection utilities
+		○ Simpler development (personal opinion)
+	- Performance is completely irrelevant for both languages. Java can handle ~100 million sensor inputs per second with irrelevant GC overhead.
+	- It'll require a lot of work. The OSRF project is more or less a wrapper about their Ignite library, but there are thousands of lines required for dealing with argument conversions. In our case, we've spent >5 years on our libraries.
+	- All example projects are wrappers around sending/receiving messages to some middleware. Usually limited to a single robot.
+		○ Doesn't work that well for modular systems. Multiple connections could simplify adding e.g. an arm. Can still be combined with e.g. ROS package
+		○ Requires external processes that need to be started.
+	- Java(Object) removes MATLAB's automatic conversion, so e.g. a vector of positions needs to deal with
+		○ Scalar: double, float, int, short, long, byte
+		○ Vector: double[], float[], int[], short[], long[], byte[]
+		○ More in a separate post.
+////
+
