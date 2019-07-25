@@ -1,0 +1,42 @@
+= Cross Platform Mobile Data Acquisition
+// See https://hubpress.gitbooks.io/hubpress-knowledgebase/content/ for information about the parameters.
+:published_at: 2019-10-01
+:hp-tags: MATLAB, MATLAB-Java Interface, shared memory, computer vision, OpenCV, JavaCV, FFMpeg
+//:imagesdir: ../images
+:imagesdir: https://cdn.jsdelivr.net/gh/ennerf/ennerf.github.io@tree/master/images
+:source-highlighter: none
+// :hp-image: /covers/cover.png
+// :hp-tags: HubPress, Blog, Open_Source,
+// :hp-alt-title: My English Title
+
+== Problem Statement / Why?
+
+* It's easy to interact with joysticks, but every OS and language has their own bindings. Some joysticks work differently than others
+* Joysticks may already be overkill for examples that need 1-2 different user inputs. Keyboards would make more sense, but KB libraries are even more of a mess.
+** Some languages don't support complex non-blocking keyboard events at all (e.g. MATLAB)
+* Sometimes 80% of the example code ends up dealing with whatever user input library
+
+
+== What?
+
+We ended up building a mobile app that lets us access joystick-like input buttons and axes, as well as gather feedback from all of the onboard sensors.
+
+
+== Examples / How to use?
+
+Examples in MATLAB / Python / C++ and maybe Scope screenshots? 
+
+* YouTube video on 6dof pose w/ magnetometer
+* Logging
+* Controlling arm through pose, or maybe single actuator through Gyroscope
+
+== Connectivity
+
+Not all phones are created equally, e.g., Samsumg Galaxy S8 has significant issues with 5GHz WiFi. iPhone is better there. Compare WiFI 2.4Ghz, 5Ghz, USB->Ethernet dongle, WiFi tethering, USB tethering
+
+
+
+
+
+
+
