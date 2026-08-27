@@ -1,7 +1,6 @@
 = Using MATLAB for hardware-in-the-loop prototyping #1 : Message Passing Systems
 :published_at: 2017-06-25
-:hp-tags: MATLAB, ROS, LCM, DDS, ZeroMQ, MEX, Java
-:imagesdir: ../images
+:page-tags: MATLAB, ROS, LCM, DDS, ZeroMQ, MEX, Java
 //:imagesdir: https://github.com/ennerf/ennerf.github.io/raw/master/images/
 //:source-highlighter: none
 
@@ -373,11 +372,3 @@ Contrary to the situation a few years ago, nowadays there exist interfaces for m
 * While interfaces that only expose MATLAB code can provide a better and more consistent user experience (e.g. help documentation), there is a significant cost associated with maintaing all of the involved layers. We would recommend holding off on creating MATLAB wrappers until the API is relatively stable.
 
 Finally, even though message passing systems are very widespread in the robotics community, they do have drawbacks and are not appropriate for every application. Future posts in this series will focus on some of the alternatives.
-
-++++
-<link rel="stylesheet" href="https://cdn.rawgit.com/ennerf/ennerf.github.io/master/resources/highlight.js/9.9.0/styles/matlab.css">
-<!-- TODO: figure out how to keep Hubpress from adding the default code highlighter to make this work -->
-<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>-->
-<!--<script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/languages/matlab.min.js"></script>-->
-<!--<script type="text/javascript">hljs.initHighlightingOnLoad()</script>-->
-++++

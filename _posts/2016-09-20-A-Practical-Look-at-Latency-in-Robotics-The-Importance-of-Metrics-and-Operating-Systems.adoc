@@ -1,7 +1,6 @@
 = A Practical Look at Latency in Robotics : The Importance of Metrics and Operating Systems
 :published_at: 2016-09-20
-:hp-tags: Latency, Operating System, Windows, OSX, Ubuntu, Scientific Linux, Sleep, Real-Time, HdrHistogram
-:imagesdir: ../images
+:page-tags: Latency, Operating System, Windows, OSX, Ubuntu, Scientific Linux, Sleep, Real-Time, HdrHistogram
 
 //NOTE: Keep X in Mind
 //image::cover-image.jpg[150, 250, link="http://docs.hebi.us"]

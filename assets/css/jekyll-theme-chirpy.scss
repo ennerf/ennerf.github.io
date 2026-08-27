@@ -1,0 +1,112 @@
+---
+---
+
+@use 'abstracts/variables' with (
+  $theme: '{{ site.theme_mode }}'
+);
+
+/* prettier-ignore */
+@use 'main
+{%- if jekyll.environment == 'production' -%}
+  .bundle
+{%- endif -%}
+';
+
+/* append your custom style below */
+
+/* Chirpy styles Kramdown's `div.language-x > div.highlight > pre`; Asciidoctor emits
+   `div.listingblock > div.content > pre.rouge.highlight` instead, so the code box has to
+   be rebuilt here. Colors still come from Chirpy's own `.highlight .<token>` rules. */
+.content {
+  .listingblock,
+  .imageblock,
+  .videoblock,
+  .admonitionblock,
+  .tableblock {
+    margin-bottom: 1.5rem;
+  }
+
+  pre.highlight {
+    padding: 1rem;
+    overflow-x: auto;
+    color: var(--code-color);
+    font-size: 0.85rem;
+    line-height: 1.4rem;
+    box-shadow: var(--language-border-color) 0 0 0 1px;
+  }
+
+  .listingblock > .title,
+  .imageblock > .title,
+  .tableblock > caption {
+    color: var(--text-muted-color);
+    font-size: 0.85rem;
+    font-style: italic;
+    text-align: center;
+  }
+
+  .imageblock {
+    text-align: center;
+
+    img {
+      max-width: 100%;
+    }
+  }
+
+  .admonitionblock {
+    background-color: var(--prompt-info-bg);
+    border-radius: 10px;
+
+    td.icon {
+      padding: 1rem 0 1rem 1rem;
+      color: var(--prompt-info-icon-color);
+      vertical-align: top;
+    }
+
+    td.content {
+      padding: 1rem;
+    }
+  }
+}
+
+/* MATLAB-editor syntax colors for light mode: keywords blue, strings purple, comments
+   green, everything else black. Dark mode keeps Chirpy's own palette. Chirpy scopes its
+   light rules to `[data-bs-theme=light]` plus `:not([data-bs-theme])` for the moment
+   before its theme script runs, so both cases are covered here. */
+@mixin matlab-highlight {
+  --highlight-bg-color: #f7f7f8;
+  --code-color: #000;
+
+  .highlight {
+    .k, .kc, .kd, .kn, .kp, .kr, .kt, .kv {
+      color: blue;
+    }
+
+    .s, .s1, .s2, .sa, .sb, .sc, .sd, .se, .sh, .si, .sx, .sr, .ss, .dl {
+      color: #a020f0;
+    }
+
+    .c, .c1, .cm, .cs, .cd, .ch {
+      color: #228b22;
+    }
+
+    /* preprocessor and annotations, as in Visual Studio */
+    .cp, .nd {
+      color: #2b91af;
+    }
+
+    .n, .na, .nb, .nc, .nf, .ni, .nl, .nn, .no, .nt, .nv, .nx, .py, .bp, .vc, .vg,
+    .vi, .fm, .o, .ow, .p, .m, .mb, .mf, .mh, .mi, .mo, .mx, .il, .w, .nowrap {
+      color: #000;
+    }
+  }
+}
+
+:root[data-bs-theme='light'] {
+  @include matlab-highlight;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-bs-theme]) {
+    @include matlab-highlight;
+  }
+}
