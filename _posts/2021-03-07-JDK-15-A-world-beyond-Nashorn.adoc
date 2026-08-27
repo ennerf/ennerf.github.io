@@ -1,0 +1,230 @@
+= JDK 15: A world beyond Nashorn
+:page-tags: JDK, GraalVM, Nashorn, Java, JShell
+
+.A migrating Nashorn. Photo by Wolfgang Hasselmann
+image::jdk15/migrating-nashorn.jpeg[A Rhino walking]
+
+____
+Update: Nashorn was made available as a https://search.maven.org/artifact/org.openjdk.nashorn/nashorn-core[standalone dependency].
+____
+
+https://en.wikipedia.org/wiki/Nashorn_(JavaScript_engine)[Nashorn] is a JavaScript engine that compiles JavaScript into bytecode that runs on the https://en.wikipedia.org/wiki/Java_virtual_machine[Java Virtual Machine (JVM)]. It was added in Java 8 and replaced the outdated Rhino engine ("Nashorn" is the German word for "Rhino").
+
+One of its common use cases is to serve as a plugin mechanism in Java applications that allows users to create new functions at runtime. This is often incredibly useful in the data analytics area. For example, consider an Excel-like application where users can create custom behaviors by writing strings into cells.
+
+We encountered a similar problem in a robotics application that plots real-time data coming from a variety of sources, including actuators, mobile phones, and analog/digital IO. The attached sensors can be arbitrary, and users sometimes need a way to specify how to compute/derive desired values at runtime. For almost a decade, Nashorn has been a really convenient way to evaluate user input.
+
+However, due to the rapid development of the https://en.wikipedia.org/wiki/ECMAScript[ECMAScript] specification combined with a lack of developers willing to maintain it, Nashorn was deprecated in Java 11 (https://openjdk.java.net/jeps/335[JEP 335]), and eventually removed entirely in Java 15 (https://openjdk.java.net/jeps/372[JEP 372]).
+
+This post discusses some of the alternative options and their performance implications. All of the code can be found on https://github.com/ennerf/blog_jdk15_nashorn[Github].
+
+== Statically Compiled Java
+
+The value of a custom chart trace is a function of the previous and current state (e.g. sensor measurements). The below code shows a representative example of a `StateFunction` that computes a value based on a simplified `State`.
+
+[source,java]
+----
+public class State {
+    public double value;
+}
+----
+
+[source,java]
+----
+public interface StateFunction {
+    public double computeValue(State prevState, State state);
+}
+----
+
+Most of the time these functions are pretty simple. Common use cases would be a combination of two sensors (e.g. power = current * voltage, error = command — feedback) or scaling by a constant (e.g. position = encoderTicks / ticksPerRevolution).
+
+The function below computes the difference between samples
+
+[source,java]
+----
+StateFunction func = (prevState, state) -> state.value - prevState.value;
+----
+
+== The Nashorn JS Engine
+
+Nashorn allows us to get the same result by compiling a String at runtime.
+
+[source,java]
+----
+StateFunction func = evalNashorn("state.value - prevState.value");
+----
+
+This is done by evaluating the input String as JavaScript, and then treating the resulting bytecode as an implementation of the interface:
+
+[source,java]
+----
+@SuppressWarnings("removal")
+public static StateFunction evalNashorn(String equation) {
+    ScriptEngine engine = new NashornScriptEngineFactory()
+        .getScriptEngine("--no-deprecation-warning");
+----
+
+[source,java]
+----
+    engine.eval(
+        "function computeValue(prevState, state) {\n" +
+        "    return " + equation + ";" +
+        "};");
+----
+
+[source,java]
+----
+    return ((Invocable)engine).getInterface(StateFunction.class);
+}
+----
+
+When benchmarking both functions using the https://github.com/openjdk/jmh[Java Microbenchmarking Harness (JMH)] we see a performance penalty of roughly 50%. This is sometimes noticeable, but it is typically good enough and significantly simpler than using the https://docs.oracle.com/javase/8/docs/api/javax/tools/JavaCompiler.html[Java Compiler API] or implementing a custom DSL w/ parser.
+
+[source,text]
+----
+Benchmark     Mode  Cnt   Score   Error   Units
+evalNative   thrpt   10  31.294 ± 0.201  ops/us
+evalNashorn  thrpt   10  16.436 ± 0.517  ops/us
+----
+
+== The Graal JS Engine
+
+https://www.graalvm.org/[GraalVM] is a novel Java VM that was designed to be a polyglot (multi-language) runtime. The first production-ready release was in May 2019, and some of its features have already become an integral part of projects like https://quarkus.io/guides/building-native-image[Quarkus Native Image]. Overall, it is a very interesting project that Java developers should be aware of. GraalVM (CE) already consistently outperforms HotSpot in our production benchmarks.
+
+https://github.com/oracle/graaljs[Graal.js] is the JavaScript engine bundled with GraalVM. It supports the latest ECMAScript standard and can also be used as a standalone library from within OpenJDK. It is the officially recommended migration path away from Nashorn, and with articles like https://medium.com/graalvm/nashorn-removal-graalvm-to-the-rescue-d4da3605b6cb[Nashorn removal: GraalVM to the rescue!] claiming up to 4-6x better peak performance, it looks like a promising replacement.
+
+It took a few hours to work through the https://www.graalvm.org/reference-manual/js/NashornMigrationGuide/[migration guide], but in the end we only needed to add the dependency
+
+[source,xml]
+----
+<dependency>
+    <groupId>org.graalvm.js</groupId>
+    <artifactId>js</artifactId>
+    <version>21.0.0.2</version>
+</dependency>
+----
+
+and a few lines of code
+
+[source,java]
+----
+public static StateFunction evalGraalJs(String equation) {
+    Context jsContext = Context.newBuilder()
+            .allowExperimentalOptions(true)
+            .allowHostAccess(HostAccess.ALL)
+            .build();
+    Value value = jsContext.eval("js", "(prevState, state) => " + equation);
+    return value.as(StateFunction.class);
+}
+----
+
+[source,java]
+----
+StateFunction func = evalGraalJs("state.value - prevState.value");
+----
+
+All done! Let's update the benchmark
+
+[source,text]
+----
+Benchmark     Mode  Cnt   Score   Error   Units
+evalNative   thrpt   10  31.294 ± 0.201  ops/us
+evalNashorn  thrpt   10  16.436 ± 0.517  ops/us
+evalGraalJs  thrpt   10   2.303 ± 0.101  ops/us
+----
+
+Surprise! It's an order of magnitude slower than Nashorn?
+
+It turns out that Graal.js parses JavaScript into an https://en.wikipedia.org/wiki/Abstract_syntax_tree[AST] that OpenJDK does not know how to compile, so it runs in a slow interpreted mode. In order to actually compile the AST to machine code, we also need to enable the built-in Graal JIT (https://openjdk.java.net/jeps/243[JEP 243]) and use to the GraalVM compiler (see https://medium.com/graalvm/graalvms-javascript-engine-on-jdk11-with-high-performance-3e79f968a819[GraalVM's JavaScript engine on JDK11 with high performance] for more details).
+
+Looking at https://github.com/graalvm/graal-js-jdk11-maven-demo[graal-js-jdk11-maven-demo] this can be done by having Maven download four GraalVM jar files into the `${compiler.dir}`, and adding the following jvm arguments
+
+[source,text]
+----
+-XX:+UnlockExperimentalVMOptions
+-XX:+EnableJVMCI
+--module-path=${compiler.dir}
+--upgrade-module-path=${compiler.dir}/compiler.jar:${compiler.dir}/compiler-management.jar
+----
+
+Re-running the benchmark with the Graal compiler enabled
+
+[source,text]
+----
+Benchmark     Mode  Cnt   Score   Error   Units
+evalNative   thrpt   10  30.336 ± 0.184  ops/us
+evalNashorn  thrpt   10  17.515 ± 0.771  ops/us
+evalGraalJs  thrpt   10  16.080 ± 0.685  ops/us
+----
+
+This fixed it! Graal.js on OpenJDK got a 7x speedup and now runs on par with Nashorn. This also matches the performance of running Graal.js on its native runtime https://github.com/graalvm/graalvm-ce-builds/releases[GraalVM CE 11]
+
+[source,text]
+----
+Benchmark     Mode  Cnt   Score   Error   Units
+evalNative   thrpt   10  31.378 ± 0.272  ops/us
+evalNashorn  thrpt   10   3.178 ± 0.060  ops/us
+evalGraalJs  thrpt   10  16.080 ± 0.889  ops/us
+----
+
+Unfortunately, neither OpenJDK+JVMCI nor GraalVM currently support https://wiki.openjdk.java.net/display/zgc/Main[ZGC], which was one of our main reasons for upgrading to a newer runtime in the first place. We expect this to get resolved in the future, but for now it wouldn't make sense to migrate our specific application to Graal.js.
+
+== The JShell API
+
+https://en.wikipedia.org/wiki/JShell[JShell] is a read-eval-print loop (REPL) tool that was introduced with Java 9 (https://openjdk.java.net/jeps/222[JEP 222]). It provides an interactive shell with instant evaluation for quick prototyping. There are many articles such as https://www.infoq.com/articles/jshell-java-repl/[JShell: A Comprehensive Guide to the Java REPL] that talk about the commandline tool.
+
+I recently watched a https://youtu.be/FLDTvMARhGA?t=9205[talk by Michael Inden] mentioning that JShell also comes with an https://docs.oracle.com/javase/9/docs/api/jdk/jshell/package-summary.html[API] that can evaluate Java code at runtime. This was a big surprise to me — Somehow I completely missed that this feature has existed for >3.5 years. Afterwards I searched for articles on JShell, but I couldn't find a single reference example for the API. It reminded me of this https://youtu.be/PtgKmzgIh4c?t=2124[story by Chris Thalinger].
+
+The API is all String based, so it can't directly return lambda functions. At first glance this made it seem inappropriate for our use case, but after some exploration we found that JShell can be executed within the same environment. This makes it possible to indirectly exchange arbitrary values through shared global state.
+
+____
+Be aware that allowing users to run arbitrary code without a Sandbox is a potential security risk. It requires thinking about input filtering and validation, and may not be appropriate at all for some applications.
+____
+
+[source,java]
+----
+public static StateFunction evalJShell(String equation) {
+    // Setup a JShell that executes in the current runtime
+    JShell jShell = JShell.builder()
+            .executionEngine(new LocalExecutionControlProvider(), null)
+            .build();
+
+    // We can't access non-String values directly, but we can exchange data
+    // through global state that both Java and JShell have access to
+    synchronized (JShellShared.class) {
+        try {
+            jShell.eval(JShellShared.class.getCanonicalName()
+                    + ".function = (prevState, state) -> " + equation + ";");
+            return JShellShared.function;
+        } finally {
+            JShellShared.function = null;
+        }
+    }
+}
+
+public static class JShellShared {
+    public static StateFunction function = null;
+}
+----
+
+[source,java]
+----
+StateFunction func = evalJShell("state.value - prevState.value");
+----
+
+Another benchmark
+
+[source,text]
+----
+Benchmark     Mode  Cnt   Score   Error   Units
+evalNative   thrpt   10  31.294 ± 0.201  ops/us
+evalNashorn  thrpt   10  16.436 ± 0.517  ops/us
+evalGraalJs  thrpt   10   2.303 ± 0.101  ops/us
+evalJShell   thrpt   10  31.483 ± 0.308  ops/us
+----
+
+Hooray! JShell provides the performance of statically compiled Java code with the ease of use of evaluating JavaScript. And it's already part of the Java 11 LTS release!
+
+This turned out to be a great option for our use case. The Java and JavaScript syntax for the simple one-liners is identical, so it was a completely backwards compatible drop-in replacement.
+
+_Originally published on https://ennerf.medium.com/jdk-15-a-world-beyond-nashorn-e19f4258c76a[Medium] on 7 March 2021._
