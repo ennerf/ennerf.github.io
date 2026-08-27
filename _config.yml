@@ -1,0 +1,127 @@
+# The Site Configuration
+
+theme: jekyll-theme-chirpy
+
+lang: en
+timezone: America/New_York
+
+# jekyll-seo-tag settings › https://github.com/jekyll/jekyll-seo-tag/blob/master/docs/usage.md
+title: Software for Robots
+tagline: Real-Time Control, Networking, Operating Systems, Languages
+description: >-
+  Real-Time Control, Networking, Operating Systems, Languages
+
+url: https://ennerf.github.io
+baseurl: ""
+
+github:
+  username: ennerf
+
+social:
+  name: Florian Enner
+  email: florian@enner.org
+  links:
+    # The first element serves as the copyright owner's link
+    - https://github.com/ennerf
+    - https://www.linkedin.com/in/florian-enner-59b81466
+
+# the avatar on the sidebar
+avatar: /images/cover-image.jpg
+
+# Global switch for the TOC in posts
+toc: true
+
+theme_mode: # [light | dark], empty follows the system preference
+
+analytics: # unused
+pageviews: # unused
+comments: # unused
+cdn: # no CDN for media resources
+
+pwa:
+  enabled: false
+
+paginate: 10
+
+# HubPress URL scheme, must not change or old links break
+permalink: /:year/:month/:day/:title.html
+
+plugins:
+  - jekyll-asciidoc
+
+asciidoctor:
+  attributes:
+    - imagesdir=/images
+    - source-highlighter=rouge
+    - icons=font
+    - sectanchors
+
+kramdown:
+  footnote_backlink: "&#8617;&#xfe0e;"
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    css_class: highlight
+    span:
+      line_numbers: false
+    block:
+      line_numbers: true
+      start_line: 1
+
+collections:
+  tabs:
+    output: true
+    sort_by: order
+  # Unfinished posts, only built locally (see _config.local.yml)
+  wip:
+    output: false
+    permalink: /drafts/:title.html
+
+defaults:
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: post
+      toc: true
+      # Chirpy's own defaults would otherwise override the global permalink
+      permalink: /:year/:month/:day/:title.html
+  - scope:
+      path: ""
+      type: wip
+    values:
+      layout: post
+      toc: true
+  - scope:
+      path: ""
+      type: tabs
+    values:
+      layout: page
+      permalink: /:title/
+
+sass:
+  style: compressed
+
+compress_html:
+  clippings: all
+  comments: all
+  endings: all
+  profile: false
+  blanklines: false
+  ignore:
+    envs: [development]
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.adoc
+  - LICENSE
+  - images/README.adoc
+  - runServer.bat
+  - drafts
+
+jekyll-archives:
+  enabled: [tags]
+  layouts:
+    tag: tag
+  permalinks:
+    tag: /tags/:name/

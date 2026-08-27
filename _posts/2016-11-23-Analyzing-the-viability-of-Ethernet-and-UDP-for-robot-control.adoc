@@ -1,7 +1,6 @@
 = Analyzing the viability of Ethernet and UDP for robot control
 :published_at: 2016-11-23
-:hp-tags: Latency, Ethernet, UDP, real-time control
-:imagesdir: ../images
+:page-tags: Latency, Ethernet, UDP, real-time control
 
 Ethernet is the most pervasive communication standard in the world. However, it is often dismissed for robotics applications because of its presumed non-deterministic behavior. In this article, we show that in practice Ethernet can be made to be extremely deterministic and provide a flexible and reliable solution for robot communication.
 

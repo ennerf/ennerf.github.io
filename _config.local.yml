@@ -1,0 +1,6 @@
+# Local preview only: also builds the unfinished posts from _wip/ under /drafts/
+collections:
+  wip:
+    output: true
+include:
+  - drafts
