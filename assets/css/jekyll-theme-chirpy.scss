@@ -68,15 +68,18 @@
   }
 }
 
-/* MATLAB-editor syntax colors for light mode: keywords blue, strings purple, comments
-   green, everything else black. Dark mode keeps Chirpy's own palette. Chirpy scopes its
-   light rules to `[data-bs-theme=light]` plus `:not([data-bs-theme])` for the moment
-   before its theme script runs, so both cases are covered here. */
+/* MATLAB-editor syntax colors for MATLAB listings in light mode: keywords blue, strings
+   purple, comments green, everything else black. Other languages and dark mode keep
+   Chirpy's own palette. Chirpy scopes its light rules to `[data-bs-theme=light]` plus
+   `:not([data-bs-theme])` for the moment before its theme script runs, so both cases are
+   covered here. */
 @mixin matlab-highlight {
-  --highlight-bg-color: #f7f7f8;
-  --code-color: #000;
+  pre.highlight:has(> code[data-lang='matlab']) {
+    background-color: #f7f7f8;
+    color: #000;
+  }
 
-  .highlight {
+  code[data-lang='matlab'] {
     .k, .kc, .kd, .kn, .kp, .kr, .kt, .kv {
       color: blue;
     }
@@ -87,11 +90,6 @@
 
     .c, .c1, .cm, .cs, .cd, .ch {
       color: #228b22;
-    }
-
-    /* preprocessor and annotations, as in Visual Studio */
-    .cp, .nd {
-      color: #2b91af;
     }
 
     .n, .na, .nb, .nc, .nf, .ni, .nl, .nn, .no, .nt, .nv, .nx, .py, .bp, .vc, .vg,
