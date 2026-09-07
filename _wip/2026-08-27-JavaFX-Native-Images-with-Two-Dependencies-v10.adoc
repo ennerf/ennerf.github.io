@@ -37,21 +37,53 @@ Several layers have to work together to make this possible. In general, each sol
 
 1. *Reachability metadata*: Native image uses a closed-world assumption, so every resource, class, and method that gets accessed reflectively at runtime needs to be known at build time (e.g. `reachability-metadata.json`). Note that there are really two separate parts to the metadata, one part for the user's own application, and the other for the underlying JavaFX engine itself.
 
-2. *The static binaries*: Roughly half of JavaFX is C/C++/Objective-C code (windowing, rendering, fonts, image loading, effects). A self-contained executable needs these libraries compiled as static archives, which upstream supports via `-PSTATIC_BUILD=true` but does not publish.
+2. *The static binaries*: Roughly half of JavaFX is C/C++/Objective-C code (windowing, rendering, fonts, image loading, effects). A self-contained executable needs these libraries compiled as static archives, which https://github.com/openjdk/jfx[jfx] supports via `-PSTATIC_BUILD=true` but does not publish.
 
 3. *Static integration glue*: A few things work differently under AOT and need to be bridged with glue code. For example, GraalVM's linker requires the JNI symbols of all included classes to be available at link time, even if those code paths could never actually be executed. This is an issue when, e.g., a Windows image wrongly includes a Linux font rendering class that depends on several Linux-only symbols. The resulting missing symbol errors can look cryptic to Java developers and give the impression that the binaries were not compiled correctly.
 
+== Application Metadata
+
+The application part of the metadata is independent of the build solutions that are the focus of this blog post, but it's by far the most common problem from a developer's perspective, so I wanted to cover it first.
+
+On the application side, most of the reflection and resource loading comes from FXML and CSS. Desktop applications load many types of files at runtime (e.g. `.css`, `.fxml`, `.png`, `.jpg`, `.ttf`) that need to be included in the native image, and the metadata also needs to cover side-effects such as importing other resources or reflectively instantiating classes (e.g. `@import`, `-fx-skin: ${class}`, `fx:controller`).
+
+The corresponding metadata lives in a `reachability-metadata.json` file that is hard to maintain manually and keep in sync. The typically recommended way to create the metadata is GraalVM's https://www.graalvm.org/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/[tracing agent], which attaches to a normal JVM run and traces all reflective accesses. That works reasonably well for a backend service with an automated test suite that hits every endpoint, but it is a major pain for GUI apps. Developers would have to click through every feature on every operating system, every time the app changes.
+
+In practice, nearly every issue we encountered in production was due to agent data becoming stale. It got annoying enough that we created https://github.com/HebiRobotics/reachability-annotations[reachability-annotations], which let us define metadata via annotations that live next to the source of truth and can never go stale:
+
+[source,java]
+----
+// Whenever this class is included, the resources are automatically added
+@Reachable(resources = { "images/*.png" })
+public class ImageLoader {}
+----
+
+We also added special JavaFX annotations that automatically parse `FXML/CSS` files and generate appropriate metadata for everything they reference:
+
+[source,java]
+----
+@ReachableFxResources({
+        "/assets/images/*.png",
+        "views/**/*.fxml",
+        "views/**/*.css",
+})
+public class MyApp extends Application {}
+----
+
+With a few annotations we can make all https://github.com/gluonhq/gluon-samples/pull/189[gluon-samples] run out of the box on all platforms without ever running an agent. By default, all entries are conditional, so unused views do not increase the image size.
+
+// TODO leave this here?
+Unfortunately, there still are some 3rd party libraries that are notoriously hard to get running (e.g. some reflection-based parsing libraries) that need to be removed or switched out for something compatible. This is not specific to JavaFX and unfortunately a pain point.
+
 == Existing Solutions
 
-So far there have been two established solutions to solve this, Gluon's Substrate, and Liberica NIK.
-
-// TODO: cover that both actually solve all 3 issues, but the most common problem from a developer's perspective was the user application metadata. Maybe we should cover it early here and remove it from later sections? Move the "I gave up four times before I eventually got an application deployed on mobile." part here too?
+So far there have been two established solutions, Gluon's Substrate and Liberica NIK. Both solve all three engine problems, but in very different ways.
 
 === Gluon Substrate
 
 Gluon's Substrate is a toolchain that can port JavaFX to just about anything, including iOS, Android, Windows, macOS, Linux, and small 32-bit embedded boards, as an executable, a shared or static library, or an OS-specific installer. Getting the whole matrix to work takes custom builds of GraalVM, the JDK, and JavaFX, additional rendering backends, mobile wrapper applications, and dedicated Maven and Gradle plugins. They have built an impressive stack, and we owe Gluon for contributing a lot of the upstream changes that let JavaFX run everywhere.
 
-However, the number of moving targets makes for a brittle combination that can break at the whims of Apple or Google, e.g., when they raise the minimum version an application has to target. While the tooling is about as user-friendly as it can be, the biggest problem in practice was the application-side metadata: the tracing agent is unreliable for GUI applications, and there was no other way to create the entries. I gave up four times before I eventually got an application deployed on mobile. Once it was there, however, it worked very well: I don't know of any other framework that can deploy to all five targets with full 2D and 3D rendering and hot-reload of styling and layouts on several devices at once.
+However, the number of moving targets makes for a brittle combination that can break at the whims of Apple or Google, e.g., when they raise the minimum version an application has to target. The tooling itself is about as user-friendly as it can be, and once I got an application deployed, it worked very well: I don't know of any other framework that can deploy to all five targets with full 2D and 3D rendering and hot-reload of styling and layouts on several devices at once.
 // TODO: link the YouTube video
 
 Gluon has come to a similar conclusion about the maintenance burden and is moving its mobile support away from GraalVM towards https://gluonhq.com/news/bringing-openjdk-to-mobile-a-community-effort/[OpenJDK Mobile]: in their words, "every new release of iOS, Android, the AOT compiler, the JVM components or the JDK required patches and adjustments", and that approach does not scale. It likely also helps that a real JVM like Zero has no closed-world assumption, so the metadata problem disappears entirely.
