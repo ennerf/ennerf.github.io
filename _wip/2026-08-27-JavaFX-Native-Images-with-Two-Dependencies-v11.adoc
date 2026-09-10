@@ -63,11 +63,11 @@ A common point of confusion is the licensing model. Only their https://gluonhq.c
 
 === BellSoft's Liberica NIK
 
-BellSoft took a much more limited approach and created a GraalVM CE distribution dedicated to desktop apps: https://bell-sw.com/liberica-native-image-kit/[Liberica NIK] (full).
+BellSoft took a much more focused approach and created a GraalVM CE distribution dedicated to desktop apps: https://bell-sw.com/liberica-native-image-kit/[Liberica NIK] (full).
 
 Besides JavaFX, it also bundles Swing/AWT modules and corresponding metadata. Users only need to set `GRAALVM_HOME` and can use it with GraalVM's stock `native-maven-plugin`. If you need to get something running quickly, NIK is the easiest way to get started on desktop apps.
 
-Liberica NIK is currently also the only supported way to run AWT and Swing in native images. Since they are part of the JDK itself, their static libraries and support code need to be shipped as part of a GraalVM distribution. In a way, the decoupling of JavaFX from the JDK turned out to be a blessing in disguise because it can be treated like a normal library integration that does not need vendor support.
+Liberica NIK is currently also the only supported way to run AWT and Swing in native images. Note that even a stock GraalVM ships the static AWT archives, but they are useless without the matching metadata and integration code, which NIK compiles into their patched native-image. In a way, the decoupling of JavaFX from the JDK turned out to be a blessing in disguise because it can be treated like a normal library that we can update at will without needing vendor support.
 
 At the time of writing, NIK (full) supports GraalVM 25 CE with JavaFX 25 and the GPU-accelerated pipelines on the four main desktop architectures (i.e. no software fallbacks and no `linux-aarch64` targets).
 
@@ -76,14 +76,12 @@ At the time of writing, NIK (full) supports GraalVM 25 CE with JavaFX 25 and the
 
 We have been using Liberica NIK for our desktop applications for about two years, and it has admittedly worked quite well.
 
-However, some of our applications measure https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html[latency] at the sub-millisecond level, and we ran into issues with incorrect measurements due to poor escape analysis (EA) and GC behavior in the community edition. Our worst allocation source turned out to be a simple `new double[]{a,b}` in `Math::pow`, which would never allocate on HotSpot. Since the enterprise Oracle GraalVM became free to use under the https://www.oracle.com/downloads/licenses/graal-free-license.html[GFTC] license in 2023, we wanted to switch to get the G1 GC, the better escape analysis, and other enterprise-only features like profile-guided optimization (PGO).
-
-//We can limit the allocations in the application layer, but a lot of code in the JDK is written assuming a powerful escape analysis that gets rid of non-escaping allocations, which the CE does not provide. Our worst allocation source turned out to be a simple `new double[]{a,b}` in `Math::pow`, which would never allocate on HotSpot. Since the enterprise Oracle GraalVM became free to use under the https://www.oracle.com/downloads/licenses/graal-free-license.html[GFTC] license in 2023, we wanted to switch to get the G1 GC, the better escape analysis, and other enterprise-only features like profile-guided optimization (PGO).
+However, some of our applications measure https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html[latency] at the sub-millisecond level, and we ran into issues with incorrect measurements due to poor escape analysis and GC behavior in the community edition. Our worst allocation source turned out to be a simple `new double[]{a,b}` in `Math::pow`, which would never allocate on HotSpot. Since the enterprise Oracle GraalVM became free to use under the https://www.oracle.com/downloads/licenses/graal-free-license.html[GFTC] license in 2023, we wanted to switch to get the G1 GC, the better escape analysis, and other enterprise-only features like profile-guided optimization (PGO).
 
 // TODO: add an image of a hebi-charts plot w/ 3D window?
 We also wanted to update to at least JavaFX 26 for the new `Headless` mode, and support `linux-aarch64` and proper software-rendering fallbacks. All three were annoying issues for https://github.com/HebiRobotics/hebi-charts-examples[hebi-charts], which exposes efficient JavaFX visualizations through a native shared library to other languages via idiomatic bindings.
 
-Neither existing approach can support the latest Oracle GraalVM with the latest JavaFX, so we created https://github.com/ennerf/jfx-static-feature[jfx-static-feature], which only uses officially supported hooks into the build system. It consists of two artifacts, `jfx-static-libs` which includes version-specific static archives and metadata, and `jfx-static-feature` which contains some (relatively) version-agnostic glue. GraalVM automatically picks up configuration files from artifacts on the classpath, so it only needs to add two dependencies next to the `org.openjfx` jars:
+Neither Substrate nor NIK supports the latest Oracle GraalVM with the latest JavaFX, so we created https://github.com/ennerf/jfx-static-feature[jfx-static-feature], which only uses officially supported hooks into the build system. It consists of two artifacts: `jfx-static-libs` for version-specific static archives and metadata, and `jfx-static-feature` for some (relatively) version-agnostic glue. GraalVM automatically picks up configuration files from artifacts on the classpath, so users only need to add two dependencies next to the `org.openjfx` jars:
 
 [source,xml]
 ----
@@ -120,21 +118,25 @@ Several layers have to work together to make JavaFX run as a native image. In ge
 
 3. *Static integration glue*: A few things work differently under AOT and need to be bridged with glue code. For example, GraalVM's linking step requires the native symbols of all included classes to be available at link time, even if some code paths could never be reached. This is an issue when, e.g., a Windows image wrongly includes a Linux font rendering class that uses JNI and depends on several Linux-only symbols. The resulting missing symbol errors can look cryptic to Java developers and give the impression that the binaries were not compiled correctly.
 
-The next section goes over how each approach solves each part.
+Next, we'll go over how each approach solves each part:
 
 .The three routes at a glance
 [width="100%",options="header",cols="2,3,3,3"]
 |====
 | | Gluon Substrate | Liberica NIK | jfx-static-feature
 
-| Metadata | JSON files (per-OS)
-| generated by feature
-| JSON files (conditional)
+| Metadata | JSON files +
+(per-OS)
+| patches in +
+distribution
+| JSON files +
+(conditional)
 
 | Static libraries
-| replaces user-version
+| swaps in their version
 | bundled
-| manual match
+| user specified +
+`${javafx.version}`
 
 | Native binding | whole archives, mostly +
 resolved at runtime | static JNI, +
@@ -143,8 +145,8 @@ bound at link time
 | Integration glue
 | code in the +
 build tool
-| patches in their +
-native-image
+| patches in +
+distribution
 | GraalVM feature +
 on the class path
 
@@ -237,7 +239,7 @@ helloworld-graal.obj : error LNK2001: unresolved external symbol
 helloworld-graal.exe : fatal error LNK1120: 55 unresolved externals
 ----
 
-These errors look like a broken toolchain rather than a wrong JSON entry. The obvious fix is a small C stub for each missing function, which would come out to around 45 stubs per platform.
+These errors look like a broken toolchain rather than a wrong JSON entry. The obvious fix is a small C stub for each missing function, which would come out to dozens of stubs per platform.
 // NOTE: linking and failure-mode claims verified 2026-09-09 on Windows x64 AND Linux x64
 //   (hello-native-test; claude-memory/openjfx-static/verify-wrong-platform-metadata.md);
 //   macOS untested. The extended @Delete stubs (CTFactory, coretext OS, OSFreetype, OSPango,
