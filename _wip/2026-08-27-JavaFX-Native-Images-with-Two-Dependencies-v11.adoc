@@ -188,33 +188,31 @@ Unfortunately, there are still some third-party libraries that are notoriously h
 
 === Engine Metadata
 
-Unlike the application metadata, the engine metadata is constant for a specific version and operating system. Users only see a pure Java API, but internally there is a lot of native code for dealing with OS behavior and rendering pipelines, and a lot of reflection to pick appropriate implementations at runtime. Between the reflection, JNI, and resources (shaders, css files, fonts, etc.), it currently takes about ~800 metadata entries to cover the whole framework.
+Unlike the application metadata, the engine metadata is constant for a specific version and operating system. Users only see a pure Java API, but internally there is a lot of native code for dealing with OS behavior and rendering pipelines, and a lot of reflection to pick appropriate implementations at runtime. Between the reflection, JNI, and resources (shaders, css files, fonts, etc.), it currently takes close to 800 metadata entries to cover the whole framework.
+// TODO: verify the approximate counts (metadata entries here, annotations/files in the note below) on the final branch
 
-Additionally, a lot of the metadata only applies to specific operating systems. Many of the platform-specific classes (e.g. `WinApplication.class`) get filtered out of the platform jars, but a few classes (e.g. platform fonts) are always available. Adding those unnecessarily bloats the native-image, and can even break the build. For example, accidentally adding the Windows  DirectWrite font backend on Linux results in 65 unresolved symbols at link time even though none of those symbols are needed.
+Additionally, a lot of the metadata only applies to specific operating systems. Many of the platform-specific classes (e.g. `WinApplication.class`) get filtered out of the platform jars, but a few classes (e.g. platform fonts) are always available. Adding those unnecessarily bloats the native-image, and can even break the build. For example, accidentally adding the Windows DirectWrite font backend on Linux results in 65 unresolved symbols at link time even though none of those symbols are needed.
 
-The metadata cannot be generated with an agent as it is impossible to cover all possible paths in a single application. Between a large amount of different shaders and effects, some accesses depends on the class loading order, and each run is limited to a single pipeline. Therefore, this metadata needs to be curated in some way, and ideally use wildcards to cover all shaders at once.
+The metadata cannot be generated with an agent as it is impossible to cover all possible paths in a single application. The shaders and effects alone form a large family of generated classes, some accesses depend on the class loading order, and each run is limited to a single pipeline. Therefore, this metadata needs to be curated in some way, and ideally use wildcards to cover all shaders at once.
 
-**Substrate** bundles JSON metadata with their downloaded fx jars (`META-INF/substrate/config/reflectionconfig.json`), and adds a custom mechanism that appends OS-specific metadata (`META-INF/substrate/config/reflectionconfig-${archOS}.json`) before handing it to native-image. They also offer a `usePrismSW` flag that adds additional `-javafxsw` variants for the software pipeline. Only Substrate reads these suffixes, so the metadata does not work when using the stock `native-maven-plugin`.
+**Substrate** bundles JSON metadata with their downloaded fx jars (`META-INF/substrate/config/reflectionconfig.json`), and adds a custom mechanism that appends OS-specific metadata (e.g. `reflectionconfig-x86_64-linux.json`) before handing it to native-image. They also offer a `usePrismSW` flag that adds additional `-javafxsw` variants for the software pipeline. Only Substrate reads these suffixes, so the metadata does not work when using the stock `native-maven-plugin`.
 
-// TODO: where to put this? delete?
-//  Note that the current Linux desktop builds do not add the sw archive to the link even with the flag enabled, so the fallback is not actually available there.
+// NOTE: the Gluon sw-not-linked finding is now covered in the Integration Glue section.
 
-**Liberica NIK** ships no JSON files at all. Instead, they heavily extended the https://github.com/oracle/graal/blob/6d71c876640c9ae7b3c131ebecc8d1834ac813c7/substratevm/src/com.oracle.svm.hosted/src/com/oracle/svm/hosted/javafx/JavaFXFeature.java[com.oracle.svm.hosted.javafx.JavaFXFeature] in the `svm.jar` and register rules directly from code. The metadata is tied to the bundled version and conditional using `Platform.includedIn` checks and triggers on specific classes.
-
-// TODO: remove old when we are happy with the above
-//Inspecting the `svm.jar` of NIK 25.0.3 shows a heavily extended `com.oracle.svm.hosted.javafx` package, i.e., the metadata is hand-written registration code compiled into their patched native-image, guarded by per-OS `Platform.includedIn` checks and trigger classes like `javafx.fxml.FXMLLoader`. This works well, but the knowledge is tied to the bundled JavaFX version, and some coverage choices are baked in. For example, the registrations for the software pipeline exist in the code but never get called, so `-Dprism.order=sw` is not available on a NIK image. Note that this also means such an image cannot start at all on a machine without a qualifying GPU.
+**Liberica NIK** ships no JSON files at all. Instead, they heavily extended the https://github.com/oracle/graal/blob/6d71c876640c9ae7b3c131ebecc8d1834ac813c7/substratevm/src/com.oracle.svm.hosted/src/com/oracle/svm/hosted/javafx/JavaFXFeature.java[com.oracle.svm.hosted.javafx.JavaFXFeature] in the `svm.jar` and register rules directly from code. The metadata is tied to the bundled jfx version, and the conditions are generated using `Platform.includedIn` checks and triggers on specific classes.
 
 **jfx-static-libs** ships conventional JSON files with conditions that approximate OS filtering, e.g., `isReachable(${OS}Application.class)`. This is compatible with the stock tooling, so it works out of the box with any GraalVM version. The metadata itself is currently generated using `@Reachable` annotations in my https://github.com/ennerf/jfx/tree/jfx26u-metadata[ennerf/jfx] fork and updated per release.
+// TODO: update the branch link (jfx26u-metadata) to the JavaFX 27 branch before publishing
 
-Missing metadata fails rather annoyingly at runtime, so we set up a verification project that executes as many code paths as possible, e.g., 2D and 3D scenes, effects, dialogs, popups, and rich text, and does automatic pixel checks as well as screenshots for manual verification. Beyond the synthetic scenes, we also check the AtlantaFX sampler and our own internal applications like link:++https://www.youtube.com/watch?v=E9csKYFPwaM[Scope]++[Scope]. It is still possible that something was missed, so we may need to have a `${javafx.version}-1` patch update at some point.
+Missing metadata fails rather annoyingly at runtime, so we set up a verification project that executes as many code paths as possible, e.g., 2D and 3D scenes, effects, dialogs, popups, and rich text. Each scene exports screenshots that undergo automatic pixel checks and are exported for manual side-by-side verification. Beyong the synthetic tests, we also check the AtlantaFX sampler and our own internal applications like https://www.youtube.com/watch?v=E9csKYFPwaM[Scope]. It is still possible that something was missed, so we may need to have a `${javafx.version}-1` patch update at some point.
 
-[Note]
+[NOTE]
 ====
-I considered trying to get the annotations upstream, but merging them would require a build-system change with a dependency on an external annotation processor, and it would create an expectation that OpenJFX officially supports native-image, which is a much bigger commitment than the code itself.
+I considered trying to get the annotations upstream, but merging them would require a build-system change with a dependency on an external annotation processor, and it would create an expectation that OpenJFX officially supports native-image, which would be a big commitment.
 
-Now that the initial metadata is figured out (~800 annotations in ~200 files), it only takes a few hours to cover the diff to a new release and run through the automated test suite.
+Now that the initial metadata is figured out (~800 annotations in ~200 files), it only takes a few hours to cover the diff to a new release and run through the automated test suite, which is something that others could potentially take over as well.
 
-Note that we are currently limited to generating the older 1.0.0 metadata format because the `typeReached` condition in 1.2.0 can't express the `HeadlessApplication` conditions, i.e., it loads OS-dependent code, but never reaches any of the classes we could use as triggers. This means we cannot upload the metadata to the community metadata repository.
+Note that we are currently limited to generating the older 1.0.0 metadata format because the `typeReached` condition in 1.2.0 can't express the `HeadlessApplication` conditions, i.e., it loads OS-dependent code, but never reaches any of the classes we could use as OS conditions. This means that we cannot upload the metadata to the community metadata repository.
 ====
 
 
@@ -240,6 +238,12 @@ Linking the archives into an image is the last problem: something has to tell na
 This is handled by `jfx-static-feature`, a GraalVM https://www.graalvm.org/sdk/javadoc/org/graalvm/nativeimage/hosted/Feature.html[Feature] that is picked up from the class path by any stock native-image. It registers the JNI package prefixes as builtin, adds the platform's archives as static JNI libraries, and names the system libraries they reference, i.e., GTK on Linux and the Cocoa frameworks on macOS, which stay dynamic (see Trade-offs). Doing this in a feature keeps the list out of every consumer's build without patching anything.
 
 Registering the libraries as builtin means that every reachable native method gets bound at link time. Eager binding only pulls the referenced objects into the image, and it turns a missing implementation into a build error. NIK's patched native-image works the same way. Substrate instead forces the whole archives into the image on Windows and macOS (`/WHOLEARCHIVE` and `-force_load`), where the JNI methods resolve lazily at runtime, the same as on a JVM, i.e., nothing gets verified at build time.
+
+A practical consequence of these differences is the software pipeline: a jfx-static image always contains the sw fallback, while neither vendor image currently does. Substrate's Linux desktop builds never add the sw archive to the link even with the flag enabled, and NIK's sw registrations exist in the code but never get called. Those images therefore require a qualifying GPU to start at all.
+// NOTE: both halves verified 2026-09-09 on the build machine (hello-native-test): Gluon's
+//  enableSwRendering flag registers SWPipeline but omits -lprism_sw on Linux; NIK's
+//  registerPrismSW is dead code, and both vendor images died at toolkit init on a GPU-less
+//  display while the jfx-static image ran on the sw pipeline.
 
 ==== Removing the Need for C Stubs
 
