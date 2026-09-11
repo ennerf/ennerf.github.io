@@ -47,16 +47,16 @@ Making that whole stack work requires dedicated solutions. There are two establi
 
 === Gluon Substrate
 
-Gluon's Substrate is a complex toolchain that can port JavaFX to just about anything, including iOS, Android, Windows, macOS, Linux, and even small 32-bit embedded boards. It can create executables, shared and static libraries, as well as OS-specific bundles and installers.
+Gluon's Substrate is a complex toolchain that can port JavaFX to just about anything, including iOS, Android, Windows, macOS, Linux, and even small 32-bit embedded boards. It can create executables with and without JavaFX, shared and static libraries, deal with resources, add custom C extensions, build OS-specific bundles and installers, and even do remote deployments to small targets via ssh.
 
-Getting the whole matrix to work requires custom builds and tools for practically every layer starting at the GraalVM distribution to mobile tooling and dedicated Maven and Gradle plugins. The result is quite an impressive stack, and Gluon deserves credit for contributing a lot of the upstream changes that let JavaFX run everywhere.
+Getting all of that to work requires modified builds and custom tools for practically every layer starting at the GraalVM distribution to mobile tooling and dedicated Maven and Gradle plugins. The result is quite an impressive stack, and Gluon deserves credit for contributing a lot of the upstream changes that let JavaFX run everywhere.
 
 However, the number of moving targets makes for a brittle combination that can easily break. According to Gluon: "every new release of iOS, Android, the AOT compiler, the JVM components or the JDK required patches and adjustments", so they have been pivoting towards https://gluonhq.com/news/bringing-openjdk-to-mobile-a-community-effort/[OpenJDK Mobile], which is a more standard JDK + Leyden approach. Moving to an open-world model will also make it easier for users as it removes the metadata problem.
 
-That being said, the old tooling still gets maintenance updates (link:https://docs.gluonhq.com/[see docs]) and is quite user-friendly considering the underlying complexity. At the time of writing, the latest versions supported by Gluon are GraalVM 23 Community Edition (CE) and JavaFX 21-ea. On desktop, there is also unofficial support for building with other GraalVM distributions, but there is currently no way to use a newer JavaFX release.
+That being said, the existing tooling still gets maintenance updates (link:https://docs.gluonhq.com/[see docs]) and is comparably user-friendly considering the enormous underlying complexity. At the time of writing, the latest versions supported by Gluon are GraalVM 23 Community Edition (CE) and JavaFX 21-ea. On desktop, there is also unofficial support for building with other GraalVM distributions, but there is currently no way to use a newer JavaFX release.
 
 // TODO: link the YouTube video for the several device deployments? maybe cut this example?
-Internally, we've used Gluon's tools for 1-2 years and are still using it for mobile targets. JavaFX on mobile actually works far better than we originally expected, and it's really nice to be able to deploy to all five targets with full 2D and 3D rendering as well as hot-reload of styling and layouts.
+We've used Gluon's tools internally for 1-2 years and are still using it for mobile targets. JavaFX on mobile actually works far better than we originally expected, and it's really nice to be able to deploy to all five targets with full 2D and 3D rendering as well as hot-reload of styling and layouts.
 
 A common point of confusion is the licensing model. Only their https://gluonhq.com/products/gluonfx/[rich component libraries] require a license, but the build tools are free to use for all platforms.
 
@@ -191,6 +191,8 @@ With a few annotations we can make all https://github.com/gluonhq/gluon-samples/
 
 Unfortunately, there are still some third-party libraries that are notoriously hard to get running, e.g., some reflection-based parsing libraries, and they may need to be replaced with something more compatible. Note that this is not specific to JavaFX, but it remains a pain point for native images in general.
 
+// TODO: we currently go through compiler hacks to compile zlib statically as it's not available on many target platforms. Would this be implementable iwth a Feature? Would it make sense to have an e.g. static-zlib-feature?
+
 === Engine Metadata
 
 Unlike the application metadata, the engine metadata is constant for a specific version and operating system. Users only see a pure Java API, but internally there is a lot of native code for dealing with OS behavior and rendering pipelines, and a lot of reflection to pick appropriate implementations at runtime. Between the reflection, JNI, and resources (shaders, css files, fonts, etc.), it currently takes close to 800 metadata entries to cover the whole framework.
@@ -201,6 +203,8 @@ Additionally, a lot of the metadata only applies to specific operating systems. 
 
 The metadata cannot be generated with an agent as it is impossible to cover all possible paths in a single application. The shaders and effects alone form a large family of generated classes, each run is limited to a single pipeline, and some accesses even depend on the class loading order. Therefore, this metadata needs to be curated in some way, and ideally use wildcards to cover all shaders at once.
 
+// TODO: it looks like Substrate adds awt.libas part of the staticJavaLibs. Do they support Swing/AWT in any meaningful way? It also looks like they support fx webkit on non-Windows platforms?
+// TODO: what does the com.gluonhq.substrate.feature.GluonFeature do?
 **Substrate** bundles JSON metadata with their downloaded fx jars (`META-INF/substrate/config/reflectionconfig.json`), and adds a custom mechanism that conditionally appends target-specific metadata (e.g. `reflectionconfig-x86_64-linux.json`) and optional metadata (e.g. `-javafxsw` with `-DusePrismSW` for the software pipeline) before handing it to native-image. Only Substrate knows about these suffixes, so the metadata does not work when using the stock `native-maven-plugin`.
 
 // NOTE: the Gluon sw-not-linked finding is now covered in the Integration Glue section.
@@ -240,6 +244,32 @@ The static binaries are primarily a distribution problem. Upstream OpenJFX has s
 
 Lastly, we need the glue required to adding the actual linking arguments and fixing some pitfalls that show up during static linking.
 
+// What is this code in the GluonFeature?
+////
+    @Override
+    public void duringSetup(DuringSetupAccess access) {
+        System.err.println("GluonFeature enabled in setup " + access);
+        NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("prism_sw");
+        NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("prism_es2");
+        NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("glass");
+        NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("glass_monocle");
+        NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("glassgtk3");
+
+    }
+
+    @Override
+    public void beforeAnalysis(BeforeAnalysisAccess a) {
+
+        PlatformNativeLibrarySupport pnls = PlatformNativeLibrarySupport.singleton();
+        pnls.addBuiltinPkgNativePrefix("com_sun_javafx_iio_jpeg");
+        pnls.addBuiltinPkgNativePrefix("com_sun_javafx_font_FontConfigManager");
+        pnls.addBuiltinPkgNativePrefix("com_sun_javafx_font_freetype");
+        pnls.addBuiltinPkgNativePrefix("com_sun_prism");
+        pnls.addBuiltinPkgNativePrefix("com_sun_glass");
+        pnls.addBuiltinPkgNativePrefix("com_sun_pisces");
+    }
+////
+
 **Substrate** owns the entire build chain and handles everything themselves.
 
 // TODO: find what they actually do. Do they mainly use the feature extension or did they actually change the build tool?
@@ -264,8 +294,12 @@ helloworld-graal.exe : fatal error LNK1120: 55 unresolved externals
 
 The obvious fix would be providing small C stubs that cover missing dummy symbols, but that would come out to dozens of stubs per platform that would need to be bundled with the archives and would represent yet another thing to maintain.
 
-// TODO: check whether they actually link ALL as /wholearchive? I remember there was some needsWholeArchive flag?
-// TODO: what do they do on Linux?
+// TODO: they add WHOLEARCHIVE to every lib, but also add it without? What does that do?
+// WindowsTargetConfiguration:
+//  flags.addAll(asListOfLibraryLinkFlags(staticJavaFxLibs));
+//  flags.addAll(asListOfWholeArchiveLinkFlags(staticJavaFxLibs));
+// TODO: what do they do on Linux? is that the -rdynamic flag?
+// TODO: Substrate can technically be called with other GraalVM distributions, but I assume the newer ones will fail (e.g. using removed methods in the Feature)
 **Substrate** gets around this by forcing the whole archives into the image and resolving symbols lazily at runtime (`/WHOLEARCHIVE` on Windows and `-force_load` on macOS), which is similar to the JVM. On the other hand, this disables build time verification and pushes actual errors to runtime.
 
 // TODO: verify exactly what they do. Do they patch the openjfx jars or do a manual @delete-like action?
@@ -305,7 +339,7 @@ Beyond the deletions, `javafx-static-feature` also contains a small number of su
 
 * Objective-C categories are dropped from static links, which shows up as an `unrecognized selector` exception when the first window opens. `libglass.a` is linked with `-force_load` to keep them.
 
-// TODO: is this a JFX or GraalVM issue?
+// TODO: is this a JFX or GraalVM issue? Gluon has an AppDelegate.m file. What about Liberica NIK? Would those work in shared libs - I assume not?
 * On macOS, the process hangs before the first window appears. Cocoa requires the first thread of the process to be pumping a run loop while glass starts up. The `java` launcher arranges this, but a native image runs `main` on the first thread. This has been known since https://github.com/oracle/graal/issues/994[2019], and the common answer has been an external Objective-C launcher. GraalVM's `-H:+RunMainInNewThread` option moves `main` off the first thread, but does not pump a run loop, so the hang remains. The feature keeps the launcher thread and pumps `CFRunLoop` on the first thread instead, in plain Java.
 
 * JavaFX qualifies GPUs using a vendor allowlist that predates the Raspberry Pi's Mesa V3D driver, so the es2 pipeline requires `-Dprism.forceGPU=true` to avoid falling back to software rendering. The GPU would have to be added to the allowlist or needs to be worked around at the application level.
