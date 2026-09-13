@@ -1,30 +1,6 @@
 = JavaFX 27 as a GraalVM Native Image
 :page-tags: JavaFX, GraalVM, Native Image, Java
 
-// v10 (2026-09-06): restructure per the plan discussion. Order flipped to metadata-first
-// (application -> engine metadata -> static binaries -> JNI integration), Motivation folded
-// into the intro and a short "A Third Option" section, Verification condensed into a paragraph
-// inside Engine Metadata, the substitution bullets and render-check details moved to an
-// appendix framed as upstream issues, versions bumped to JavaFX 27 for the release-day
-// publish. The duplicated intro variants from v9 are resolved into one. Only
-// fact-verification TODOs remain.
-// Feedback pass (2026-09-06, in place): comma-chained sentences split, the invented
-// screen-share framing around the startup numbers removed, Engine Metadata shortened,
-// Matching Versions merged into The Static Libraries as a paragraph, Trade-offs trimmed to
-// note-backed items (desktop-only and Swing/printing bullets dropped as obvious/unverified).
-// Restructure pass (2026-09-07): Application Metadata moved before Existing Solutions (the
-// tracing-agent argument and the gave-up-four-times anecdote live there now), vendor recaps
-// deduplicated (the table owns the summary), C-stub justification compressed, and the
-// section renamed Static JNI Integration -> Integration Glue to match the background list.
-// Consistency pass (2026-09-07, after the Three Approaches rework): table trimmed to the three
-// problem rows with a lead-in sentence (Versions/Targets now live in the vendor sections),
-// Static Libraries vendor recap deduplicated, CE gloss single-sourced at first use, and the
-// Getting Started leftovers (no-other-requirements claim, Windows empty-directory note)
-// rescued into the HEBI section.
-// Restructure (2026-09-10, v11): Three Approaches moved directly after the intro,
-// Technical Background folded into the Three Problems opening, Application Metadata
-// became the first problem subsection. Wording unchanged except its lead-in sentence.
-
 // TODO: screenshot on the Pi 5 with the default Raspbian background. Either the AtlantaFX
 // sampler or Scope (3D view); if Scope, update the caption, the sentence below, and the
 // "from the opening picture" reference in the verification paragraph.
@@ -191,17 +167,6 @@ With a few annotations we can make all https://github.com/gluonhq/gluon-samples/
 
 Unfortunately, there are still some third-party libraries that are notoriously hard to get running, e.g., some reflection-based parsing libraries, and they may need to be replaced with something more compatible. Note that this is not specific to JavaFX, but it remains a pain point for native images in general.
 
-// TODO: we currently go through compiler hacks to compile zlib statically as it's not available on many target platforms. Would this be implementable iwth a Feature? Would it make sense to have an e.g. static-zlib-feature?
-// ANSWER (2026-09-11, verified in GraalVM 25.3.4.1 svm.jar): no public API to REMOVE the
-//  built-in zlib. Two additive mechanisms: JDKInitializationFeature registers static "zip"
-//  (zlib compiled into the JDK's zip.lib on Windows), and on Linux/macOS an internal
-//  @CLibrary("z") marker class adds a plain -lz (dynamic). NativeLibraries only has
-//  appender methods (javap-verified), no remove/exclude, no ExcludeLibraries option.
-//  Workarounds: -H:CLibraryPath=<dir> with your own libz.a shadows the -lz resolution
-//  (Linux/macOS only), or unsupported reach-in via NativeLibraries.getLibraries().remove
-//  (mutable list by reference; ordering-sensitive, and no equivalent for the "zip" path).
-//  So a clean static-zlib-feature is NOT currently possible.
-
 === Engine Metadata
 
 Unlike the application metadata, the engine metadata is constant for a specific version and operating system. Users only see a pure Java API, but internally there is a lot of native code for dealing with OS behavior and rendering pipelines, and a lot of reflection to pick appropriate implementations at runtime. Between the reflection, JNI, and resources (shaders, css files, fonts, etc.), it currently takes close to 800 metadata entries to cover the whole framework.
@@ -212,21 +177,7 @@ Additionally, a lot of the metadata only applies to specific operating systems. 
 
 The metadata cannot be generated with an agent as it is impossible to cover all possible paths in a single application. The shaders and effects alone form a large family of generated classes, each run is limited to a single pipeline, and some accesses even depend on the class loading order. Therefore, this metadata needs to be curated in some way, and ideally use wildcards to cover all shaders at once.
 
-// ANSWER (2026-09-11, substrate source): awt/awt_headless (+fontmanager, javajpeg, lcms)
-//  are in LinuxTargetConfiguration's staticJavaLibs ONLY -- just linked, presumably for
-//  symbol deps; a repo-wide search finds no Swing/AWT support code, config, or feature.
-//  So no meaningful AWT support. javafx.web: wired via hasWeb() on Linux, macOS, iOS,
-//  Android (webkit lib sets per platform) but NOT Windows (no hasWeb() call there).
-// ANSWER GluonFeature: tiny 3-method class, LINUX-ONLY (only LinuxTargetConfiguration
-//  returns it from getEnabledFeatures + adds the required --add-exports; a source comment
-//  says "for now, it is linux-supported only"). It preregisters builtin libs (prism_sw,
-//  prism_es2, glass, glass_monocle, glassgtk3) and adds JNI package prefixes
-//  (com_sun_glass, com_sun_prism, com_sun_pisces, fonts, iio_jpeg) -- i.e. the same
-//  builtin static-JNI mechanism our feature uses, which is why Linux gets link-time
-//  symbol references while Windows/macOS use whole-archive + lazy resolution.
 **Substrate** bundles JSON metadata with their downloaded fx jars (`META-INF/substrate/config/reflectionconfig.json`), and adds a custom mechanism that conditionally appends target-specific metadata (e.g. `reflectionconfig-x86_64-linux.json`) and optional metadata (e.g. `-javafxsw` with `-DusePrismSW` for the software pipeline) before handing it to native-image. Only Substrate knows about these suffixes, so the metadata does not work when using the stock `native-maven-plugin`.
-
-// NOTE: the Gluon sw-not-linked finding is now covered in the Integration Glue section.
 
 **Liberica NIK** ships no JSON files at all. Instead, they heavily extended the https://github.com/oracle/graal/blob/6d71c876640c9ae7b3c131ebecc8d1834ac813c7/substratevm/src/com.oracle.svm.hosted/src/com/oracle/svm/hosted/javafx/JavaFXFeature.java[com.oracle.svm.hosted.javafx.JavaFXFeature] in the `svm.jar` and register rules directly from code. The metadata is tied to the bundled jfx version, and the conditions are generated using `Platform.includedIn` checks and triggers on specific classes.
 
@@ -243,9 +194,6 @@ Now that the initial metadata is figured out (~800 annotations in ~200 files), i
 
 // TODO: add a diagram highlighting the problem?
 Note that we are currently limited to generating the older 1.0.0 metadata format because the `typeReached` condition in 1.2.0 can't express the `HeadlessApplication` conditions, i.e., it loads OS-dependent code, but never reaches any of the classes we could use as OS conditions. This means that we cannot upload the metadata to the community metadata repository.
-// NOTE: verified 2026-09-11: the community repo migrated to the unified format for
-//  GraalVM 25+ (oracle/graalvm-reachability-metadata#751, done); legacy split-file configs
-//  only live on a frozen 0.3.x fallback branch, so the claim is accurate.
 ====
 
 
@@ -253,35 +201,12 @@ Note that we are currently limited to generating the older 1.0.0 metadata format
 
 The static binaries are primarily a distribution problem. Upstream OpenJFX has supported static builds via `-PSTATIC_BUILD=true` for years, but has never published the resulting archives. Everyone who needs them has to rely on 3rd party vendors or build the archives themselves. One issue with that is that the versions have to be an exact match, i.e., they should be built from the same commit as the runtime jars.
 
-// ANSWER (2026-09-11, substrate source): version via javafxStaticSdkVersion property
-//  (default Constants.DEFAULT_JAVAFX_STATIC_SDK_VERSION = "21-ea+11.3"); URL is a private
-//  static final "https://download2.gluonhq.com/substrate/javafxstaticsdk/" + pattern --
-//  only the version is user-controllable, NO custom-URL override. BUT two local escapes
-//  exist: env var JAVAFX_STATIC_SDK_PATH pointing at a local SDK dir (validated to
-//  contain lib/javafx.base.jar + javafx.graphics.jar), or pre-populating the cache at
-//  ~/.gluon/substrate/javafxStaticSdk/<version>/<target>/sdk. So "no way to use a newer
-//  non-Gluon build" is too strong -- no custom URL, but a local SDK path works. That is
-//  also why matching Substrate's artifact format matters (see jfx-static-libs paragraph).
 **Substrate** downloads Gluon's own static JavaFX SDK and silently replaces the user-specified JavaFX jars before invoking native-image. This ensures matching jars and archives, but it's impossible to use a newer version. If you currently specify jfx version 27, it gets switched to the latest Gluon build and reported as `21-internal+11.2`. Substrate offers a hook to downgrade to older versions, but at the moment there is no way to set a custom url to use a newer non-Gluon build. By default Substrate only adds the hardware pipelines. The software fallback is opt-in via the plugin's `enableSWRendering` flag. Note that our first test spelled it `enableSwRendering`, which Maven silently ignores, so the fallback looked broken even though it works fine once enabled.
 // TODO: last sentence move to other?
-// VERIFIED (2026-09-11 Docker retest, REPORT.md in hello-native-test/results/linux/
-//  followup-2026-09-11 on the build machine): with -Dgluonfx.enableSWRendering=true the
-//  Linux build adds -lprism_sw, registers SWPipeline, and a GPU-less Xvfb run falls back
-//  to sw and renders. Without the flag the image dies with "No toolkit found"
-//  (ClassNotFoundException: SWPipeline). Plugin param (capital SW) maps to substrate's
-//  setUsePrismSW; one config object serves compile and link.
 
 **Liberica NIK** fixes the version by bundling the JavaFX modules with their jdk, which takes precedence over any `org.openjfx` jars declared in the build. They support the LTS releases, so the latest is currently JDK 25 + JavaFX 25. They removed the software pipeline without opt-in option, so it cannot be run on platforms without a qualifying GPU.
 
-**jfx-static-libs** provides static builds that match the official openjfx versions and are built from the same commit. The builds currently live in my openjfx fork at https://github.com/ennerf/jfx[ennerf/jfx]. We do not modify any JFX code or behavior, so the behavior is identical with running on Hotspot. However, each release adds two commits for setting up the annotation processor and annotations for generating the metadata. We decided to match Substrate's format for the produced artifacts in case Substrate ever accepts custom download urls.
-// VERIFIED (2026-09-11): Substrate accepts our Linux SDK as-is via JAVAFX_STATIC_SDK_PATH
-//  (path validation and jar naming pass; Gluon merely also ships dashed jar copies).
-//  Three Substrate-side gaps needed container workarounds: a missing .md5 sidecar triggers
-//  a pointless 86 MB download of Gluon's SDK (build still uses our path); -lgstreamer-lite
-//  is hardwired on desktop Linux even for non-media apps (stub archive needed); and their
-//  link list misses -lprism_common (the JDK-8340005 symbol). With those, link succeeds.
-//  No runnable image from the combos yet for unrelated reasons: Gluon GraalVM 23 cannot
-//  load our Java-24 class files; Oracle 25 hits the glass JNI-1.6 builtin rejection. The static archives are actually reasonably small, so for the artifact on Maven Central we bundle all 5 platforms (including linux-aarch64) plus metadata into a single ~10MB jar without classifier. Note that the archives are only used by `jfx-static-feature`, so as a standalone library it does nothing other than add reachability metadata.
+**jfx-static-libs** provides static builds that match the official openjfx versions and are built from the same commit. The builds currently live in my openjfx fork at https://github.com/ennerf/jfx[ennerf/jfx]. We do not modify any JFX code or behavior, so the behavior is identical with running on Hotspot. However, each release adds two commits for setting up the annotation processor and annotations for generating the metadata. We decided to match Substrate's format for the produced artifacts in case Substrate ever accepts custom download urls. The static archives are actually reasonably small, so for the artifact on Maven Central we bundle all 5 platforms (including linux-aarch64) plus metadata into a single ~10MB jar without classifier. Note that the archives are only used by `jfx-static-feature`, so as a standalone library it does nothing other than add reachability metadata.
 
 
 === Integration Glue
@@ -289,17 +214,8 @@ The static binaries are primarily a distribution problem. Upstream OpenJFX has s
 Lastly, we need the glue required for adding the actual linking arguments and fixing some pitfalls that show up during static linking.
 
 **Substrate** owns the entire build chain, so all linker arguments live inside their build tool. Note that on Linux they additionally enable an internal `GluonFeature` that registers the JavaFX libraries as built-in JNI libraries, similar to what our feature does on all platforms.
-// NOTE (verified 2026-09-11 in substrate source): GluonFeature is Linux-only
-//  (LinuxTargetConfiguration.getEnabledFeatures; source comment: "for now, it is
-//  linux-supported only"). It preregisters prism_sw, prism_es2, glass, glass_monocle,
-//  glassgtk3 and adds prefixes com_sun_glass, com_sun_prism, com_sun_pisces,
-//  com_sun_javafx_font_freetype, com_sun_javafx_font_FontConfigManager,
-//  com_sun_javafx_iio_jpeg. Needs --add-exports for SVM internals.
 
 **Liberica NIK** leaves the build tools alone. Users run the stock `native-maven-plugin`, and all changes live in the patched `native-image` builder itself, i.e., a `JavaFXFeature` compiled into their `svm.jar` that registers the libraries and metadata for the bundled JavaFX version.
-// NOTE (verified 2026-09-11): svm.jar contains com.oracle.svm.hosted.javafx
-//  JavaFXFeature/JavaFXJNI/JavaFXReflection + JavaFXPresent; same builtin registration
-//  mechanism as ours, per-OS curated.
 
 **jfx-static-feature** was designed to work with the stock build tool, so it is implemented as a GraalVM https://www.graalvm.org/sdk/javadoc/org/graalvm/nativeimage/hosted/Feature.html[Feature] that gets picked up from the classpath automatically. It extracts the platform-specific archives, checks that they match the runtime version, and adds the necessary linker commands for the static libraries and their system dependencies, e.g., Cocoa on macOS or GTK on Linux (those stay dynamic).
 
@@ -322,26 +238,12 @@ The obvious fix would be providing small C stubs that cover missing dummy symbol
 
 Note that all three approaches build on the same underlying mechanism: native-image only creates link-time references for native methods that belong to a registered built-in library, and treats everything else as regular JNI that resolves at runtime. Registering a library as built-in therefore turns every reachable native method into a symbol that the linker has to find, and a missing implementation into a build error. The difference is how much gets registered.
 
-// NOTE (verified 2026-09-11): Windows passes each fx lib BOTH as normal input and as
-//  /WHOLEARCHIVE:<lib> (plain inputs redundant; symbol-level dead stripping never happens
-//  there). Linux: plain -l flags, LinuxLinkerFlags hardwires -Wl,--no-whole-archive;
-//  -rdynamic is always set, independent of JavaFX.
-// NOTE other GraalVMs (pending build test): vendor check only LOGS a warning without
-//  VENDOR=Gluon; version floor check is a no-op for JDK>=20. GluonFeature's internal API
-//  still exists in 25.x, so "newer ones will fail" is NOT confirmed.
 **Substrate** gets around this by forcing the whole archives into the image and resolving symbols lazily at runtime (`/WHOLEARCHIVE` on Windows and `-force_load` on macOS), which is similar to the JVM. On the other hand, this disables build time verification and pushes actual errors to runtime. A missing implementation shows up at the first call as an `UnsatisfiedLinkError` pointing at the `java.library.path`, which sends developers looking for a shared library that was never supposed to exist. The Linux builds are the exception: there the archives get linked normally, and the `GluonFeature` registers a curated prefix list that leaves out the wrong-OS font backends, so their symbols are never referenced.
 
 **Liberica NIK** also binds the native methods at link time, but their `JavaFXFeature` only registers the font classes that belong to the current platform. The wrong-OS classes can still enter the image through bad metadata, but their natives get treated as regular JNI and fail at the first call instead of the build.
-// NOTE (verified 2026-09-11, svm.jar disassembly): purely omission via a per-OS allow-list
-//  (Platform.includedIn chain: WINDOWS -> PrismFontFactory+directwrite; LINUX ->
-//  FontConfigManager+freetype; DARWIN -> DFontDecoder+MacFontFinder+coretext). No jar
-//  patching, no @Delete/@Substitute on platform classes (byte-level grep found none).
 
 **jfx-static-feature** makes use of GraalVM's `@Delete` substitution to delete unwanted classes and solve the problem at the root. Classes that are not part of the analysis are never deemed reachable and never need to resolve. The static archives are linked normally, so actually missing symbols will fail eagerly at link time.
 
-// Code verbatim from jfx-static-feature stubs/DeleteLinuxNatives.java + ClassPresent.java
-// (2026-09-11). Also in the stubs but not shown: a method-level @Delete for the dead
-// upstream declaration OSFreetype.FT_Get_Char_Index (implemented in no archive on any OS).
 [source,java]
 ----
 @Delete
@@ -376,8 +278,6 @@ The conditions are negations (`NotLinux`, `NotMacOS`) rather than inclusion list
 Note that `PrismFontFactory` cannot be deleted as a whole because its Windows-only natives sit on the shared base class. Those six methods get substituted individually with stubs that throw an exception.
 
 We tested the individual mechanisms by adding a bad metadata file that makes all JNI classes fully reachable and tried building all three versions. Substrate built without issue on Windows and macOS. The default Linux build failed with twenty missing symbols from the software pipeline, i.e., an archive that only gets linked when the sw flag is enabled. With the flag, the only remaining failure was the dead `FT_Get_Char_Index` declaration that no platform ever implemented. For NIK we encountered one unresolved symbol in `com.sun.glass.ui.Application` due to a method that was added in JavaFX 24 and lives in `prism_common`. Note that none of these issues were related to the wrong-OS classes.
-// VERIFIED 2026-09-11 (B4): all-jni config + enableSWRendering -> pisces symbols gone,
-//  exactly one undefined: Java_com_sun_javafx_font_freetype_OSFreetype_FT_1Get_1Char_1Index.
 
 ==== Remaining Glue
 
@@ -394,20 +294,12 @@ Beyond the deletions, `jfx-static-feature` also contains a small number of subst
 **OpenJFX**
 
 * `System.loadLibrary` cannot load any of the static JavaFX libraries. On Windows, glass reports JNI version 1.2 from its `JNI_OnLoad`, while the spec requires 1.8 or later for statically linked libraries (one-line fix). On Linux and macOS, the `JNI_OnLoad_<lib>` symbols are hidden by the image's linker version script, so the feature calls the initializers directly.
-// NOTE (2026-09-11): GraalVM 25 now enforces the >=1.8 rule at runtime for builtin
-//  libraries (JNIVersion.isSupported). Observed in practice: the Gluon-on-Oracle-25 test
-//  died with "UnsatisfiedLinkError: Unsupported JNI version 0x10006, required by glass"
-//  (Linux glass returns 1.6). Same upstream bug family as the Windows 1.2 case.
 
 * Objective-C categories are dropped from static links, which shows up as an `unrecognized selector` exception when the first window opens. `libglass.a` is linked with `-force_load` to keep them.
 
-// TODO: is this a JFX or GraalVM issue? Gluon has an AppDelegate.m file. What about Liberica NIK? Would those work in shared libs - I assume not?
-// ANSWER Gluon (2026-09-11, substrate native/macosx): AppDelegate.m keeps thread 1 inside
-//  [NSApp run] and starts the Java main on a BACKGROUND thread from
-//  applicationDidFinishLaunching (performSelectorInBackground -> run_main). launcher.c
-//  just calls into it; excluded for shared-library builds, so shared libs indeed get no
-//  run loop from Gluon. NIK on macOS: could not verify from a Windows install (no macOS
-//  artifacts present) -- needs a macOS NIK distribution or their docs.
+// TODO: is this a JFX or GraalVM issue? Gluon parks thread 1 in [NSApp run] via their
+//  AppDelegate.m launcher (excluded for shared libs, which therefore get no run loop);
+//  NIK on macOS is unverified. Details in notes: v11-resolved-comments.md.
 * On macOS, the process hangs before the first window appears. Cocoa requires the first thread of the process to be pumping a run loop while glass starts up. The `java` launcher arranges this, but a native image runs `main` on the first thread. This has been known since https://github.com/oracle/graal/issues/994[2019], and the common answer has been an external Objective-C launcher. GraalVM's `-H:+RunMainInNewThread` option moves `main` off the first thread, but does not pump a run loop, so the hang remains. The feature keeps the launcher thread and pumps `CFRunLoop` on the first thread instead, in plain Java.
 
 * JavaFX qualifies GPUs using a vendor allowlist that predates the Raspberry Pi's Mesa V3D driver, so the es2 pipeline requires `-Dprism.forceGPU=true` to avoid falling back to software rendering. The GPU would have to be added to the allowlist or needs to be worked around at the application level.
@@ -433,11 +325,6 @@ Another issue is the reliance on (old) 3rd party libraries that fundamentally do
 
 // TODO: move somewhere else
 // A practical consequence of these differences is the software pipeline: a jfx-static image always contains the sw fallback, a NIK image never does, and Substrate's is opt-in and off by default. Images without the fallback require a qualifying GPU to start at all.
-// NOTE (updated 2026-09-11): NIK half verified 2026-09-09 (registerPrismSW is dead code,
-//  image dies at toolkit init without GPU). Gluon half CORRECTED by the Docker retest:
-//  with -Dgluonfx.enableSWRendering=true (capital SW; the lowercase spelling is silently
-//  ignored by Maven) the sw fallback links AND works under Xvfb. Only the default-off and
-//  silent-misspelling points remain usable against Gluon.
 
 
 
@@ -449,12 +336,6 @@ There are a few limitations that are worth being clear about:
 
 * *Image size.* A minimal application comes out at roughly 46 MB on Windows and 52 MB on Linux, i.e., in the same range as Liberica NIK and noticeably smaller than Gluon Substrate. Note that each stack links a different JavaFX version even when the poms declare the same one, so the numbers are only rough guidance:
 
-// ANSWER (2026-09-11, Linux container test): gluonfx + Oracle GraalVM 25.0.4 compiles
-//  (vendor check only warns; GluonFeature loads, its APIs still exist in 25.0.4), but the
-//  link needs manual fixes (clibraries symlinks + -l:libsvm_container.a) and the image
-//  then dies at runtime: "UnsatisfiedLinkError: Unsupported JNI version 0x10006, required
-//  by glass" -- GraalVM 25 rejects JNI < 1.8 for BUILTIN libraries while FX glass'
-//  JNI_OnLoad returns 1.6. So: no hard gate, but not usable as shipped.
 .The same minimal application built on each stack, all declaring JavaFX 26.0.2
 [width="100%",options="header",cols="2,3,3,3"]
 |====
