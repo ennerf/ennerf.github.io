@@ -43,7 +43,7 @@ BellSoft took a much more focused approach and created a GraalVM CE distribution
 
 Their distribution bundles both JavaFX and Swing/AWT modules, as well as corresponding metadata. Users only need to set `GRAALVM_HOME` and can use it with GraalVM's stock `native-maven-plugin`. If you need to get something running quickly, NIK is the easiest way to get started on desktop apps.
 
-Liberica NIK is currently also the only supported way to run AWT and Swing in native images. Note that even a stock Oracle GraalVM ships the static AWT archives, but they are useless without the matching metadata and integration code that NIK provides. In a way, the decoupling of JavaFX from the JDK turned out to be a blessing in disguise because it can be treated like a normal library that we can update at will without needing vendor support.
+Liberica NIK is currently also the only supported way to run AWT and Swing in native images. Note that even a stock Oracle GraalVM ships the static AWT archives, but they are useless without the matching metadata and integration code that NIK provides. In a way, the decoupling of JavaFX from the JDK turned into a nice benefit because it can be treated like a normal library that we can update at will without needing vendor support.
 
 At the time of writing, NIK (full) supports the LTS versions GraalVM 25 CE with JavaFX 25 and the GPU-accelerated pipelines on the four main desktop architectures. They currently do not support the software pipeline or `linux-aarch64` targets.
 
@@ -219,7 +219,7 @@ Lastly, we need the glue required for adding the actual linking arguments and fi
 
 ==== Static Linking
 
-Statically linked JNI code can get into the image in two different ways. The simple route is forcing the entire archives into the executable, e.g., via `/WHOLEARCHIVE` on Windows, `-force_load` on macOS, or `--whole-archive` on Linux. The `Java_*` entry points are exported symbols, so they end up in the executable's own export table, and the image resolves them at runtime with the same lookup a JVM uses for statically linked JNI (https://openjdk.org/jeps/178[JEP 178]). Nothing needs to be registered, but every object file gets included whether it is used or not, and nothing gets verified at build time.
+Statically linked JNI code can get into the image in two different ways. The simple route is forcing the entire archives into the executable, e.g., via `/WHOLEARCHIVE` on Windows, `-force_load` on macOS, or `--whole-archive` on Linux. The `Java_*` entry points are exported symbols, so they end up in the executable's own export table, and the image resolves them at runtime with the same lookup a JVM uses for statically linked JNI (https://openjdk.org/jeps/178[JEP 178]). This disables build-time verification and includes all object files, independent of whether they get used or not.
 
 The alternative is registering the archives as built-in JNI libraries, the same mechanism GraalVM uses for the JDK's own libraries. Native-image then emits a link-time reference for every reachable native method, so the linker pulls in only the objects that are actually needed. The verification happens at build time, so a genuinely missing implementation fails early.
 
@@ -235,7 +235,7 @@ Note that GraalVM 25 started to enforce JEP 178's minimum `JNI_VERSION_1_8` for 
 
 As mentioned in the metadata section, a few platform-specific classes are present in every platform's jar even though their native code is not. Out of the 95 graphics classes that declare native methods, this only applies to six classes related to font rendering, as well as the iOS image loader.
 
-Unfortunately, even with perfect provided metadata, users can easily cause issues by e.g. committing agent-generated files and building on another platform. Until those classes are filtered upstream (TODO: link to filter), making e.g. the Windows DirectWrite font backend reachable on Linux breaks the build with 65 unresolved symbols even though none of them are needed. The missing symbol errors give the impression that the binaries were not compiled correctly, rather than highlighting a metadata issue.
+Unfortunately, even with perfectly provided metadata, users can easily cause issues by e.g. committing agent-generated files and building on another platform. Until those classes are added to the upstream https://github.com/openjdk/jfx/blob/jfx27/build.gradle#L5617-L5669[exclude list], making e.g. the Windows DirectWrite font backend reachable on Linux breaks the build with 65 unresolved symbols even though none of them are needed. The missing symbol errors give the impression that the binaries were not compiled correctly, rather than highlighting a metadata issue.
 
 [source]
 ----
@@ -259,7 +259,7 @@ On Linux their `GluonFeature` registers a curated prefix list that leaves out th
 
 **Liberica NIK** uses their `JavaFXFeature` to register curated prefix lists for each platform, so the native methods are bound at link time. Wrong-OS classes that enter the image through bad metadata get treated as regular JNI, so they add some image bloat but never break the build.
 
-**jfx-static-feature** registers a combined prefix list and uses GraalVM's `@Delete` substitution to delete the wrong-OS classes and solve the problem at the root. Leaving them unregistered would only downgrade them to regular JNI that stays in the image and fails at runtime. Deleted classes are removed from the analysis entirely, so bad metadata fails the build with a meaningful error:
+**jfx-static-feature** registers a combined prefix list and uses GraalVM's `@Delete` substitution to delete the wrong-OS classes. Leaving them unregistered would only downgrade them to regular JNI that stays in the image and fails at runtime. Deleted classes are removed from the analysis entirely, so bad metadata fails the build with a meaningful error:
 
 [source,java]
 ----
@@ -313,8 +313,6 @@ java.lang.ClassNotFoundException: com.sun.prism.sw.SWPipeline
     ...
 java.lang.RuntimeException: No toolkit found
 ----
-+
-Note that our first Substrate test spelled the flag `enableSwRendering` instead of `enableSWRendering`, which Maven silently ignores, so the fallback looked broken even though it works fine once enabled.
 
 * *Image size.* A minimal application comes out at roughly 46 MB on Windows and 52 MB on Linux, i.e., in the same range as Liberica NIK and noticeably smaller than Gluon Substrate. Note that each stack links a different JavaFX version even when the poms declare the same one, so the numbers are only rough guidance:
 
