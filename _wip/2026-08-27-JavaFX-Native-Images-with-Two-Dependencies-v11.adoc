@@ -93,7 +93,7 @@ Several layers have to work together to make JavaFX run as a native image. In ge
 
 2. *The static binaries*: Roughly half of JavaFX is C/C++/Objective-C code (windowing, rendering, fonts, image loading, effects). A self-contained executable needs these libraries compiled and linked in as static archives. https://github.com/openjdk/jfx[jfx] already supports building the archives via `-PSTATIC_BUILD=true`, but they currently don't get published.
 
-3. *Static integration glue*: A few things work differently under AOT and need to be bridged with glue code. For example, GraalVM's linking step requires the native symbols of all included classes to be available at link time, even if some code paths could never be reached. Including unusable JNI entry points can result in missing symbol errors that look cryptic to Java developers and give the impression that the binaries were not compiled correctly.
+3. *Static integration glue*: A few things work differently under AOT and need to be bridged with glue code. For example, GraalVM's linking step requires the native symbols of all included classes to be available at link time, even if some code paths could never be reached. Including unusable JNI entry points can result in missing symbol errors that look cryptic to Java developers.
 
 Next, we'll go over how each approach solves each part:
 
@@ -203,7 +203,7 @@ The static binaries are primarily a distribution problem. Upstream OpenJFX has s
 
 **Substrate** downloads Gluon's own static JavaFX SDK and silently replaces the user-specified JavaFX jars before invoking native-image. This ensures matching jars and archives, but it's impossible to use a newer version. If you currently specify jfx version 27, it gets switched to the latest Gluon build and reported as `21-internal+11.2`. Substrate defaults to only including the hardware pipelines, but they offer an opt-in to include the software fallback via the `enableSWRendering` flag.
 
-**Liberica NIK** fixes the version by bundling the JavaFX modules with their jdk, which takes precedence over any `org.openjfx` jars declared in the build. They support the LTS releases, so the latest is currently JDK 25 + JavaFX 25. Note that their JavaFX build contains some minor source patches (to e.g. fix C overload names) that are not published. They completely removed the software pipeline, so it cannot be run on platforms without a qualifying GPU.
+**Liberica NIK** fixes the version by bundling the JavaFX modules with their jdk, which takes precedence over any `org.openjfx` jars declared in the build. They support the LTS releases, so the latest is currently JDK 25 + JavaFX 25. Note that their JavaFX build contains some minor source patches that are not published. They completely removed the software pipeline, so it cannot be run on platforms without a qualifying GPU.
 
 **jfx-static-libs** works with the official `org.openjfx` release jars and provides accompanying static builds that were built from the same commit. The builds currently live in my openjfx fork at https://github.com/ennerf/jfx[ennerf/jfx] and contain no modifications to the Java or native code. Each release adds one commit for setting up the annotation processor, and a second that adds annotations for generating the metadata. The output format matches Substrate's in case it ever accepts custom download urls. The static archives are actually reasonably small, so for the artifact on Maven Central we bundle all 5 platforms (including linux-aarch64) plus metadata into a single ~10MB jar without classifier. The archives are only used by `jfx-static-feature`, so the artifact can be used as a standalone dependency purely to add reachability metadata.
 
@@ -211,23 +211,23 @@ The static binaries are primarily a distribution problem. Upstream OpenJFX has s
 
 Lastly, we need the glue required for adding the actual linking arguments and fixing some pitfalls that show up during static linking.
 
-**Substrate** owns the entire build chain, so all linker arguments live inside their build tool. On Linux they additionally enable an internal `GluonFeature` that registers the JavaFX libraries as built-in JNI libraries.
+**Substrate** owns the entire build chain, so all linker arguments live inside their build tool.
 
-**Liberica NIK** works with GraalVM's stock `native-maven-plugin`, but ships patched sources and a heavily modified `JavaFXFeature` inside their `svm.jar` that registers the libraries and metadata for the bundled JavaFX version.
+**Liberica NIK** works with GraalVM's stock `native-maven-plugin`, but ships a heavily modified `JavaFXFeature` inside their `svm.jar` that registers the libraries and metadata for the bundled JavaFX version.
 
-**jfx-static-feature** was designed to work with the stock build tool and zero source changes, so any integration glue has to be implemented as a custom  https://www.graalvm.org/sdk/javadoc/org/graalvm/nativeimage/hosted/Feature.html[Feature]. The feature gets picked up from the classpath automatically, extracts the platform-specific archives, checks that they match the runtime version, and adds the necessary linker commands for the static libraries and their system dependencies.
+**jfx-static-feature** was designed to work with the stock build tool and zero source changes, so any integration glue has to be implemented as a custom https://www.graalvm.org/sdk/javadoc/org/graalvm/nativeimage/hosted/Feature.html[Feature]. The feature gets picked up from the classpath automatically, extracts the platform-specific archives, checks that they match the runtime version, and adds the necessary linker commands for the static libraries and their system dependencies.
 
 ==== Static Linking
 
-Statically linked JNI code can get into the image in two different ways. The simple route is forcing the entire archives into the executable, e.g., via `/WHOLEARCHIVE` on Windows, `-force_load` on macOS, or `--whole-archive` on Linux. The `Java_*` entry points are exported symbols, so they end up in the executable's own export table, and the image resolves them at runtime like a https://openjdk.org/jeps/178[JEP 178] statically-linked-JNI lookup. Nothing needs to be registered, but every object file gets included whether it is used or not, and nothing gets verified at build time.
+Statically linked JNI code can get into the image in two different ways. The simple route is forcing the entire archives into the executable, e.g., via `/WHOLEARCHIVE` on Windows, `-force_load` on macOS, or `--whole-archive` on Linux. The `Java_*` entry points are exported symbols, so they end up in the executable's own export table, and the image resolves them at runtime with the same lookup a JVM uses for statically linked JNI (https://openjdk.org/jeps/178[JEP 178]). Nothing needs to be registered, but every object file gets included whether it is used or not, and nothing gets verified at build time.
 
 The alternative is registering the archives as built-in JNI libraries, the same mechanism GraalVM uses for the JDK's own libraries. Native-image then emits a link-time reference for every reachable native method, so the linker pulls in only the objects that are actually needed. The verification happens at build time, so a genuinely missing implementation fails early.
 
-Note that GraalVM 25 started to enforce JEP178's minimum `JNI_VERSION_1_8` for static linking. OpenJFX 27 still reports lower versions, so GraalVM 25 is not compatible with unmodified sources.
+Note that GraalVM 25 started to enforce JEP 178's minimum `JNI_VERSION_1_8` for static linking. The glass library in OpenJFX 27 still reports lower versions, so GraalVM 25 is not compatible with unmodified sources.
 
-**Substrate** forces whole archives on Windows and macOS, but on Linux they use the built-in registration. The highest supported GraalVM version is 23, so the JNI version is not an issue.
+**Substrate** forces whole archives on Windows and macOS, but on Linux their internal `GluonFeature` does the built-in registration. The highest supported GraalVM version is 23, so the JNI version is not an issue.
 
-**Liberica NIK** does the built-in registration for all platforms. Their JavaFX release ships with minor source modifications to work around any compatibility issues.
+**Liberica NIK** does the built-in registration for all platforms. Their bundled glass build is patched to report `JNI_VERSION_1_8`.
 
 **jfx-static-feature** also does the built-in registration for all platforms. Since we rely on unmodified official versions, we use GraalVM substitutions for fixing any source incompatibilities.
 
@@ -235,7 +235,7 @@ Note that GraalVM 25 started to enforce JEP178's minimum `JNI_VERSION_1_8` for s
 
 As mentioned in the metadata section, a few platform-specific classes are present in every platform's jar even though their native code is not. Out of the 95 graphics classes that declare native methods, this only applies to six classes related to font rendering, as well as the iOS image loader.
 
-Unfortunately, even with perfectly provided metadata, users can easily cause issues by e.g. committing agent-generated files and building on another platform. Until those classes are filtered upstream (TODO: link to filter), making e.g. the Windows DirectWrite font backend reachable on Linux breaks the build with 65 unresolved symbols even though none of them are needed. The missing symbol errors look more like a broken toolchain rather than a metadata issue, and give the impression that the binaries were not compiled correctly.
+Unfortunately, even with perfect provided metadata, users can easily cause issues by e.g. committing agent-generated files and building on another platform. Until those classes are filtered upstream (TODO: link to filter), making e.g. the Windows DirectWrite font backend reachable on Linux breaks the build with 65 unresolved symbols even though none of them are needed. The missing symbol errors look more like a broken toolchain rather than a metadata issue, and give the impression that the binaries were not compiled correctly.
 
 [source]
 ----
@@ -245,7 +245,7 @@ helloworld-graal.obj : error LNK2001: unresolved external symbol
 helloworld-graal.exe : fatal error LNK1120: 55 unresolved externals
 ----
 
-The obvious fix would be providing small C stubs that cover missing dummy symbols, but that would come out to dozens of stubs per platform that would need to be bundled with the archives and would represent yet another thing to maintain.
+One possible fix would be covering the missing symbols with small C stubs, similar to what Substrate does for some missing JDK symbols on its mobile targets. However, the font backends alone would come out to dozens of stubs per platform that would need to be bundled with the archives and maintained.
 
 **Substrate**'s whole-archive linking avoids the problem on Windows and macOS: wrong-OS classes are tolerated the same way a JVM tolerates them, and as long as they never get called, they only add some image bloat. An implementation that is genuinely missing only shows up on the first call as an `UnsatisfiedLinkError`:
 
@@ -259,7 +259,7 @@ On Linux their `GluonFeature` registers a curated prefix list that leaves out th
 
 **Liberica NIK** uses their `JavaFXFeature` to register curated prefix lists for each platform, so the native methods are bound at link time. Wrong-OS classes that enter the image through bad metadata get treated as regular JNI, so they add some image bloat but never break the build.
 
-**jfx-static-feature** registers a combined prefix list and uses GraalVM's `@Delete` substitution to delete unwanted classes. This makes bad configurations fail at link time and solves the problem at the root. Classes that are not part of the analysis are never deemed reachable and never need to resolve:
+**jfx-static-feature** registers a combined prefix list and uses GraalVM's `@Delete` substitution to delete the wrong-OS classes and solve the problem at the root. Leaving them unregistered would only downgrade them to regular JNI that stays in the image and fails at runtime. Deleted classes are removed from the analysis entirely, so bad metadata fails the build with a meaningful error:
 
 [source,java]
 ----
@@ -310,7 +310,7 @@ Beyond the deletions, `jfx-static-feature` also contains a small number of subst
 
 **OpenJFX**
 
-* `System.loadLibrary` cannot load any of the static JavaFX libraries. On Windows, glass reports JNI version 1.2 from its `JNI_OnLoad`, while the spec requires 1.8 or later for statically linked libraries (one-line fix). On Linux and macOS, the `JNI_OnLoad_<lib>` symbols are hidden by the image's linker version script, so the feature calls the initializers directly. GraalVM 25 started enforcing the version rule at runtime, so loading an unpatched glass as a built-in library fails with `UnsatisfiedLinkError: Unsupported JNI version 0x10006, required by glass`.
+* `System.loadLibrary` cannot load any of the static JavaFX libraries. The glass library reports JNI versions below 1.8 from its `JNI_OnLoad` (a one-line fix), so GraalVM 25 refuses to load it as a built-in library with `UnsatisfiedLinkError: Unsupported JNI version 0x10006, required by glass`. On Linux and macOS, the `JNI_OnLoad_<lib>` symbols are additionally hidden by the image's linker version script, so the feature calls the initializers directly.
 
 * Objective-C categories are dropped from static links, which shows up as an `unrecognized selector` exception when the first window opens. `libglass.a` is linked with `-force_load` to keep them.
 
