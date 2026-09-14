@@ -1,5 +1,7 @@
 = JavaFX 27 as a GraalVM Native Image
 :page-tags: JavaFX, GraalVM, Native Image, Java
+// used for GitHub's preview renderer. Jekyll locks the imagesdir to /images
+:imagesdir: ../images
 
 // TODO: screenshot on the Pi 5 with the default Raspbian background. Either the AtlantaFX
 // sampler or Scope (3D view); if Scope, update the caption, the sentence below, and the
