@@ -235,7 +235,7 @@ Note that GraalVM 25 started to enforce JEP 178's minimum `JNI_VERSION_1_8` for 
 
 As mentioned in the metadata section, a few platform-specific classes are present in every platform's jar even though their native code is not. Out of the 95 graphics classes that declare native methods, this only applies to six classes related to font rendering, as well as the iOS image loader.
 
-Unfortunately, even with perfect provided metadata, users can easily cause issues by e.g. committing agent-generated files and building on another platform. Until those classes are filtered upstream (TODO: link to filter), making e.g. the Windows DirectWrite font backend reachable on Linux breaks the build with 65 unresolved symbols even though none of them are needed. The missing symbol errors look more like a broken toolchain rather than a metadata issue, and give the impression that the binaries were not compiled correctly.
+Unfortunately, even with perfect provided metadata, users can easily cause issues by e.g. committing agent-generated files and building on another platform. Until those classes are filtered upstream (TODO: link to filter), making e.g. the Windows DirectWrite font backend reachable on Linux breaks the build with 65 unresolved symbols even though none of them are needed. The missing symbol errors give the impression that the binaries were not compiled correctly, rather than highlighting a metadata issue.
 
 [source]
 ----
@@ -270,33 +270,7 @@ On Linux their `GluonFeature` registers a curated prefix list that leaves out th
 static final class Target_FTFactory {}
 ----
 
-The conditions are negations (`NotLinux`, `NotMacOS`) rather than inclusion lists, so future platform ports would fail visibly instead of silently keeping a stubbed-out backend:
-
-[source,java]
-----
-static final class NotLinux implements BooleanSupplier {
-    public boolean getAsBoolean() {
-        return !Platform.includedIn(Platform.LINUX.class);
-    }
-}
-----
-
-We also added an existence check to avoid issues if those classes ever get removed upstream:
-
-[source,java]
-----
-final class ClassPresent implements Predicate<String> {
-    @Override
-    public boolean test(String className) {
-        try {
-            Class.forName(className, false, ClassPresent.class.getClassLoader());
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
-    }
-}
-----
+The conditions are negations (`NotLinux`, `NotMacOS`) combined with an existence check (`ClassPresent`), so future platform ports or upstream class removals fail visibly instead of silently keeping a stubbed-out backend.
 
 ==== Remaining Glue
 
