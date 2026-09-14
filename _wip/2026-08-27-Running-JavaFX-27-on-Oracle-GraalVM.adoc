@@ -10,9 +10,23 @@ image::jfx-static/atlantafx-sampler-pi5.jpg[AtlantaFX sampler running on a Raspb
 
 We initially used https://www.graalvm.org/native-image/[GraalVM Native Image] as a way to deploy JavaFX to mobile targets. However, after seeing significant performance benefits (GUIs mostly run in interpreted mode since users would have to click thousands of times to reach the JIT threshold), we gradually migrated all of our desktop and CLI applications over to ahead-of-time (AOT) compilation.
 
+// TODO: fill in the pi5 measurements (jlink vs native, 26.0.2) and re-measure with 27 before publishing
+.AtlantaFX sampler comparison on a Raspberry PI
+[width="80%",options="header",cols="3,2,2",align="center"]
+|====
+| AtlantaFX Sampler | jlink (JIT) | native image (AOT)
+
+| Distribution size | TBD | TBD
+| Time to first window | TBD | TBD
+| Memory after startup (RSS) | TBD | TBD
+| Build time | TBD | TBD
+|====
+
 JavaFX actually works very well in Native Image once everything is configured, but getting a complex application running for the first time is typically not a straightforward experience. This steep initial hurdle has unfortunately earned JavaFX, and desktop Java in general, a reputation of being incompatible or working poorly with native image.
 
-I think a big part of this stems from complex, specialized tooling that performs a lot of "magic" behind the scenes to hide the native layers. Whenever anything breaks, it produces errors that many Java developers don't know how to debug. In this post I want to demystify the internals a bit, and show how you can run the latest JavaFX 27 release with the latest Oracle GraalVM.
+I think a big part of this stems from complex, specialized tooling that performs a lot of "magic" behind the scenes to hide the native layers. Whenever anything breaks, it produces errors that many Java developers don't know how to debug.
+
+The existing tools were both built on the GraalVM Community Edition (CE) with JavaFX 25 as the highest usable version. In this post I want to demystify the internals, and show how you can run the latest JavaFX 27 release with the latest Oracle GraalVM.
 
 == Three Approaches
 
@@ -29,7 +43,7 @@ Getting all of that to work requires modified builds and custom tools for practi
 
 However, the number of moving targets makes for a brittle combination that can easily break. According to Gluon: "every new release of iOS, Android, the AOT compiler, the JVM components or the JDK required patches and adjustments", so they have been pivoting towards https://gluonhq.com/news/bringing-openjdk-to-mobile-a-community-effort/[OpenJDK Mobile], which is a more standard JDK + Leyden approach. Moving to an open-world model will also make it easier for users as it removes the metadata problem.
 
-That being said, the existing tooling still gets maintenance updates (link:https://docs.gluonhq.com/[see docs]) and is comparably user-friendly considering the enormous underlying complexity. At the time of writing, the latest versions supported by Gluon are GraalVM 23 Community Edition (CE) and JavaFX 21-ea. On desktop, there is also unofficial support for building with other GraalVM distributions, but there is currently no way to use a newer JavaFX release.
+That being said, the existing tooling still gets maintenance updates (link:https://docs.gluonhq.com/[see docs]) and is comparably user-friendly considering the enormous underlying complexity. At the time of writing, the latest versions supported by Gluon are GraalVM 23 Community Edition and JavaFX 21-ea. On desktop, there is also unofficial support for building with other GraalVM distributions, but there is currently no way to use a newer JavaFX release.
 
 // TODO: link the YouTube video for the several device deployments? maybe cut this example?
 We've used Gluon's tools internally for 1-2 years and are still using it for mobile targets. JavaFX on mobile actually works far better than we originally expected, and it's really nice to be able to deploy to all five targets with full 2D and 3D rendering as well as hot-reload of styling and layouts.
