@@ -7,8 +7,8 @@
 // sampler or Scope (3D view); if Scope, update the caption, the sentence below, and the
 // "from the opening picture" reference in the verification paragraph.
 [.text-center]
-.The AtlantaFX sampler as a statically linked JavaFX 27 native image on a Raspberry Pi 5
-image::jfx-static/atlantafx-sampler-pi5.jpg[AtlantaFX sampler running on a Raspberry Pi 5]
+.The AtlantaFX sampler as a JavaFX 27 native image on a Raspberry Pi 5
+image::jfx-static/sampler-blueprints.png[AtlantaFX sampler running on a Raspberry Pi 5,role=screenshot]
 
 We initially used https://www.graalvm.org/native-image/[GraalVM Native Image] as a way to deploy JavaFX to mobile targets. However, after seeing significant performance benefits (GUIs mostly run in interpreted mode since users would have to click thousands of times to reach the JIT threshold), we gradually migrated all of our desktop and CLI applications over to ahead-of-time (AOT) compilation.
 

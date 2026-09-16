@@ -50,6 +50,14 @@
     img {
       max-width: 100%;
     }
+
+    /* screenshots often have white edges that disappear against the page */
+    &.screenshot img {
+      border-radius: 0px;
+      box-shadow:
+        var(--language-border-color) 0 0 0 1px,
+        rgba(0, 0, 0, 0.08) 0 2px 8px;
+    }
   }
 
   .admonitionblock {
