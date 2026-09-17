@@ -7,9 +7,9 @@ timezone: America/New_York
 
 # jekyll-seo-tag settings › https://github.com/jekyll/jekyll-seo-tag/blob/master/docs/usage.md
 title: Software for Robots
-tagline: Real-Time Control, Networking, Operating Systems, Languages
+tagline: Real-Time Control, Networking, Languages, GraalVM Native Image
 description: >-
-  Real-Time Control, Networking, Operating Systems, Languages
+  Real-Time Control, Networking, Languages, GraalVM Native Image
 
 url: https://ennerf.github.io
 baseurl: ""

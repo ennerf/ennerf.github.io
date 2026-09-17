@@ -38,6 +38,9 @@
   .listingblock > .title,
   .imageblock > .title,
   .tableblock > caption {
+    /* Bootstrap moves captions below the table */
+    caption-side: top;
+    padding-bottom: 0.5rem;
     color: var(--text-muted-color);
     font-size: 0.85rem;
     font-style: italic;
