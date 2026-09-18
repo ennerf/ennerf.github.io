@@ -172,9 +172,10 @@ Unfortunately, there are still some third-party libraries that are notoriously h
 === Problem 1: Engine Metadata
 
 Unlike the application metadata, the engine metadata is constant for a specific version and operating system. Users see a pure Java API, but internally there is a lot of native code for dealing with OS behavior and rendering pipelines, and a lot of reflection to pick appropriate implementations at runtime. Between the reflection, JNI, and resources (shaders, css files, fonts, etc.), it currently takes close to 1,000 metadata entries to cover the whole framework.
-// re-counted 2026-09-16 on the released jfx-static-libs:27 jars + jfx27-metadata: graphics 775
-// (jni 166, reflect 594, res 15), web 146, media 31, controls 10, richtext 9, base 5, swing 2,
-// fxml 1, input 1 = 980 total; annotations 317 in 282 files (graphics 226/196, web 59/55).
+// released jfx-static-libs:27 jars + jfx27-metadata:
+// * graphics 775 (jni 166, reflect 594, res 15),
+// * web 146, media 31, controls 10, richtext 9, base 5, swing 2, fxml 1, input 1
+// = 980 total; annotations 317 in 282 files (graphics 226/196, web 59/55).
 
 Additionally, a lot of the metadata only applies to specific operating systems. Many of the platform-specific classes (e.g. `WinApplication.class`) get filtered out of the platform jars, but a few classes (e.g. platform fonts) are always available. Adding those unnecessarily bloats the native-image and can create build issues.
 
@@ -185,9 +186,6 @@ The metadata cannot be generated with the https://www.graalvm.org/latest/referen
 **Liberica NIK** does not ship any JSON files, but they heavily extended the https://github.com/oracle/graal/blob/6d71c876640c9ae7b3c131ebecc8d1834ac813c7/substratevm/src/com.oracle.svm.hosted/src/com/oracle/svm/hosted/javafx/JavaFXFeature.java[JavaFXFeature] in the `svm.jar` and register rules directly from code. The metadata is tied to the bundled jfx version, and the conditions are generated using `Platform.includedIn` checks and triggers on specific classes.
 
 **StaticFX** ships conventional JSON files with conditions that approximate OS filtering, e.g., `typeReachable = ${OS}Application.class`. This is compatible with the stock tooling, so it works out of the box with any current GraalVM release. The metadata itself is currently generated using `@Reachable` annotations in a jfx https://github.com/ennerf/jfx/releases[fork] and updated once per release.
-
-// TODO: this doesn't add anything, does it?
-// The web module is an extreme case for conditions: WebKit creates most of its Java peers from native code, so nothing on the Java side ever names them, and a condition on such a class would never fire. All of its entries are instead conditioned on the single class that loads the library.
 
 [NOTE]
 ====
