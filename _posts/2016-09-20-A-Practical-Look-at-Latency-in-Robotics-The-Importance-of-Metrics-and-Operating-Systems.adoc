@@ -1,7 +1,7 @@
 = A Practical Look at Latency in Robotics : The Importance of Metrics and Operating Systems
 :published_at: 2016-09-20
 :page-tags: Latency, Operating System, Windows, OSX, Ubuntu, Scientific Linux, Sleep, Real-Time, HdrHistogram
-:page-image: { path: /images/os/osx-win-ubuntu_24h.png, alt: "24 hours of latency hiccups on Windows, macOS, and Ubuntu" }
+:page-image: { path: /images/os/latency-social-card.png, alt: "Latency percentile distribution of Windows, macOS, and Ubuntu over 24 hours" }
 
 //NOTE: Keep X in Mind
 //image::cover-image.jpg[150, 250, link="http://docs.hebi.us"]
