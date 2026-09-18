@@ -226,13 +226,14 @@ Statically linked JNI code can get into the image in two different ways. The sim
 
 The alternative is registering the archives as built-in JNI libraries, the same mechanism GraalVM uses for the JDK's own libraries. Native-image then emits a link-time reference for every reachable native method, so the linker pulls in only the objects that are actually needed. The verification happens at build time, so a genuinely missing implementation fails early.
 
-Note that GraalVM 25 enforces JEP 178's minimum `JNI_VERSION_1_8` for static linking. The glass library in OpenJFX 27 still reports lower versions, so GraalVM 25 is not compatible with the unpatched sources.
+Historically, the glass library in OpenJFX reported lower JNI versions. Since GraalVM 25 strictly enforces https://openjdk.org/jeps/178[JEP 178]'s minimum `JNI_VERSION_1_8` for static linking, the official sources are not compatible until this is updated upstream.
 
 **Substrate** forces whole archives on Windows and macOS, but on Linux their internal `GluonFeature` does the built-in registration. The highest supported GraalVM version is 23, so the JNI version is not an issue.
 
 **Liberica NIK** does the built-in registration for all platforms. Their bundled glass build is patched to report `JNI_VERSION_1_8`.
 
-**StaticFX** also does the built-in registration for all platforms. Since we rely on unmodified official versions, we use GraalVM substitutions for fixing any source incompatibilities.
+**StaticFX** also does the built-in registration for all platforms, and we rely on GraalVM substitutions to patch the call sites to ensure compatibility without changing the actual sources.
+
 
 ==== Linking Missing Symbols
 
@@ -299,9 +300,9 @@ Beyond the deletions, `StaticFX` also contains a small number of substitutions t
 
 **Media, WebView, and Swing**
 
-The media and web modules do not build static archives because their native dependencies (GStreamer and WebKit) only exist as shared libraries. However, on a JVM these modules already load their libraries dynamically from the platform jars, and nothing prevents a native image from doing the same. The feature simply copies the matching `.dll/.so/.dylib` from the classpath to the output, and adds appropriate linker arguments. Applications that don't use media or web remain standalone executables.
+The media and web modules do not build static archives because their native dependencies (GStreamer and WebKit) are incredibly difficult to build statically. However, on a JVM these modules already load their libraries dynamically from the platform jars, and nothing prevents a native image from doing the same. The feature simply copies the matching `.dll/.so/.dylib` from the classpath to the output, and adds appropriate linker arguments. Applications that don't use media or web remain standalone executables.
 
-Our `javafx.swing` metadata only covers the pure Java interop glue. `SwingNode` additionally needs metadata for the AWT internals of `java.desktop`, which belongs to the JDK rather than JavaFX. We got it working on all five platforms with two `@Reachable` annotations on the application side, but that remains an example rather than something we actively support.
+Our `javafx.swing` metadata only covers the pure Java interop glue. While full `SwingNode` utiliziation requires additional metadata for the JDK's internal AWT systems, we have successfully verified it working with two `@Reachable` annotations across all five platforms. However, that remains an example rather than something we actively support.
 
 
 [[benchmarks]]
