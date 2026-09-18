@@ -55,7 +55,7 @@ At the time of writing, NIK (full) supports the LTS versions GraalVM 25 CE with 
 
 === HEBI's StaticFX
 
-We have been using Liberica NIK for our desktop applications for about two years, and it has admittedly worked quite well. However, some of our applications measure https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html[latency] at the sub-millisecond level, and we ran into issues with incorrect measurements due to poor escape analysis and GC behavior in the community edition. Our worst allocation source turned out to be a simple `new double[]{a,b}` in `Math::pow`, which would never allocate on HotSpot.
+We have been using Liberica NIK for our desktop applications for about two years, and it has admittedly worked quite well. However, some of our applications measure https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html[latency] at the sub-millisecond level, and we ran into issues with incorrect measurements because the community edition's escape analysis eliminated far fewer allocations than HotSpot, on top of differences in GC behavior. Our worst allocation source turned out to be a simple `new double[]{a,b}` in `Math::pow`, which would never allocate on HotSpot.
 
 Since the Oracle GraalVM (formerly Enterprise Edition) became free to use under the https://www.oracle.com/downloads/licenses/graal-free-license.html[GFTC] license in 2023, we wanted to switch to get better escape analysis, https://medium.com/graalvm/graalvm-25-2-is-here-600a9ae53f83[G1 GC on all platforms], and other enterprise-only features like profile-guided optimization (PGO).
 
@@ -287,7 +287,7 @@ Beyond the deletions, `StaticFX` also contains a small number of substitutions t
 
 **GraalVM**
 
-* Overloaded native methods never link: native-image resolves builtin JNI methods by their short name, and an overloaded native only exists under its signature-mangled name on the C side (relevant to three classes). We added `@CFunction` substitutions to manually route them to the mangled symbols. BellSoft works around this with source patches that rename the overloaded natives (e.g., `CreateFontFace` -> `CreateFontFaceIndexed`), and Substrate is unaffected due to lazy resolution on Windows and macOS (falls back to the mangled names at runtime), and none of the classes being relevant on Linux.
+* Overloaded native methods never link: native-image resolves builtin JNI methods by their short name, and an overloaded native only exists under its signature-mangled name on the C side, as the JNI spec requires (relevant to three classes). We added `@CFunction` substitutions to manually route them to the mangled symbols. BellSoft works around this with source patches that rename the overloaded natives (e.g., `CreateFontFace` -> `CreateFontFaceIndexed`), and Substrate is unaffected due to lazy resolution on Windows and macOS (falls back to the mangled names at runtime), and none of the classes being relevant on Linux.
 
 * GraalVM's built-in JavaFX support registers `Application` subclasses for reflection, but not the no-argument constructor called by the launcher. JavaFX Native Images currently fail at startup with `NoSuchMethodException: MyApp.<init>()` unless the application registers itself, so our feature registers the constructor of each reachable subclass.
 
@@ -295,7 +295,7 @@ Beyond the deletions, `StaticFX` also contains a small number of substitutions t
 
 * `System.loadLibrary` cannot initialize any of the static JavaFX libraries. Loading the unpatched glass as a built-in library fails with `UnsatisfiedLinkError: Unsupported JNI version 0x10006, required by glass`. On Linux and macOS, the `JNI_OnLoad_<lib>` entry points are additionally hidden by the image's exported-symbol list, so the feature calls the initializers directly instead.
 
-* Objective-C categories are dropped from static links, which shows up as an `unrecognized selector` exception when the first window opens. `libglass.a` is linked with `-force_load` to keep them.
+* Objective-C categories are dropped from static links (standard linker behavior, as categories produce no symbols the linker tracks as dependencies), which shows up as an `unrecognized selector` exception when the first window opens. `libglass.a` is linked with `-force_load` to keep them.
 
 * On macOS, the process hangs before the first window appears. Cocoa requires the process's first thread to be running a https://developer.apple.com/documentation/corefoundation/cfrunloop[CFRunLoop] while glass starts up. The `java` launcher handles this, but a native image runs `main` on the first thread. We can substitute a handoff to cover `Application::launch`, but `Platform::startup` currently needs an external https://github.com/HebiRobotics/native-launchers-maven-plugin[native launcher].
 
