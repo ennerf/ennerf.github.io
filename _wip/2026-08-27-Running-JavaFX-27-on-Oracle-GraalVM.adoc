@@ -4,7 +4,7 @@
 :imagesdir: ../images
 
 [.text-center]
-.The AtlantaFX sampler as a JavaFX 27 Native Image on a Raspberry Pi 5 (https://youtu.be/GA_iAnxznO8[video walkthrough])
+.The AtlantaFX sampler as a JavaFX 27 Native Image on a Raspberry Pi 5, showcasing full JavaFX support including FXML, WebView, MediaPlayer, and AWT integration (https://youtu.be/GA_iAnxznO8[video walkthrough])
 image::jfx-static/sampler-blueprints.png[AtlantaFX sampler running on a Raspberry Pi 5,role=screenshot]
 
 We initially used GraalVM Native Image as a way to deploy JavaFX to mobile targets. However, after seeing significant performance benefits, we gradually migrated all of our desktop and CLI applications over to ahead-of-time (AOT) compilation. GUIs mostly run in interpreted mode because users would have to click thousands of times to reach the JIT threshold. With AOT we see up to 90% reductions in startup and first visit times, which results in a much snappier experience.
