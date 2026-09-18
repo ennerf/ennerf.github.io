@@ -1,4 +1,4 @@
-= JavaFX 27 as a GraalVM Native Image
+= JavaFX 27 as a GraalVM Native Image on a Raspberry Pi 5
 :page-tags: JavaFX, GraalVM, Native Image, Java
 // used for GitHub's preview renderer. Jekyll locks the imagesdir to /images
 :imagesdir: ../images
@@ -291,7 +291,7 @@ Beyond the deletions, `StaticFX` also contains a small number of substitutions t
 
 * Objective-C categories are dropped from static links, which shows up as an `unrecognized selector` exception when the first window opens. `libglass.a` is linked with `-force_load` to keep them.
 
-* On macOS, the process hangs before the first window appears. Cocoa requires the process's first thread to be running a https://developer.apple.com/documentation/corefoundation/cfrunloop[CFRunLoop] while glass starts up. The `java` launcher handles this, but a native image runs `main` on the first thread. We can substitute a handoff to cover `Application::launch`, but `Platform::startup` currently needs an external launcher.
+* On macOS, the process hangs before the first window appears. Cocoa requires the process's first thread to be running a https://developer.apple.com/documentation/corefoundation/cfrunloop[CFRunLoop] while glass starts up. The `java` launcher handles this, but a native image runs `main` on the first thread. We can substitute a handoff to cover `Application::launch`, but `Platform::startup` currently needs an external https://github.com/HebiRobotics/native-launchers-maven-plugin[native launcher].
 
 * JavaFX qualifies GPU support against a vendor allowlist that does not include Broadcom, so the es2 pipeline on a Raspberry Pi requires `-Dprism.forceGPU=true` to avoid falling back to software rendering.
 
@@ -304,7 +304,8 @@ The media and web modules do not build static archives because their native depe
 Our `javafx.swing` metadata only covers the pure Java interop glue. `SwingNode` additionally needs metadata for the AWT internals of `java.desktop`, which belongs to the JDK rather than JavaFX. We got it working on all five platforms with two `@Reachable` annotations on the application side, but that remains an example rather than something we actively support.
 
 
-== Numbers
+[[benchmarks]]
+== Benchmarks
 
 === Application Size
 
@@ -355,7 +356,6 @@ The table below has the minimal sizes for the highest supported version for all 
 
 Most of the difference is in the first impression. On the desktop, the JIT eventually catches up, but startup and the first visit of every page still go through class loading and the interpreter. We measured the AtlantaFX sampler on JavaFX 27 as jlink, jlink with a trained CDS archive, and a native image, on a fast desktop and a Raspberry Pi 5:
 
-[[benchmarks]]
 .Time to first window, and page loads as first -> second visit (times in ms)
 [width="80%",options="header",cols="4,2,2,2",align="center"]
 |====
@@ -386,7 +386,7 @@ I hope that it became clearer how JavaFX interacts with Native Image and what so
 
 Getting a desktop application AOT compiled for the first time is still a challenge, but IMO the payoff is worth pushing through the initial barrier. The single biggest issue is the lack of metadata for common JavaFX libraries and the application itself, but hopefully our reachability-annotations with dedicated FXML support can make that more approachable and maintainable. Even the AtlantaFX sampler that uses practically every existing component only needed a few annotations for full compatibility.
 
-A second remaining issue is the reliance on (old) third-party libraries that fundamentally don't play well with the closed-world assumption in native-image. The ecosystem has been moving towards libraries that are more compatible, but switching libraries is always a pain. We will see how project Crema and its open-world model will be able to help with that.
+A second remaining issue is the reliance on (old) third-party libraries that fundamentally don't play well with the closed-world assumption in native-image. The ecosystem has been moving towards libraries that are more compatible, but switching libraries is always a pain. We will see how project https://github.com/oracle/graal/issues/11327[Crema] and its open-world model will be able to help with that.
 
 
 
