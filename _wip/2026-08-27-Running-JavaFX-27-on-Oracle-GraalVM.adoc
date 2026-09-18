@@ -26,7 +26,7 @@ In fact, starting the https://github.com/mkpaz/atlantafx[AtlantaFX] sampler on a
 
 JavaFX actually works very well in Native Image once everything is configured, but getting a complex application running for the first time is typically not a straightforward experience. This steep initial hurdle has unfortunately earned JavaFX, and desktop Java in general, a reputation of being incompatible or working poorly with Native Image. I think a big part of this stems from complex, specialized tooling that performs a lot of "magic" behind the scenes to hide the native layers. Whenever anything breaks, it produces errors that many Java developers don't know how to debug.
 
-In this post I want to demystify their internals, and show why we built our own tooling to run the latest JavaFX 27 release with the latest Oracle GraalVM (Enterprise Edition) on desktop targets.
+In this post I want to demystify their internals, and show why we built our own tooling to run the latest JavaFX 27 release with the latest enterprise Oracle GraalVM on desktop targets.
 
 == Three Approaches
 
@@ -59,7 +59,7 @@ At the time of writing, NIK (full) supports the LTS versions GraalVM 25 CE with 
 
 We have been using Liberica NIK for our desktop applications for about two years, and it has admittedly worked quite well. However, some of our applications measure https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html[latency] at the sub-millisecond level, and we ran into issues with incorrect measurements due to poor escape analysis and GC behavior in the community edition. Our worst allocation source turned out to be a simple `new double[]{a,b}` in `Math::pow`, which would never allocate on HotSpot.
 
-Since the Oracle GraalVM Enterprise Edition became free to use under the https://www.oracle.com/downloads/licenses/graal-free-license.html[GFTC] license in 2023, we wanted to switch to get better escape analysis, https://medium.com/graalvm/graalvm-25-2-is-here-600a9ae53f83[G1 GC on all platforms], and other enterprise-only features like profile-guided optimization (PGO).
+Since the Oracle GraalVM (formerly Enterprise Edition) became free to use under the https://www.oracle.com/downloads/licenses/graal-free-license.html[GFTC] license in 2023, we wanted to switch to get better escape analysis, https://medium.com/graalvm/graalvm-25-2-is-here-600a9ae53f83[G1 GC on all platforms], and other enterprise-only features like profile-guided optimization (PGO).
 
 We also needed to upgrade to a newer JavaFX version for https://github.com/HebiRobotics/hebi-charts-examples[hebi-charts], which exposes high-performance JavaFX visualizations through a native shared library to other languages like Python and C++. Our goal was to be able to generate graphics and images through SSH on a linux-aarch64 device using the `Headless` mode introduced in JavaFX 26 with the software pipeline.
 
@@ -278,15 +278,15 @@ static final class Target_FTFactory {}
 
 The conditions are negations (`NotLinux`, `NotMacOS`) combined with an existence check (`ClassPresent`), so a future platform port fails visibly instead of running a stubbed-out backend.
 
-==== Remaining Glue
-
-Beyond the deletions, `StaticFX` also contains a small number of substitutions that work around remaining gaps between GraalVM and a statically linked JavaFX. Several of them are latent issues that wouldn't show up on a JVM, but should be fixed upstream. I only checked how Gluon and NIK handle some of them:
-
-**Media, WebView, and Swing**
+==== Media, WebView, and Swing
 
 The media and web modules do not build static archives because their native dependencies (GStreamer and WebKit) are incredibly difficult to build statically. However, on a JVM these modules already load their libraries dynamically from the platform jars, and nothing prevents a native image from doing the same. The feature simply copies the matching `.dll/.so/.dylib` from the classpath to the output, and adds appropriate linker arguments. Applications that don't use media or web remain standalone executables.
 
-Our `javafx.swing` metadata only covers the pure Java interop glue. While full `SwingNode` utiliziation requires additional metadata for the JDK's internal AWT systems, we have successfully verified it working with two `@Reachable` annotations across all five platforms. However, that remains an example rather than something we actively support.
+Our `javafx.swing` metadata only covers the pure Java interop glue. While full `SwingNode` utilization requires additional metadata for the JDK's internal AWT systems, we have successfully verified it working with two `@Reachable` annotations across all five platforms. However, that remains an example rather than something we actively support.
+
+==== Remaining Glue
+
+Beyond the deletions, `StaticFX` also contains a small number of substitutions that work around remaining gaps between GraalVM and a statically linked JavaFX. Several of them are latent issues that wouldn't show up on a JVM, but should be fixed upstream. I only checked how Gluon and NIK handle some of them:
 
 **GraalVM**
 
@@ -296,7 +296,7 @@ Our `javafx.swing` metadata only covers the pure Java interop glue. While full `
 
 **OpenJFX**
 
-* `System.loadLibrary` cannot initialize any of the static JavaFX libraries. https://openjdk.org/jeps/178[JEP 178] requires statically linked libraries to report at least `JNI_VERSION_1_8`, but glass still reports older versions and fails with `UnsatisfiedLinkError: Unsupported JNI version 0x10006, required by glass`. On Linux and macOS, the `JNI_OnLoad_<lib>` entry points are additionally hidden by the image's exported-symbol list, so the feature calls the initializers directly instead.
+* `System.loadLibrary` cannot initialize any of the static JavaFX libraries. Loading the unpatched glass as a built-in library fails with `UnsatisfiedLinkError: Unsupported JNI version 0x10006, required by glass`. On Linux and macOS, the `JNI_OnLoad_<lib>` entry points are additionally hidden by the image's exported-symbol list, so the feature calls the initializers directly instead.
 
 * Objective-C categories are dropped from static links, which shows up as an `unrecognized selector` exception when the first window opens. `libglass.a` is linked with `-force_load` to keep them.
 
@@ -381,7 +381,7 @@ Most of the difference is in the first impression. On the desktop, the JIT event
 
 After the initial class loading, the JIT closes most of the gap on the desktop, while the Pi stays noticeably faster under AOT.
 
-Note that FXML loads significantly faster under AOT even after multiple calls. Our own applications are built almost entirely on complex nested FXML files that get loaded reflectively. In the past we have considered converting FXML to byte code to improve performance, but Native Image has made that unnecessary for us.
+Note that FXML loads significantly faster under AOT even after multiple calls. Our own applications are built almost entirely on complex nested FXML files that get loaded reflectively. In the past we have considered converting FXML to bytecode to improve performance, but Native Image has made that unnecessary for us.
 
 Each machine was measured with its default pipeline, i.e., D3D on the desktop and the software pipeline on the Pi 5 (the V3D GPU is not in the vendor allow-list). The native images use the default Serial GC without PGO, and the CDS archives were trained on all measured pages. Timings come from external screen capture: a page load counts from the click until the content starts to appear, taking the median of 3 runs at 16 ms capture resolution on the desktop and ~50 ms on the Pi. Entries with `~20 ms` had already switched in the first capture after the click.
 
