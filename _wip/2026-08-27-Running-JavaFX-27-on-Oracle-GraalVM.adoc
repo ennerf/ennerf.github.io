@@ -7,7 +7,7 @@
 .The AtlantaFX sampler as a JavaFX 27 Native Image on a Raspberry Pi 5, showcasing full JavaFX support including FXML, WebView, MediaPlayer, and AWT integration (https://youtu.be/GA_iAnxznO8[video walkthrough])
 image::jfx-static/sampler-blueprints.png[AtlantaFX sampler running on a Raspberry Pi 5,role=screenshot]
 
-We initially used GraalVM Native Image as a way to deploy JavaFX to mobile targets. However, after seeing significant performance benefits, we gradually migrated all of our desktop and CLI applications over to ahead-of-time (AOT) compilation. GUIs mostly run in interpreted mode because users would have to click thousands of times to reach the JIT threshold. With AOT we see up to 90% reductions in startup and first visit times, which results in a much snappier experience.
+We initially used GraalVM Native Image as a way to deploy JavaFX to mobile targets. However, after seeing our mobile apps feel snappier than our desktop apps, we gradually migrated all of our GUI and CLI applications over to ahead-of-time (AOT) compilation. GUIs mostly run in interpreted mode (users would have to click thousands of times to reach the JIT threshold), and with AOT we see up to 90% reductions in startup and first visit times, which results in a noticeably better user experience.
 
 .AtlantaFX sampler comparison on a Raspberry Pi 5
 [width="80%",options="header",cols="3,2,2,2",align="center"]
@@ -24,9 +24,9 @@ We initially used GraalVM Native Image as a way to deploy JavaFX to mobile targe
 
 In fact, starting the https://github.com/mkpaz/atlantafx[AtlantaFX] sampler on a high-end Ryzen 9 9950X desktop with jlink + CDS takes more than 2.5 times as long (1.3 s) as the same application running AOT-compiled on a tiny Raspberry Pi 5 (0.5 s, see <<benchmarks,benchmarks>>).
 
-JavaFX actually works very well in Native Image once everything is configured, but getting a complex application running for the first time is typically not a straightforward experience. This steep initial hurdle has unfortunately earned JavaFX, and desktop Java in general, a reputation of being incompatible or working poorly with Native Image.
+JavaFX actually works very well in Native Image once everything is configured, but getting a complex application running for the first time is typically not a straightforward experience. This steep initial hurdle has unfortunately earned JavaFX, and desktop Java in general, a reputation of being incompatible or working poorly with Native Image. I think a big part of this stems from complex, specialized tooling that performs a lot of "magic" behind the scenes to hide the native layers. Whenever anything breaks, it produces errors that many Java developers don't know how to debug.
 
-I think a big part of this stems from complex, specialized tooling that performs a lot of "magic" behind the scenes to hide the native layers. Whenever anything breaks, it produces errors that many Java developers don't know how to debug. In this post I want to demystify their internals, and show why we built our own tooling to run the latest JavaFX 27 release with the latest Oracle GraalVM.
+In this post I want to demystify their internals, and show why we built our own tooling to run the latest JavaFX 27 release with the latest Oracle GraalVM (Enterprise Edition) on desktop targets.
 
 == Three Approaches
 
@@ -42,14 +42,14 @@ However, the number of moving targets makes for a brittle combination that can e
 
 That being said, the existing tooling still gets maintenance updates (link:https://docs.gluonhq.com/[see docs]) and is comparably user-friendly considering the enormous underlying complexity. However, the latest versions Gluon currently supports are GraalVM 23 Community Edition (CE) and JavaFX 21, and there is currently no supported way to use a newer JavaFX release.
 
-We've used Gluon's tools internally for 1-2 years and still refer to it for mobile targets. JavaFX on mobile actually works far better than we originally expected, and it's really nice to be able to deploy to all five targets with full 2D and 3D rendering as well as hot-reload of styling and layouts.
+We've used Gluon's tools internally for 1-2 years and still refer to it for mobile targets. JavaFX on mobile actually works far better than we originally expected, and it's really nice to be able to deploy to all five targets with full 2D and 3D rendering as well as hot-reload of styling and layouts (see https://www.youtube.com/watch?v=qeZdsze0ijo[Mobile Scope]).
 
 A common point of confusion is the licensing model. Only their https://gluonhq.com/products/gluonfx/[rich component libraries] require a license, but the build tools are free to use for all platforms.
 
 
 === BellSoft's Liberica NIK
 
-BellSoft took a much more focused approach and created a GraalVM CE distribution dedicated to desktop apps: https://bell-sw.com/liberica-native-image-kit/[Liberica NIK (full)]. If you need to get something running quickly, NIK is the easiest way to get started on desktop apps.
+BellSoft took a much more focused approach and created a GraalVM CE distribution dedicated to desktop apps: https://bell-sw.com/liberica-native-image-kit/[Liberica NIK (full)]. If you need to get something running quickly, NIK is the easiest way to get started.
 
 Their distribution bundles JavaFX and Swing/AWT modules, as well as corresponding metadata for both. Users only need to set `GRAALVM_HOME` and can use it with GraalVM's stock `native-maven-plugin`. Note that even a stock Oracle GraalVM ships the static AWT archives, but users have to generate the required metadata themselves.
 
@@ -59,13 +59,13 @@ At the time of writing, NIK (full) supports the LTS versions GraalVM 25 CE with 
 
 We have been using Liberica NIK for our desktop applications for about two years, and it has admittedly worked quite well. However, some of our applications measure https://ennerf.github.io/2016/09/20/A-Practical-Look-at-Latency-in-Robotics-The-Importance-of-Metrics-and-Operating-Systems.html[latency] at the sub-millisecond level, and we ran into issues with incorrect measurements due to poor escape analysis and GC behavior in the community edition. Our worst allocation source turned out to be a simple `new double[]{a,b}` in `Math::pow`, which would never allocate on HotSpot.
 
-Since the enterprise Oracle GraalVM became free to use under the https://www.oracle.com/downloads/licenses/graal-free-license.html[GFTC] license in 2023, we wanted to switch to get better escape analysis, https://medium.com/graalvm/graalvm-25-2-is-here-600a9ae53f83[G1 GC on all platforms], and other enterprise-only features like profile-guided optimization (PGO).
+Since the Oracle GraalVM Enterprise Edition became free to use under the https://www.oracle.com/downloads/licenses/graal-free-license.html[GFTC] license in 2023, we wanted to switch to get better escape analysis, https://medium.com/graalvm/graalvm-25-2-is-here-600a9ae53f83[G1 GC on all platforms], and other enterprise-only features like profile-guided optimization (PGO).
 
-We also needed to upgrade to a newer JavaFX version for https://github.com/HebiRobotics/hebi-charts-examples[hebi-charts], which exposes high-performance JavaFX visualizations through a native shared library to other languages like Python and C++. Our goal was to be able to generate graphics/images through SSH on a linux-aarch64 device using the `Headless` mode introduced in JavaFX 26 with the software pipeline.
+We also needed to upgrade to a newer JavaFX version for https://github.com/HebiRobotics/hebi-charts-examples[hebi-charts], which exposes high-performance JavaFX visualizations through a native shared library to other languages like Python and C++. Our goal was to be able to generate graphics and images through SSH on a linux-aarch64 device using the `Headless` mode introduced in JavaFX 26 with the software pipeline.
 
 Neither Substrate nor Liberica NIK supports that specific combination, so we ended up creating https://github.com/HebiRobotics/jfx-static-feature[StaticFX]. In a way, the decoupling of JavaFX from the JDK turned into a nice benefit because it can be treated like a normal library that we can update at will without needing vendor support.
 
-Rather than taking over the build system, StaticFX runs as a regular https://www.graalvm.org/sdk/javadoc/org/graalvm/nativeimage/hosted/Feature.html[GraalVM Feature] on the stock toolchain, and can pass all the required configurations to native-image without modifying any of the jfx sources. It also supports dynamic linking where static linking is not available, so it can support all JavaFX modules, including media, web, and swing interop.
+Rather than taking over the build system, StaticFX runs as a regular https://www.graalvm.org/sdk/javadoc/org/graalvm/nativeimage/hosted/Feature.html[GraalVM Feature] on the stock toolchain, and can pass all the required configurations to native-image without modifying any of the jfx sources. It also supports dynamic linking where static linking is not available, so it can support all JavaFX modules, including Media, Web, and Swing interop.
 
 It consists of two artifacts: `jfx-static-libs` for version-specific static archives and metadata, and `jfx-static-feature` for the relatively version-agnostic glue. GraalVM automatically picks up configuration files from artifacts on the classpath, so users only need to add two dependencies next to the `org.openjfx` jars:
 
@@ -85,6 +85,8 @@ It consists of two artifacts: `jfx-static-libs` for version-specific static arch
 ----
 
 The https://github.com/HebiRobotics/jfx-static-feature[StaticFX] repository contains detailed documentation and examples.
+
+Note that StaticFX can only target platforms that GraalVM supports. Mobile targets require cross-compilation and currently can't be done without custom build tools like Substrate.
 
 == Three Problems
 
@@ -182,7 +184,7 @@ The metadata cannot be generated with the https://www.graalvm.org/latest/referen
 
 **Liberica NIK** does not ship any JSON files, but they heavily extended the https://github.com/oracle/graal/blob/6d71c876640c9ae7b3c131ebecc8d1834ac813c7/substratevm/src/com.oracle.svm.hosted/src/com/oracle/svm/hosted/javafx/JavaFXFeature.java[JavaFXFeature] in the `svm.jar` and register rules directly from code. The metadata is tied to the bundled jfx version, and the conditions are generated using `Platform.includedIn` checks and triggers on specific classes.
 
-**jfx-static-libs** ships conventional JSON files with conditions that approximate OS filtering, e.g., `isReachable(${OS}Application.class)`. This is compatible with the stock tooling, so it works out of the box with any current GraalVM release. The metadata itself is currently generated using `@Reachable` annotations in a jfx https://github.com/ennerf/jfx/releases[fork] and updated once per release.
+**StaticFX** ships conventional JSON files with conditions that approximate OS filtering, e.g., `typeReachable = ${OS}Application.class`. This is compatible with the stock tooling, so it works out of the box with any current GraalVM release. The metadata itself is currently generated using `@Reachable` annotations in a jfx https://github.com/ennerf/jfx/releases[fork] and updated once per release.
 
 // TODO: this doesn't add anything, does it?
 // The web module is an extreme case for conditions: WebKit creates most of its Java peers from native code, so nothing on the Java side ever names them, and a condition on such a class would never fire. All of its entries are instead conditioned on the single class that loads the library.
@@ -191,7 +193,7 @@ The metadata cannot be generated with the https://www.graalvm.org/latest/referen
 ====
 I considered trying to get the annotations upstream, but merging them would require a build-system change with a dependency on an external annotation processor, and it would create an expectation that OpenJFX officially supports native-image, which would be a big commitment.
 
-Now that the initial metadata is figured out (~315 annotations in ~280 files generating ~1,000 entries), it only takes a few hours to cover a new release and run through the automated test suite, which is something that others could potentially do themselves as well.
+Now that the initial metadata is figured out (~315 annotations in ~280 files generating ~1,000 entries), it only takes a few hours to cover a new release and run through the automated test suite. We designed it for ease of maintenance and documented the process in https://github.com/HebiRobotics/jfx-static-feature/blob/main/jfx-static-libs/README.md#reproducibility--independence[jfx-static-libs]. We plan to release new builds in a timely manner, but it's possible to create your own builds to avoid relying on third-party updates.
 
 Note that we are currently limited to generating the older 1.0.0 metadata format because the `typeReached` condition in 1.2.0 can't express the `HeadlessApplication` conditions, i.e., it loads OS-dependent code, but never reaches any of the classes we could use as OS conditions. This means that we cannot upload the metadata to the community metadata repository.
 ====
@@ -226,7 +228,7 @@ Statically linked JNI code can get into the image in two different ways. The sim
 
 The alternative is registering the archives as built-in JNI libraries, the same mechanism GraalVM uses for the JDK's own libraries. Native-image then emits a link-time reference for every reachable native method, so the linker pulls in only the objects that are actually needed. The verification happens at build time, so a genuinely missing implementation fails early.
 
-Historically, the glass library in OpenJFX reported lower JNI versions. Since GraalVM 25 strictly enforces https://openjdk.org/jeps/178[JEP 178]'s minimum `JNI_VERSION_1_8` for static linking, the official sources are not compatible until this is updated upstream.
+Historically, the glass library in OpenJFX reported lower JNI versions. Since GraalVM 25 strictly enforces JEP 178's minimum `JNI_VERSION_1_8` for static linking, the official sources are not compatible until this is updated upstream.
 
 **Substrate** forces whole archives on Windows and macOS, but on Linux their internal `GluonFeature` does the built-in registration. The highest supported GraalVM version is 23, so the JNI version is not an issue.
 
@@ -239,7 +241,7 @@ Historically, the glass library in OpenJFX reported lower JNI versions. Since Gr
 
 As mentioned in the metadata section, a few platform-specific classes are present in every platform's jar even though their native code is not. Out of the 95 graphics classes that declare native methods, this only applies to six classes related to font rendering, as well as the iOS image loader.
 
-Unfortunately, even with perfectly provided metadata, users can easily cause issues by e.g. committing agent-generated files and building on another platform. Until those classes are added to the upstream https://github.com/openjdk/jfx/blob/jfx27/build.gradle#L5617-L5669[exclude list], making e.g. the macOS CoreText font backend reachable on Windows breaks the build with 55 unresolved symbols even though none of them are needed. The missing symbol errors give the impression that the binaries were not compiled correctly, rather than highlighting a metadata issue.
+Unfortunately, even with perfectly provided metadata, users can easily cause issues by e.g. committing agent-generated files and building on another platform. Until those classes are added to the upstream https://github.com/openjdk/jfx/blob/88ad997176fa397c30bc2a12c3ba4ddb17a0cf53/build.gradle#L5617-L5669[exclude list], making e.g. the macOS CoreText font backend reachable on Windows breaks the build with 55 unresolved symbols even though none of them are needed. The missing symbol errors give the impression that the binaries were not compiled correctly, rather than highlighting a metadata issue.
 
 [source]
 ----
@@ -280,6 +282,12 @@ The conditions are negations (`NotLinux`, `NotMacOS`) combined with an existence
 
 Beyond the deletions, `StaticFX` also contains a small number of substitutions that work around remaining gaps between GraalVM and a statically linked JavaFX. Several of them are latent issues that wouldn't show up on a JVM, but should be fixed upstream. I only checked how Gluon and NIK handle some of them:
 
+**Media, WebView, and Swing**
+
+The media and web modules do not build static archives because their native dependencies (GStreamer and WebKit) are incredibly difficult to build statically. However, on a JVM these modules already load their libraries dynamically from the platform jars, and nothing prevents a native image from doing the same. The feature simply copies the matching `.dll/.so/.dylib` from the classpath to the output, and adds appropriate linker arguments. Applications that don't use media or web remain standalone executables.
+
+Our `javafx.swing` metadata only covers the pure Java interop glue. While full `SwingNode` utiliziation requires additional metadata for the JDK's internal AWT systems, we have successfully verified it working with two `@Reachable` annotations across all five platforms. However, that remains an example rather than something we actively support.
+
 **GraalVM**
 
 * Overloaded native methods never link: native-image resolves builtin JNI methods by their short name, and an overloaded native only exists under its signature-mangled name on the C side (relevant to three classes). We added `@CFunction` substitutions to manually route them to the mangled symbols. BellSoft works around this with source patches that rename the overloaded natives (e.g., `CreateFontFace` -> `CreateFontFaceIndexed`), and Substrate is unaffected due to lazy resolution on Windows and macOS (falls back to the mangled names at runtime), and none of the classes being relevant on Linux.
@@ -297,12 +305,6 @@ Beyond the deletions, `StaticFX` also contains a small number of substitutions t
 * JavaFX qualifies GPU support against a vendor allowlist that does not include Broadcom, so the es2 pipeline on a Raspberry Pi requires `-Dprism.forceGPU=true` to avoid falling back to software rendering.
 
 * Files shipped inside the image load using the `resource:` scheme, but the Media player on macOS only checks for `jar:` and `jrt:`, and hands the url to AVFoundation to get an error.
-
-**Media, WebView, and Swing**
-
-The media and web modules do not build static archives because their native dependencies (GStreamer and WebKit) are incredibly difficult to build statically. However, on a JVM these modules already load their libraries dynamically from the platform jars, and nothing prevents a native image from doing the same. The feature simply copies the matching `.dll/.so/.dylib` from the classpath to the output, and adds appropriate linker arguments. Applications that don't use media or web remain standalone executables.
-
-Our `javafx.swing` metadata only covers the pure Java interop glue. While full `SwingNode` utiliziation requires additional metadata for the JDK's internal AWT systems, we have successfully verified it working with two `@Reachable` annotations across all five platforms. However, that remains an example rather than something we actively support.
 
 
 [[benchmarks]]
@@ -377,7 +379,9 @@ Most of the difference is in the first impression. On the desktop, the JIT event
 | Typography | 397 -> 302 | 422 -> 302 | 262 -> 241
 |====
 
-After the initial class loading, the JIT closes most of the gap on the desktop, while the Pi stays noticeably faster under AOT. It is also noticeable that FXML loads significantly faster on AOT on both platforms, even after multiple calls.
+After the initial class loading, the JIT closes most of the gap on the desktop, while the Pi stays noticeably faster under AOT.
+
+Note that FXML loads significantly faster under AOT even after multiple calls. Our own applications are built almost entirely on complex nested FXML files that get loaded reflectively. In the past we have considered converting FXML to byte code to improve performance, but Native Image has made that unnecessary for us.
 
 Each machine was measured with its default pipeline, i.e., D3D on the desktop and the software pipeline on the Pi 5 (the V3D GPU is not in the vendor allow-list). The native images use the default Serial GC without PGO, and the CDS archives were trained on all measured pages. Timings come from external screen capture: a page load counts from the click until the content starts to appear, taking the median of 3 runs at 16 ms capture resolution on the desktop and ~50 ms on the Pi. Entries with `~20 ms` had already switched in the first capture after the click.
 
