@@ -38,6 +38,9 @@
   .listingblock > .title,
   .imageblock > .title,
   .tableblock > caption {
+    /* Bootstrap moves captions below the table */
+    caption-side: top;
+    padding-bottom: 0.5rem;
     color: var(--text-muted-color);
     font-size: 0.85rem;
     font-style: italic;
@@ -50,6 +53,14 @@
     img {
       max-width: 100%;
     }
+
+    /* screenshots often have white edges that disappear against the page */
+    &.screenshot img {
+      border-radius: 0px;
+      box-shadow:
+        var(--language-border-color) 0 0 0 1px,
+        rgba(0, 0, 0, 0.08) 0 2px 8px;
+    }
   }
 
   .admonitionblock {
@@ -60,10 +71,50 @@
       padding: 1rem 0 1rem 1rem;
       color: var(--prompt-info-icon-color);
       vertical-align: top;
+
+      /* Asciidoctor emits `i.fa.icon-<type>` and expects its own stylesheet to map the
+         glyph; Chirpy only ships Font Awesome, so map the admonition types here. The
+         label text comes from the element's title attribute (Note, Tip, ...). */
+      i.fa {
+        /* FA7 fixes .fa at width 1.25em, which makes the label overflow the cell */
+        width: auto;
+        white-space: nowrap;
+      }
+
+      i.fa::after {
+        content: attr(title);
+        margin-left: 0.4rem;
+        font-family: Lato, 'Microsoft Yahei', sans-serif;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+      }
+
+      .icon-note::before {
+        content: '\f05a'; /* circle-info */
+      }
+
+      .icon-tip::before {
+        content: '\f0eb'; /* lightbulb */
+      }
+
+      .icon-warning::before {
+        content: '\f071'; /* triangle-exclamation */
+      }
+
+      .icon-important::before {
+        content: '\f06a'; /* circle-exclamation */
+      }
+
+      .icon-caution::before {
+        content: '\f06d'; /* fire */
+      }
     }
 
     td.content {
       padding: 1rem;
+      /* undo the nowrap Chirpy puts on table-wrapper cells; admonitions hold prose */
+      white-space: normal;
     }
   }
 }

@@ -1,0 +1,65 @@
+= Reachability Metadata from the Source
+:page-tags: GraalVM, Native Image, JavaFX, Java
+:page-mermaid: true
+
+// STUB for the metadata follow-up post. Raw material moved here from the jfx-static
+// flagship draft on 2026-08-28, plus pointers to the notes it should draw from:
+// - claude-memory/openjfx-static/metadata-audit.md — the constant-folding table
+//   (nine reflective shapes, which fold and which don't) and the audit method
+// - claude-memory/openjfx-static/metadata-conditions.md — full typeReachable vs
+//   typeReached reasoning
+// - claude-memory/openjfx-static/upstream.md — BufferUtil LCD-text bug, MacPixels
+// - reachability-annotations README — annotation/processor examples
+//
+// Planned angle: framework-independent "annotations instead of traced JSON" thesis,
+// with JavaFX as the showcase and the war stories (MacPixels menu bar, BufferUtil
+// hollow LCD text) as evidence. The typeReached/headless material below is the
+// bug-report-shaped centerpiece.
+// TODO (moved from the flagship draft): add constructors for every type that is @Injected? condition on itself? fails when it is a subtype and not the declared one?
+
+== The condition schema cannot express a per-OS choice
+
+The condition mechanism has an interesting limitation. A condition can only name a Java class. That is sufficient for windowed applications, because each operating system has its own glass `Application` class, so anchoring `DWFactory` to `WinApplication` encodes "only on Windows" indirectly. However, this breaks down for the first user that is not OS specific, which is the built-in headless platform:
+
+.Three font backends and four users. The windowed glass classes each imply an OS, while `HeadlessApplication` is the same class everywhere.
+[mermaid,role=mermaid-src]
+----
+flowchart LR
+    subgraph apps["glass Application"]
+        Win["WinApplication"]
+        Mac["MacApplication"]
+        Gtk["GtkApplication"]
+        Headless["HeadlessApplication
+        (same class on every OS)"]
+    end
+    subgraph backends["font backend (native)"]
+        DW["DWFactory
+        DirectWrite &mdash; natives only on Windows"]
+        CT["CTFactory
+        CoreText &mdash; natives only on macOS"]
+        FT["FTFactory
+        FreeType &mdash; natives only on Linux"]
+    end
+    Win -- "condition on the glass class works:
+    reaching it implies the OS" --> DW
+    Mac --> CT
+    Gtk --> FT
+    Headless -. "reaches exactly one, picked by isWindows/
+    isMacosx/isLinux and folded at build time &mdash;
+    but no reachable class names the OS" .-> DW
+    Headless -.-> CT
+    Headless -.-> FT
+    linkStyle 3,4,5 stroke:#c0392b,color:#c0392b
+    style Headless stroke:#c0392b
+----
+++++
+<script>
+  /* asciidoctor+rouge emits data-lang instead of the language-mermaid
+     class that Chirpy's mermaid loader looks for */
+  document.querySelectorAll('.listingblock.mermaid-src pre').forEach(function (pre) {
+    pre.classList.add('language-mermaid');
+  });
+</script>
+++++
+
+`HeadlessApplication` is one class on every OS. `PrismFontFactory` selects the backend based on `isWindows`/`isMacosx`/`isLinux`, which native-image folds at build time, so a headless image reaches exactly one of the three backends. However, there is no platform-specific class underneath `HeadlessApplication` to attach a condition to, and registering all three backends fails the link as described above. What the metadata would need to express is simply `"condition": {"os": "windows"}`, which no schema version currently offers. Note that the newer https://www.graalvm.org/latest/reference-manual/native-image/metadata/[unified metadata format] (1.2.0) actually made this worse: the older `typeReachable` condition is a build-time question, evaluated after the OS has been folded away, while its replacement `typeReached` is a runtime question and the only remaining vocabulary. This is why the metadata ships in the older format, and a build-time platform condition seems like a reasonable upstream request that would benefit anyone publishing cross-platform metadata.
