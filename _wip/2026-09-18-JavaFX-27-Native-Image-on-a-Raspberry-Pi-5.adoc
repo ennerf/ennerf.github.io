@@ -1,11 +1,9 @@
 = JavaFX 27 as a GraalVM Native Image on a Raspberry Pi 5
 :page-tags: JavaFX, GraalVM, Native Image, Java
+:page-image: { path: /images/jfx-static/sampler-blueprints.png, alt: "The AtlantaFX sampler as a JavaFX 27 Native Image on a Raspberry Pi 5" }
+:page-description: How Gluon Substrate, Liberica NIK, and StaticFX get JavaFX running as a GraalVM Native Image, including WebView and media, benchmarked on a Raspberry Pi 5.
 // used for GitHub's preview renderer. Jekyll locks the imagesdir to /images
 :imagesdir: ../images
-
-[.text-center]
-.The AtlantaFX sampler as a JavaFX 27 Native Image on a Raspberry Pi 5, showcasing full JavaFX support including FXML, WebView, MediaPlayer, and AWT integration (https://youtu.be/GA_iAnxznO8[video walkthrough])
-image::jfx-static/sampler-blueprints.png[AtlantaFX sampler running on a Raspberry Pi 5,role=screenshot]
 
 We initially used GraalVM Native Image as a way to deploy JavaFX to mobile targets. However, after seeing our mobile apps feel snappier than our desktop apps, we gradually migrated all of our GUI and CLI applications over to ahead-of-time (AOT) compilation. GUIs mostly run in interpreted mode (users would have to click thousands of times to reach the JIT threshold), and with AOT we see up to 90% reductions in startup and first visit times, which results in a noticeably better user experience.
 
@@ -22,7 +20,7 @@ We initially used GraalVM Native Image as a way to deploy JavaFX to mobile targe
 | Private memory after all pages | 1424 MB | 1396 MB (-2%) | 634 MB (-55%)
 |====
 
-In fact, starting the https://github.com/mkpaz/atlantafx[AtlantaFX] sampler on a high-end Ryzen 9 9950X desktop with jlink + CDS takes more than 2.5 times as long (1.3 s) as the same application running AOT-compiled on a tiny Raspberry Pi 5 (0.5 s, see <<benchmarks,benchmarks>>).
+In fact, starting the https://github.com/mkpaz/atlantafx[AtlantaFX] sampler on a high-end Ryzen 9 9950X desktop with jlink + CDS takes more than 2.5 times as long (1.3 s) as the same application running AOT-compiled on a tiny Raspberry Pi 5 (0.5 s, see <<benchmarks,benchmarks>>). The whole run is captured in a short https://youtu.be/GA_iAnxznO8[video walkthrough] of all pages, including FXML, WebView, MediaPlayer, and AWT integration.
 
 JavaFX actually works very well in Native Image once everything is configured, but getting a complex application running for the first time is typically not a straightforward experience. This steep initial hurdle has unfortunately earned JavaFX, and desktop Java in general, a reputation of being incompatible or working poorly with Native Image. I think a big part of this stems from complex, specialized tooling that performs a lot of "magic" behind the scenes to hide the native layers. Whenever anything breaks, it produces errors that many Java developers don't know how to debug.
 
