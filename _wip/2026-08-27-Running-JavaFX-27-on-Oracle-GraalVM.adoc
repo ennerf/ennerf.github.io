@@ -280,9 +280,11 @@ The conditions are negations (`NotLinux`, `NotMacOS`) combined with an existence
 
 ==== Media, WebView, and Swing
 
-The media and web modules do not build static archives because their native dependencies (GStreamer and WebKit) are incredibly difficult to build statically. However, on a JVM these modules already load their libraries dynamically from the platform jars, and nothing prevents a native image from doing the same. The feature simply copies the matching `.dll/.so/.dylib` from the classpath to the output, and adds appropriate linker arguments. Applications that don't use media or web remain standalone executables.
+Both Substrate and Liberica NIK omit the media and web modules because their native dependencies (GStreamer and WebKit) are incredibly difficult to build statically. Since that is unlikely to ever change, dropping the modules entirely seemed unnecessarily restrictive to us.
 
-Our `javafx.swing` metadata only covers the pure Java interop glue. While full `SwingNode` utilization requires additional metadata for the JDK's internal AWT systems, we have successfully verified it working with two `@Reachable` annotations across all five platforms. However, that remains an example rather than something we actively support.
+On a standard JVM, these modules already load their binaries dynamically from the platform jars, and nothing prevents a native image from doing the same. The feature simply extracts the matching shared libraries (.dll, .so, or .dylib) from the classpath to the output directory and adds the appropriate linker arguments. Applications that require web or media can't be built as self-contained executables, but that seems like a reasonable tradeoff.
+
+Our `javafx.swing` metadata covers the pure Java interop glue. While full `SwingNode` utilization requires additional metadata for the JDK's internal AWT systems, we have successfully verified it working across all five platforms using just two `@Reachable` annotations. However, that remains an example rather than something we actively support.
 
 ==== Remaining Glue
 
