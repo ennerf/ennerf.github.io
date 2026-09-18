@@ -26,7 +26,7 @@ In fact, starting the https://github.com/mkpaz/atlantafx[AtlantaFX] sampler on a
 
 JavaFX actually works very well in Native Image once everything is configured, but getting a complex application running for the first time is typically not a straightforward experience. This steep initial hurdle has unfortunately earned JavaFX, and desktop Java in general, a reputation of being incompatible or working poorly with Native Image. I think a big part of this stems from complex, specialized tooling that performs a lot of "magic" behind the scenes to hide the native layers. Whenever anything breaks, it produces errors that many Java developers don't know how to debug.
 
-In this post I want to demystify their internals, and show why we built our own tooling to run the latest JavaFX 27 release with the latest enterprise Oracle GraalVM on desktop targets.
+In this post I want to demystify the internals of these tools, and show why we built our own tooling to run the latest JavaFX 27 release with the latest enterprise Oracle GraalVM on desktop targets.
 
 == Three Approaches
 
@@ -51,9 +51,9 @@ A common point of confusion is the licensing model. Only their https://gluonhq.c
 
 BellSoft took a much more focused approach and created a GraalVM CE distribution dedicated to desktop apps: https://bell-sw.com/liberica-native-image-kit/[Liberica NIK (full)]. If you need to get something running quickly, NIK is the easiest way to get started.
 
-Their distribution bundles JavaFX and Swing/AWT modules, as well as corresponding metadata for both. Users only need to set `GRAALVM_HOME` and can use it with GraalVM's stock `native-maven-plugin`. Note that even a stock Oracle GraalVM ships the static AWT archives, but users have to generate the required metadata themselves.
+Their distribution bundles JavaFX and Swing/AWT modules, as well as corresponding metadata for both. Users only need to set `GRAALVM_HOME` and can use it with GraalVM's stock `native-maven-plugin`. Even a stock Oracle GraalVM ships the static AWT archives, but users have to generate the required metadata themselves.
 
-At the time of writing, NIK (full) supports the LTS versions GraalVM 25 CE with JavaFX 25 and the GPU-accelerated pipelines on the four main desktop architectures. They currently do not support the software pipeline or `linux-aarch64` targets. Both Gluon and BellSoft do not support the media and web modules in a Native Image.
+At the time of writing, NIK (full) supports the LTS versions GraalVM 25 CE with JavaFX 25 and the GPU-accelerated pipelines on the four main desktop architectures. They currently do not support the software pipeline or `linux-aarch64` targets. Neither Gluon nor BellSoft supports the media and web modules in a Native Image.
 
 === HEBI's StaticFX
 
@@ -86,7 +86,7 @@ It consists of two artifacts: `jfx-static-libs` for version-specific static arch
 
 The https://github.com/HebiRobotics/jfx-static-feature[StaticFX] repository contains detailed documentation and examples.
 
-Note that StaticFX can only target platforms that GraalVM supports. Mobile targets require cross-compilation and currently can't be done without custom build tools like Substrate.
+StaticFX can only target platforms that GraalVM supports. Mobile targets require cross-compilation and currently can't be done without custom build tools like Substrate.
 
 == Three Problems
 
@@ -193,7 +193,7 @@ I considered trying to get the annotations upstream, but merging them would requ
 
 Now that the initial metadata is figured out (~315 annotations in ~280 files generating ~1,000 entries), it only takes a few hours to cover a new release and run through the automated test suite. We designed it for ease of maintenance and documented the process in https://github.com/HebiRobotics/jfx-static-feature/blob/main/jfx-static-libs/README.md#reproducibility--independence[jfx-static-libs]. We plan to release new builds in a timely manner, but it's possible to create your own builds to avoid relying on third-party updates.
 
-Note that we are currently limited to generating the older 1.0.0 metadata format because the `typeReached` condition in 1.2.0 can't express the `HeadlessApplication` conditions, i.e., it loads OS-dependent code, but never reaches any of the classes we could use as OS conditions. This means that we cannot upload the metadata to the community metadata repository.
+We are currently limited to generating the older 1.0.0 metadata format because the `typeReached` condition in 1.2.0 can't express the `HeadlessApplication` conditions, i.e., it loads OS-dependent code, but never reaches any of the classes we could use as OS conditions. This means that we cannot upload the metadata to the community metadata repository.
 ====
 
 Missing metadata fails rather annoyingly at runtime. The failures range from hard crashes (e.g. segfaults on missing classes) to silently producing bad rendering artifacts (e.g. missing the peer for the `BoxShadow` effect). To capture issues early, we set up a verification project that executes as many code paths as possible, including 2D and 3D scenes, effects, dialogs, popups, and rich text. Each scene exports screenshots that undergo automatic pixel checks and are exported for manual side-by-side verification. The executable can also be pointed at different pipelines (`-Dprism.order=d3d`/`es2`/`mtl`) to verify that their results all match. Beyond the synthetic tests, we also check the AtlantaFX sampler and our own internal applications like https://www.youtube.com/watch?v=E9csKYFPwaM[Scope].
@@ -207,7 +207,6 @@ The static binaries are primarily a distribution problem. Upstream OpenJFX has s
 
 **Liberica NIK** fixes the version by bundling the JavaFX modules with their jdk, which takes precedence over any `org.openjfx` jars declared in the build. They support the LTS releases, so the latest is currently JDK 25 + JavaFX 25. Note that their JavaFX build contains some minor source patches that are not published. Their feature omits the software pipeline, so applications fail on machines without a qualifying GPU.
 
-// TODO: this is repeated from above?
 **StaticFX** works with the official `org.openjfx` release jars and provides accompanying static builds that were built from the same commit. The builds currently live in my openjfx fork at https://github.com/ennerf/jfx[jfx] and contain no changes to the Java or native code beyond the annotations. Each release adds one commit for setting up the annotation processor, and a second that adds annotations for generating the metadata. The output format matches Substrate's in case it ever accepts custom download urls. The static archives are actually reasonably small, so for the artifact on Maven Central we bundle all 5 platforms (including linux-aarch64) plus metadata into a single ~10 MB jar without classifier. The archives are only used by `jfx-static-feature`, so the artifact can be used as a standalone dependency purely to add reachability metadata.
 
 === Problem 3: Integration Glue
