@@ -134,13 +134,26 @@ On the application side, most of the reflection and resource loading comes from 
 
 The corresponding metadata lives in a `reachability-metadata.json` file that is hard to maintain manually and keep in sync. The typically recommended way to create the metadata is GraalVM's https://www.graalvm.org/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/[tracing agent], which attaches to a normal JVM run and traces all reflective accesses. That works reasonably well for a backend service with an automated test suite that hits every endpoint, but it is a major pain for GUI apps. Developers would have to click through every feature on every operating system, and redo it every time the app changes.
 
-Missing items often result in rather unhelpful runtime errors, e.g., missing a file resource:
+By default, missing items can fail silently or with rather unhelpful runtime errors, e.g., a missing FXML file:
 
 [source]
 ----
-Caused by: javafx.fxml.LoadException: Location is not set.
+Caused by: java.lang.IllegalStateException: Location is not set.
         at javafx.fxml.FXMLLoader.loadImpl(...)
 ----
+
+GraalVM for JDK 23 added the opt-in `--exact-reachability-metadata` build flag that turns missing registrations into detailed instructions:
+
+[source]
+----
+Caused by: com.oracle.svm.core.jdk.resources.MissingResourceRegistrationError: Cannot access resource at path 'sampler/hello.png'. To allow this operation, add the following to the 'resources' section of 'reachability-metadata.json' and rebuild the native image:
+
+    {
+      "glob": "sampler/hello.png"
+    }
+----
+
+Note that this also fails when looking up optional files that don't exist, such as the binary `.bss` versions that JavaFX checks whenever loading a stylesheet. Fortunately, globs are accepted (only in `-Areachability.outputFormat=1.2.0`), so this can be worked around with a single `@Reachable(resources = "/sampler/**/*.bss")`.
 
 In practice, nearly every issue we encountered in production was due to agent data becoming stale. It got annoying enough that we created https://github.com/HebiRobotics/reachability-annotations[reachability-annotations], which let us define metadata via annotations that live next to the source of truth and are regenerated on every build:
 
