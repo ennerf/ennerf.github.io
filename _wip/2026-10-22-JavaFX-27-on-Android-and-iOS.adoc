@@ -1,0 +1,189 @@
+= JavaFX 27 on Android and iOS
+:page-tags: JavaFX, GraalVM, Native Image, Android, iOS, Java
+:page-description: How StaticFX builds JavaFX 27 for Android and iOS, how MobilePlatform packages it for stock Gradle and Xcode projects, and what it took to make JavaFX controls look and move like native ones.
+// used for GitHub's preview renderer. Jekyll locks the imagesdir to /images
+:imagesdir: ../images
+
+// DRAFT 2026-10-22. Material and sources: claude-memory/HEBI-Java/mobile-blog-notes.md.
+// Lines starting with "// TODO" mark claims that need checking against the released tip or media that does not exist yet.
+
+In my https://ennerf.github.io/2026/09/18/JavaFX-27-Native-Image-on-a-Raspberry-Pi-5.html[last post] I wrote that mobile targets require cross-compilation and currently can't be done without custom build tools. That is no longer the case. StaticFX can now build JavaFX 27 with a stock Oracle GraalVM 25.4 into a shared library for Android and iOS, and the result gets packaged by a normal Gradle or Xcode project like any other native code.
+
+// TODO media: sampler walkthrough video (YouTube) on the Galaxy S20 and the iPhone 14 Pro, after B.68
+
+Getting JavaFX to run on a phone turned out to be the smaller part of the work. A JavaFX application that runs on a phone does not automatically feel like a phone application. The stock controls look like desktop controls, animations step unevenly on a 120 Hz display, scrolling stops dead when the finger lifts, and the keyboard covers the text field that it was opened for. Most of our effort went into fixing those problems, so in this post I want to cover the build only briefly and focus on the integration with the operating system and on how we matched the motion of the native controls.
+
+The work is split into three projects:
+
+* https://github.com/HebiRobotics/jfx-static-feature[StaticFX] builds the image. It gained `jfx-mobile-libs` and `jdk-mobile-libs` artifacts for the static archives of the mobile targets.
+* https://github.com/ennerf/mobile-platform[MobilePlatform] is a small operating system layer for any Java code that runs as a shared library on a phone, with or without JavaFX. It starts the image, packages it, and contains optional modules for OS services such as sensors and networking.
+* https://github.com/ennerf/mobilefx[MobileFX] contains the JavaFX host for both platforms and a controls library with iOS and Android themes. The controls also run on the desktop JVM.
+
+// TODO links: final repo locations and Maven coordinates after B.63
+
+== Building the Image
+
+The desktop version of StaticFX links the static JavaFX archives into an executable. Mobile targets work the same way, except that the image becomes a shared library that gets loaded by a wrapper application, and that the JDK itself has to be linked statically as well. Oracle GraalVM does not ship static JDK libraries for Android and iOS, so they come in a separate `jdk-mobile-libs` artifact that is built from the https://github.com/graalvm/labs-openjdk[labs-openjdk] branch of the matching GraalVM release. The JavaFX side lives in `jfx-mobile-libs`, which replaces `jfx-static-libs` and is built from the same commit of my https://github.com/ennerf/jfx[jfx fork] as the desktop archives.
+
+[source,xml]
+----
+<dependency>
+    <groupId>us.hebi.graalvm</groupId>
+    <artifactId>jfx-static-feature</artifactId>
+    <version>1.1.1</version>
+</dependency>
+<dependency>
+    <groupId>us.hebi.graalvm</groupId>
+    <artifactId>jfx-mobile-libs</artifactId>
+    <version>${javafx.version}</version>
+    <scope>runtime</scope>
+</dependency>
+<dependency>
+    <groupId>us.hebi.graalvm</groupId>
+    <artifactId>jdk-mobile-libs</artifactId>
+    <version>25.4.4.1.1</version> <!-- needs to match the exact Oracle GraalVM version -->
+    <scope>runtime</scope>
+</dependency>
+----
+
+The JDK archives are tied to the exact GraalVM version, because the image links against the internals of the VM that built it. This means that every GraalVM release requires a new `jdk-mobile-libs` release, and the feature refuses to build when the two disagree. The JavaFX archives are independent of the GraalVM version and follow the JavaFX releases just like on desktop.
+
+OpenJFX does not publish any jars for the mobile targets, so the `org.openjfx` dependencies resolve to the jars of the build host. `jfx-mobile-libs` adds the Android, Monocle, and iOS toolkit classes that those jars lack, and the feature removes the desktop parts at build time. As a consequence, Android images have to be built on a Linux x86_64 host with the Android NDK, and iOS images on an Apple Silicon Mac with Xcode. The target is selected with native-image options rather than an OS classifier, and the https://github.com/HebiRobotics/jfx-static-feature/tree/main/jfx-static-examples/example-jfx-library[example-jfx-library] contains Maven profiles for all three targets (`android-aarch64`, `ios-arm64`, and the `ios-arm64-simulator`).
+
+StaticFX stops at the shared library. Everything that happens afterwards, i.e., launching JavaFX inside an app, forwarding input and lifecycle events, and accessing platform services, is the job of the application. That is where the other two projects come in.
+
+== Packaging
+
+A shared library on its own is not an app. On Android it needs to be loaded from an Activity, it needs permissions in a manifest, and any code that calls Android APIs has to run in the Android runtime (ART) rather than in the image. On iOS it needs to be wrapped in a framework, and some APIs need usage descriptions in the `Info.plist` before the system lets an app call them.
+
+MobilePlatform handles this with two parts. The first part is a host that starts the image: an Android library with the class `MobileHost`, whose `start` method loads the library, creates the isolate, and passes the app's directories, and an iOS entry point `mobile_platform_start()` that does the same from inside the library. The image itself never has to guess where it is allowed to write files.
+
+The second part is a convention for what a module jar can carry next to its Java classes, and two GraalVM features that read it at build time. A module keeps everything that is specific to an operating system under `META-INF/mobile/<os>/`:
+
+* A static archive `lib<name>.a` with the module's C or Objective-C code. Maven compiles it from the module's `src/main/native` directory.
+* For Android, the classes that need to run in ART, a manifest fragment, and a list of permissions.
+* For iOS, a `Partial-Info.plist` with the usage descriptions.
+
+// TODO verify layout and feature names against the tip after B.65 (META-INF/mobile/<os>/, MobileLinkFeature, MobilePackageFeature, target/mobile/ios)
+
+`MobileLinkFeature` links every archive it finds on the class path into the image and exports its symbols. `MobilePackageFeature` collects the rest and writes a single `.aar` that contains the image, the ART classes of all modules, a merged manifest with their permissions, and ProGuard keep rules for classes that native code looks up by name. An Android app depends on that one file and nothing else:
+
+[source,kotlin]
+----
+dependencies {
+    implementation(files("../../target/hello.aar"))
+}
+----
+
+On iOS the feature collects the plist fragments, and a build script wraps the library into an XCFramework that Xcode links like any other framework. Adding a service to an app is a single Maven dependency, and nothing in the Gradle or Xcode project needs to change.
+
+The calls between Java and the native code use GraalVM's `@CFunction` for calls from Java into C, and `@CEntryPoint` for callbacks from C into Java. Unlike JNI, neither of them requires any reachability metadata, and the C side only sees plain function signatures. The code that has to call Android APIs goes through a small amount of JNI in the ART classes, because those APIs are only reachable from ART.
+
+Note that a module can also deliver its native code as a separate library that the app compiles with the NDK or as a Swift package, and that the image loads at run time with `System.load`. The repository contains an example of both routes. Having the code inside the image means that a module stays a single dependency.
+
+// TODO author: which route is the recommended one, and does the hostlib route stay in the post at all
+
+The first service modules came out of what our own apps needed:
+
+* `mobile-sensors` provides the motion sensors with their own rates and listeners. A thread of the image pulls the samples from the OS in batches, i.e., from the NDK's sensor queue on Android and from a buffer that CoreMotion's handlers write to on iOS, so a sample allocates nothing and never passes through ART.
+* `mobile-network` takes Android's WiFi multicast lock, without which some phones silently drop multicast and broadcast packets, and raises the receive buffer of a UDP socket above the 64 KB that the JDK caps it at on iOS.
+* `mobile-location`, `mobile-files`, `mobile-camera`, and `mobile-pictures` cover the location, the system's document picker, the camera, and the photo library.
+
+// TODO check the module list and one-line descriptions against the released README
+
+== Platform Integration
+
+The JavaFX port for Android and iOS has been part of OpenJFX for a long time, but it has seen little maintenance compared to the desktop toolkits, and a number of things that a phone application depends on are either missing or behave differently from native applications. The `mobilefx-host` module contains the JavaFX side of the host, i.e., an Android `FxActivity` that owns the surface JavaFX renders into, the iOS equivalent, and a number of fixes that make JavaFX behave like a native app.
+
+=== Frame Timing
+
+JavaFX updates animations, layout, and rendering in a pulse, which is normally driven by a timer at the refresh rate of the display. Modern phones run their displays at up to 120 Hz, and any mismatch between the pulse and the display shows up as uneven motion.
+
+On Android, Monocle has no vsync timer. Quantum pulsed from a 60 Hz timer and again after each rendered frame, which on the 120 Hz display of a Galaxy S20 resulted in frames that alternated 4 ms and 12 ms apart. Animations moved in visibly uneven steps. The fix was to drive the pulse from Android's https://developer.android.com/reference/android/view/Choreographer[Choreographer], which calls back once per frame of the display. The `FxActivity` posts a frame callback while JavaFX has work to do, the callback calls into the image through a `@CEntryPoint`, and a substitution tells Quantum to start its timer without a period of its own.
+
+On iOS, glass already pulses from a https://developer.apple.com/documentation/quartzcore/cadisplaylink[CADisplayLink], but it does so on every frame even when there is nothing to do, and at 60 Hz since it never asks for a frame rate. We now pause the display link whenever Quantum is idle, and request ProMotion's 120 Hz while it runs, which iPhones grant once the `Info.plist` contains `CADisableMinimumFrameDurationOnPhone`.
+
+// TODO media: frame interval plot before/after on the S20? Only if the old measurement can be reproduced.
+
+=== Touch Input
+
+Lists, pages, and pickers on a phone keep moving after the finger lifts, and the speed of that motion comes from the last few touch samples. Both platforms compute it from the timestamps that the touch hardware assigned to each sample, e.g., Android's https://developer.android.com/reference/android/view/VelocityTracker[VelocityTracker] fits a polynomial over the samples of the last 100 ms.
+
+JavaFX's `MouseEvent` and `TouchEvent` have no timestamp, so the only time available to a JavaFX control is the time at which its event handler runs. The handlers run on the FX thread, which receives touch events in bunches whenever it is busy with a frame. While a wheel picker was turning, we measured the handler times to be off from the actual touch times by 20-43 ms, which is far too much for a velocity estimate over a few samples.
+
+Rather than changing JavaFX's event classes, the hosts now pass the samples of the operating system through a side channel. On iOS these are the https://developer.apple.com/documentation/uikit/uievent/coalescedtouches(for:)[coalesced touches] of each event with their timestamps and precise (sub-point) locations, and on Android the historical samples of each `MotionEvent` with their event times. The controls read the samples of the current finger whenever they need a velocity, and compute it the same way as the platform, i.e., with VelocityTracker's second-order least squares fit on Android, and with the 40 ms window that we measured on iOS.
+
+=== Keyboard
+
+When a text field gets the focus, the software keyboard slides up and the application has to move its content out of the way, ideally in sync with the keyboard. Both platforms tell the application how the keyboard is going to move, but on iOS the notification turned out to be misleading. UIKit's `keyboardWillChangeFrame` notification reports a duration of 0.383 s with an undocumented animation curve 7, but the actual animation that we read from the Core Animation objects of the keyboard is a critically damped spring with a response of 0.267 s. Animating the content with the reported curve leaves it visibly behind the keyboard.
+
+On Android the keyboard animation is reported through the window insets animation. On the Galaxy S20 (Android 13) the keyboard moves over 285 ms on a `bezier(0.2, 0, 0, 1)` curve, which is AOSP's default. The Vivo X300 Pro (Android 16) instead drives its keyboard with a spring, but the insets callback only reports a duration, so our content follows the right duration with AOSP's curve, and the shape is only approximate on such phones.
+
+// TODO media: side-by-side clip, native text field vs MobileFX text field, keyboard opening on the iPhone 14 Pro and the S20 (MP4, not GIF)
+
+Note that the delay between tapping a field and the keyboard starting to move is the system's own. On the S20 the first keyboard of a run started 184 ms after the request, and later ones after about 73 ms. The content starts moving with the system's animation, so it shares the same delay.
+
+=== System Settings
+
+A few other settings need to get from the operating system into JavaFX. Glass on the phones reports neither dark mode nor reduced motion, so the host passes them as properties, together with the safe area that keeps content clear of the status bar, a camera cutout, and the home indicator. It also passes the date and time patterns of the system, which differ from the JDK's CLDR data in some locales, e.g., the medium date format for English in Austria is "14.10.2026" on an iPhone, but "14 Oct 2026" in the JDK.
+
+The screen reader bridge is the least complete part. VoiceOver and TalkBack can read and act on the controls of a scene, but they cannot scroll a list to rows beyond the screen yet.
+
+== Controls
+
+The controls started out as part of our https://www.youtube.com/watch?v=qeZdsze0ijo[Scope Mobile] application, and have since been extracted into the `mobilefx-controls` library. The main design goal was that plain JavaFX code should get the platform's look without any changes, so the library is primarily a pair of user-agent stylesheets with custom skins. An application calls `MobileTheme.install()` once at startup, and a `new Slider()` looks like a UISlider on iOS and like a Material 3 slider on Android. The stylesheets are compiled from SCSS on top of https://github.com/mkpaz/atlantafx[AtlantaFX], and the platform can be switched at runtime for previews.
+
+// TODO snippet: minimal app on MobileApplication after B.66 (final start(Stage) wires the theme and owns the MobileRoot; the app overrides start(MobileRoot)). Verify the API on the tip before including.
+
+Where JavaFX has no equivalent control, the library adds its own, e.g., a shell with tabs and a page stack with the swipe back gesture, bottom sheets and action sheets, wheel pickers, swipeable list rows, pull to refresh, and a snackbar. Menus, dialogs, and sheets are drawn as layers of a single scene root instead of separate popup windows, which makes them behave like overlays of a phone app and also works on the desktop. The https://github.com/ennerf/mobilefx/blob/main/mobilefx-controls/README.md[README] lists every control with its differences between the two platforms.
+
+// TODO media: screenshot table of a few controls in both themes, light and dark, generated by the sampler
+
+=== Matching Native Motion
+
+A control that looks right but moves differently still feels wrong, and motion is hard to judge by eye. Rather than tuning the animations by hand, we built two small reference apps that played the transitions of the platforms' own controls and logged every frame. On iOS the reference app read the animated value from `layer.presentation()` at every CADisplayLink tick at 120 Hz. On Android it read the view properties after each Choreographer frame, and window animations such as dialogs from `screenrecord` frames. The touches came from XCUITest and `adb input`, and the progress curves were normalized and fitted with numpy and scipy.
+
+UIKit's pages, sheets, and switches turned out to be springs in the form of SwiftUI's https://developer.apple.com/documentation/swiftui/animation/spring(response:dampingfraction:blendduration:)[spring(response:dampingFraction:)], and the fits matched with an RMS error below 0.005 in progress. Material's transitions fit its named easing curves with fixed durations. The controls now use those fits, and the remaining deviation of our animations from the native recordings is below 0.025 in progress for the iOS pages, sheets, and switch.
+
+.Some of the fitted motion constants (iOS 27 on an iPhone 14 Pro, Material Components 1.13)
+[width="80%",options="header",cols="3,4",align="center"]
+|====
+| Transition | Fit
+| iOS page push | spring(0.24, 1.1)
+| iOS sheet | spring(0.344, 1.0)
+| iOS switch | spring(0.30, 1.0)
+| iOS keyboard | spring(0.267, 1.0)
+| iOS scroll deceleration | exponential, time constant 0.4995 s
+| Android shared axis | emphasized, 450 ms
+| Android bottom sheet | 270 ms open, 200 ms close
+| Android fling | AOSP's OverScroller spline
+|====
+
+// TODO media: chart of native vs MobileFX progress for the iOS page push and sheet (native-progress.tsv vs ours)
+
+Scrolling needed the most care. UIScrollView decelerates exponentially with a time constant of almost exactly 0.5 s, which held from 304 to 7766 pt/s, and springs back at the edges. Android's flings follow the spline of AOSP's `OverScroller`, which a Vivo X300 Pro matched at all 11 speeds we tested, and stretch the content at the edges instead of bouncing. The S20's One UI differed from AOSP in its scrolling, so we followed AOSP.
+
+// TODO media: fling with bounce (iOS) and stretch (Android), side by side with native
+
+There are a few caveats to these numbers. All touches were synthetic, so motion that follows a finger, e.g., a dragged sheet or the swipe back gesture, was only fitted from the release onwards, and its feel is untested. We also only had one device per platform version. Lastly, the S20 took 65-75 ms from a pulse to the screen, which makes any lag behind the finger more noticeable than the remaining curve errors.
+
+// TODO decide: if the post runs long, this section becomes its own post ("Measuring iOS and Android motion")
+
+== Limitations
+
+There are still some gaps compared to a native application:
+
+* There is no web view, since JavaFX's web module is not built for the phones. `MobilePlatform.openUrl` opens pages in the system's browser instead.
+* The app only runs while it is on the screen. There are no background services, iOS suspends the app soon after the user leaves it, and Android may stop it.
+* The text does not follow the system's text size (Dynamic Type or Android's font scale) yet.
+* The controls have not been checked with right-to-left languages.
+* The screen reader bridge is incomplete, as mentioned above.
+* `TableView` keeps JavaFX's own skin, which scrolls without the fling, bounce, and stretch of lists and scroll panes.
+
+// TODO re-check the list against the released README
+
+// TODO numbers: library size, cold start on the S20 and iPhone 14 Pro, build time. Measure cleanly or leave out.
+
+== Conclusion
+
+// TODO write once the content is settled. End on a practical sentence: where the repos are and how to try the sampler (APK, TestFlight?).
